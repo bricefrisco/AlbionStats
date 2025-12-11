@@ -204,4 +204,13 @@ CREATE TABLE player_stats_snapshots (
 );
 
 SELECT create_hypertable('player_stats_snapshots', 'ts');
+
+ALTER TABLE player_stats_snapshots
+SET (
+    timescaledb.compress,
+    timescaledb.compress_segmentby = 'player_id',
+    timescaledb.compress_orderby = 'ts DESC'
+);
+
+SELECT add_compression_policy('player_stats_snapshots', INTERVAL '1 day');
 ```
