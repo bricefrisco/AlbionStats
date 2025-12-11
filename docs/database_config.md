@@ -213,4 +213,7 @@ SET (
 );
 
 SELECT add_compression_policy('player_stats_snapshots', INTERVAL '1 day');
+
+CREATE INDEX player_state_priority_poll_idx
+ON player_state (priority, next_poll_at);
 ```

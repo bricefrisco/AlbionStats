@@ -130,10 +130,9 @@ func (p *Poller) collectPlayers(events []event, acc map[string]models.PlayerStat
 				Region:       p.cfg.Region,
 				PlayerID:     participant.ID,
 				Name:         participant.Name,
-				Priority:     300,
+				Priority:     100,
 				NextPollAt:   now,
 				ErrorCount:   0,
-				LastPolled:   &now,
 				LastSeen:     &lastSeen,
 				GuildID:      nullableString(participant.GuildID),
 				GuildName:    nullableString(participant.GuildName),
@@ -164,15 +163,16 @@ func (p *Poller) upsertPlayers(ctx context.Context, players map[string]models.Pl
 
 	return p.db.WithContext(ctx).Clauses(clause.OnConflict{
 		Columns: []clause.Column{{Name: "region"}, {Name: "player_id"}},
-		DoUpdates: clause.AssignmentColumns([]string{
-			"name",
-			"guild_id",
-			"guild_name",
-			"alliance_id",
-			"alliance_name",
-			"alliance_tag",
-			"last_seen",
-			"last_polled",
+		DoUpdates: clause.Assignments(map[string]interface{}{
+			"name":          clause.Column{Table: "excluded", Name: "name"},
+			"guild_id":      clause.Column{Table: "excluded", Name: "guild_id"},
+			"guild_name":    clause.Column{Table: "excluded", Name: "guild_name"},
+			"alliance_id":   clause.Column{Table: "excluded", Name: "alliance_id"},
+			"alliance_name": clause.Column{Table: "excluded", Name: "alliance_name"},
+			"alliance_tag":  clause.Column{Table: "excluded", Name: "alliance_tag"},
+			"last_seen":     clause.Column{Table: "excluded", Name: "last_seen"},
+			"priority":      100,
+			"next_poll_at":  gorm.Expr("NOW()"),
 		}),
 	}).Create(&batch).Error
 }

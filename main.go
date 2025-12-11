@@ -11,6 +11,7 @@ import (
 
 	"albionstats/internal/config"
 	"albionstats/internal/killboard"
+	"albionstats/internal/playerpoller"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -33,7 +34,7 @@ func main() {
 		Timeout: cfg.HTTPTimeout,
 	}
 
-	poller := killboard.New(client, db, killboard.Config{
+	kbPoller := killboard.New(client, db, killboard.Config{
 		APIBase:        cfg.APIBase,
 		PageSize:       cfg.PageSize,
 		MaxPages:       cfg.MaxPages,
@@ -42,22 +43,50 @@ func main() {
 		UserAgent:      cfg.UserAgent,
 	})
 
+	playerPoller := playerpoller.New(client, db, playerpoller.Config{
+		APIBase:    cfg.APIBase,
+		PageSize:   cfg.PlayerBatch,
+		RatePerSec: cfg.PlayerRate,
+		UserAgent:  cfg.UserAgent,
+	})
+
 	ctx, cancel := signalContext(context.Background())
 	defer cancel()
+
+	// Player poller runs continuously; it rate-limits internally.
+	go func() {
+		for {
+			if err := playerPoller.Run(ctx); err != nil {
+				log.Printf("player poller error: %v", err)
+			}
+
+			select {
+			case <-ctx.Done():
+				return
+			default:
+			}
+		}
+	}()
 
 	ticker := time.NewTicker(cfg.EventsInterval)
 	defer ticker.Stop()
 
-	for {
-		log.Printf("loop: running poller")
-		if err := poller.Run(ctx); err != nil {
-			log.Printf("poller error: %v", err)
-		}
+	// Run killboard poller immediately once
+	log.Printf("loop: running killboard poller")
+	if err := kbPoller.Run(ctx); err != nil {
+		log.Printf("poller error: %v", err)
+	}
 
+	for {
 		select {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
+		}
+
+		log.Printf("loop: running killboard poller")
+		if err := kbPoller.Run(ctx); err != nil {
+			log.Printf("poller error: %v", err)
 		}
 	}
 }

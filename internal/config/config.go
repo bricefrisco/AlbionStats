@@ -19,6 +19,8 @@ type Config struct {
 	MaxPages       int
 	EventsInterval time.Duration
 	HTTPTimeout    time.Duration
+	PlayerRate     int
+	PlayerBatch    int
 	UserAgent      string
 }
 
@@ -29,6 +31,8 @@ const (
 	defaultMaxPages       = 1
 	defaultEventsInterval = 10 * time.Second
 	defaultHTTPTimeout    = 10 * time.Second
+	defaultPlayerRate     = 6
+	defaultPlayerBatch    = 100
 	defaultUserAgent      = "AlbionStats-KillboardPoller/1.0"
 	defaultConfigPath     = ".env"
 )
@@ -53,6 +57,8 @@ func Load() (Config, error) {
 		MaxPages:       intFrom(values, "ALBION_EVENTS_MAX_PAGES", defaultMaxPages),
 		EventsInterval: durationFrom(values, "ALBION_EVENTS_INTERVAL", defaultEventsInterval),
 		HTTPTimeout:    durationFrom(values, "ALBION_HTTP_TIMEOUT", defaultHTTPTimeout),
+		PlayerRate:     intFrom(values, "ALBION_PLAYER_RATE", defaultPlayerRate),
+		PlayerBatch:    intFrom(values, "ALBION_PLAYER_BATCH", defaultPlayerBatch),
 		UserAgent:      valueWithDefault(values, "ALBION_USER_AGENT", defaultUserAgent),
 	}
 
@@ -68,6 +74,12 @@ func Load() (Config, error) {
 	}
 	if cfg.EventsInterval <= 0 {
 		return Config{}, fmt.Errorf("invalid ALBION_EVENTS_INTERVAL: %v", cfg.EventsInterval)
+	}
+	if cfg.PlayerRate <= 0 {
+		return Config{}, fmt.Errorf("invalid ALBION_PLAYER_RATE: %d", cfg.PlayerRate)
+	}
+	if cfg.PlayerBatch <= 0 {
+		return Config{}, fmt.Errorf("invalid ALBION_PLAYER_BATCH: %d", cfg.PlayerBatch)
 	}
 
 	cfg.APIBase = strings.TrimRight(cfg.APIBase, "/")

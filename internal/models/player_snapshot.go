@@ -2,22 +2,20 @@ package models
 
 import "time"
 
-// PlayerState maps to the player_state table.
-type PlayerState struct {
+// PlayerStatsSnapshot maps to player_stats_snapshots table.
+type PlayerStatsSnapshot struct {
 	Region       string     `gorm:"column:region;primaryKey;type:region_enum"`
 	PlayerID     string     `gorm:"column:player_id;primaryKey"`
-	Name         string     `gorm:"column:name"`
-	GuildID      *string    `gorm:"column:guild_id"`
-	GuildName    *string    `gorm:"column:guild_name"`
-	AllianceID   *string    `gorm:"column:alliance_id"`
-	AllianceName *string    `gorm:"column:alliance_name"`
-	AllianceTag  *string    `gorm:"column:alliance_tag"`
-	LastSeen     *time.Time `gorm:"column:last_seen"`
-	LastPolled   *time.Time `gorm:"column:last_polled"`
-	Priority     int        `gorm:"column:priority;default:100"`
-	NextPollAt   time.Time  `gorm:"column:next_poll_at;default:now()"`
-	ErrorCount   int        `gorm:"column:error_count;default:0"`
-	LastError    *string    `gorm:"column:last_error"`
+	TS           time.Time  `gorm:"column:ts;primaryKey"`
+	APITimestamp *time.Time `gorm:"column:api_timestamp"`
+
+	// Identity
+	Name         string  `gorm:"column:name"`
+	GuildID      *string `gorm:"column:guild_id"`
+	GuildName    *string `gorm:"column:guild_name"`
+	AllianceID   *string `gorm:"column:alliance_id"`
+	AllianceName *string `gorm:"column:alliance_name"`
+	AllianceTag  *string `gorm:"column:alliance_tag"`
 
 	// Fame counters
 	KillFame  *int64   `gorm:"column:kill_fame"`
@@ -33,7 +31,7 @@ type PlayerState struct {
 	PveCorrupted *int64 `gorm:"column:pve_corrupted"`
 	PveMists     *int64 `gorm:"column:pve_mists"`
 
-	// Gathering Fame Breakdown
+	// Gathering
 	GatherFiberTotal    *int64 `gorm:"column:gather_fiber_total"`
 	GatherFiberRoyal    *int64 `gorm:"column:gather_fiber_royal"`
 	GatherFiberOutlands *int64 `gorm:"column:gather_fiber_outlands"`
@@ -64,7 +62,7 @@ type PlayerState struct {
 	GatherAllOutlands *int64 `gorm:"column:gather_all_outlands"`
 	GatherAllAvalon   *int64 `gorm:"column:gather_all_avalon"`
 
-	// Crafting Fame Breakdown
+	// Crafting
 	CraftingTotal    *int64 `gorm:"column:crafting_total"`
 	CraftingRoyal    *int64 `gorm:"column:crafting_royal"`
 	CraftingOutlands *int64 `gorm:"column:crafting_outlands"`
@@ -76,6 +74,6 @@ type PlayerState struct {
 	CrystalLeagueFame *int64 `gorm:"column:crystal_league_fame"`
 }
 
-func (PlayerState) TableName() string {
-	return "player_state"
+func (PlayerStatsSnapshot) TableName() string {
+	return "player_stats_snapshots"
 }
