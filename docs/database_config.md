@@ -214,6 +214,17 @@ SET (
 
 SELECT add_compression_policy('player_stats_snapshots', INTERVAL '1 day');
 
+ALTER TABLE player_state SET (fillfactor = 60);
+
+ALTER TABLE player_poll_state SET (
+    autovacuum_vacuum_scale_factor = 0.0,
+    autovacuum_vacuum_threshold = 100,
+    autovacuum_analyze_scale_factor = 0.0,
+    autovacuum_analyze_threshold = 100,
+    autovacuum_vacuum_cost_limit = 2000,
+    autovacuum_vacuum_cost_delay = 2
+);
+
 CREATE INDEX player_state_priority_poll_idx
 ON player_state (priority, next_poll_at);
 ```

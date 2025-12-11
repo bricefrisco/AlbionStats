@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"sync"
 	"time"
 
 	"albionstats/internal/models"
@@ -17,6 +18,7 @@ import (
 	"errors"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type Config struct {
@@ -24,12 +26,42 @@ type Config struct {
 	PageSize   int
 	RatePerSec int
 	UserAgent  string
+	Workers    int
 }
 
 type Poller struct {
 	client *http.Client
 	db     *gorm.DB
 	cfg    Config
+}
+
+type processResult struct {
+	playerState models.PlayerState
+	updateState models.PlayerState
+	snapshot    models.PlayerStatsSnapshot
+	delete      bool
+	err         error
+	nextPollAt  time.Time
+	priority    int
+}
+
+func (p *Poller) workerCount(n int) int {
+	if p.cfg.Workers > 0 {
+		if p.cfg.Workers < n {
+			return p.cfg.Workers
+		}
+		return n
+	}
+	if p.cfg.RatePerSec > 0 {
+		if p.cfg.RatePerSec < n {
+			return p.cfg.RatePerSec
+		}
+		return n
+	}
+	if n < 1 {
+		return 1
+	}
+	return n
 }
 
 func New(client *http.Client, db *gorm.DB, cfg Config) *Poller {
@@ -61,65 +93,127 @@ func (p *Poller) Run(ctx context.Context) error {
 	ticker := time.NewTicker(rate)
 	defer ticker.Stop()
 
-	log.Printf("player-poller: batch size=%d rate=%d/s", len(players), p.cfg.RatePerSec)
+	workerCount := p.workerCount(len(players))
+	jobs := make(chan models.PlayerState)
+	results := make(chan processResult, len(players))
 
-	for i, pl := range players {
-		if pl.LastPolled != nil && time.Since(*pl.LastPolled) < 6*time.Hour {
-			nextPoll := pl.LastPolled.Add(6 * time.Hour)
-			if err := p.db.WithContext(ctx).Model(&models.PlayerState{}).
-				Where("region = ? AND player_id = ?", pl.Region, pl.PlayerID).
-				Updates(map[string]interface{}{
-					"next_poll_at": nextPoll,
-					"priority":     200,
-				}).Error; err != nil {
-				log.Printf("player-poller: player=%s skip-update err=%v", pl.PlayerID, err)
-			} else {
-				log.Printf("player-poller: player=%s last polled too recent; next_poll_at=%s", pl.PlayerID, nextPoll.Format(time.RFC3339))
+	var wg sync.WaitGroup
+
+	log.Printf("player-poller: batch size=%d rate=%d/s workers=%d", len(players), p.cfg.RatePerSec, workerCount)
+
+	for w := 0; w < workerCount; w++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for pl := range jobs {
+				log.Printf("player-poller: worker fetching player_id=%s name=%s", pl.PlayerID, pl.Name)
+				// shared rate limiter
+				select {
+				case <-ctx.Done():
+					return
+				case <-ticker.C:
+				}
+
+				results <- p.processPlayer(ctx, pl)
 			}
-			continue
-		}
-		if i > 0 {
+		}()
+	}
+
+	go func() {
+		for _, pl := range players {
 			select {
 			case <-ctx.Done():
-				return ctx.Err()
-			case <-ticker.C:
+				close(jobs)
+				return
+			case jobs <- pl:
 			}
 		}
-		if err := p.processPlayer(ctx, pl); err != nil {
-			log.Printf("player-poller: player=%s err=%v", pl.PlayerID, err)
-			if err2 := p.handleFailure(ctx, pl); err2 != nil {
-				log.Printf("player-poller: failure handling error for %s: %v", pl.PlayerID, err2)
+		close(jobs)
+	}()
+
+	wg.Wait()
+	close(results)
+
+	var updates []models.PlayerState
+	var snapshots []models.PlayerStatsSnapshot
+	var deletes []models.PlayerState
+	var failures []models.PlayerState
+
+	for res := range results {
+		if res.err != nil {
+			log.Printf("player-poller: player=%s err=%v", res.playerState.PlayerID, res.err)
+			nextErr := res.playerState.ErrorCount + 1
+			backoff := failureBackoff(nextErr)
+			failures = append(failures, models.PlayerState{
+				Region:     res.playerState.Region,
+				PlayerID:   res.playerState.PlayerID,
+				ErrorCount: nextErr,
+				NextPollAt: time.Now().UTC().Add(backoff),
+			})
+			continue
+		}
+		if res.delete {
+			deletes = append(deletes, res.playerState)
+			continue
+		}
+		updates = append(updates, res.updateState)
+		snapshots = append(snapshots, res.snapshot)
+	}
+
+	// apply deletes (grouped by region)
+	if len(deletes) > 0 {
+		log.Printf("player-poller: deleting %d players", len(deletes))
+		regionBuckets := make(map[string][]string)
+		for _, d := range deletes {
+			regionBuckets[d.Region] = append(regionBuckets[d.Region], d.PlayerID)
+		}
+		for region, ids := range regionBuckets {
+			if err := p.db.WithContext(ctx).Delete(&models.PlayerState{}, "region = ? AND player_id IN ?", region, ids).Error; err != nil {
+				log.Printf("player-poller: delete err region=%s ids=%d: %v", region, len(ids), err)
 			}
-		} else {
-			log.Printf("player-poller: player=%s ok", pl.PlayerID)
+		}
+	}
+
+	// upsert player_state
+	if len(updates) > 0 {
+		log.Printf("player-poller: upserting %d players", len(updates))
+		if err := p.bulkUpsertStates(ctx, updates); err != nil {
+			log.Printf("player-poller: upsert states err: %v", err)
+		}
+	}
+
+	// apply failures (increment error_count, backoff)
+	if len(failures) > 0 {
+		log.Printf("player-poller: upserting %d errors", len(failures))
+		if err := p.bulkUpsertFailures(ctx, failures); err != nil {
+			log.Printf("player-poller: failure upsert err: %v", err)
+		}
+	}
+
+	// insert snapshots
+	if len(snapshots) > 0 {
+		log.Printf("player-poller: inserting %d snapshots", len(snapshots))
+		if err := p.db.WithContext(ctx).Create(&snapshots).Error; err != nil {
+			log.Printf("player-poller: insert snapshots err: %v", err)
 		}
 	}
 
 	return nil
 }
 
-func (p *Poller) processPlayer(ctx context.Context, pl models.PlayerState) error {
+func (p *Poller) processPlayer(ctx context.Context, pl models.PlayerState) processResult {
 	ts := time.Now().UTC()
 	resp, err := p.fetchPlayer(ctx, pl.PlayerID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			if delErr := p.db.WithContext(ctx).Delete(&models.PlayerState{}, "region = ? AND player_id = ?", pl.Region, pl.PlayerID).Error; delErr != nil {
-				return fmt.Errorf("player %s 404 delete: %w", pl.PlayerID, delErr)
-			}
-			log.Printf("player-poller: removed player=%s due to 404", pl.PlayerID)
-			return nil
+			return processResult{playerState: pl, delete: true}
 		}
-		return fmt.Errorf("fetch player %s: %w", pl.PlayerID, err)
+		return processResult{playerState: pl, err: fmt.Errorf("fetch player %s: %w", pl.PlayerID, err)}
 	}
 
 	apiTS := resp.LifetimeStatistics.Timestamp
 	if apiTS == nil {
-		// Remove player if API payload lacks timestamp (assumed invalid)
-		if err := p.db.WithContext(ctx).Delete(&models.PlayerState{}, "region = ? AND player_id = ?", pl.Region, pl.PlayerID).Error; err != nil {
-			return fmt.Errorf("player %s: delete on missing timestamp: %w", pl.PlayerID, err)
-		}
-		log.Printf("player-poller: removed player=%s due to missing API timestamp", pl.PlayerID)
-		return nil
+		return processResult{playerState: pl, delete: true}
 	}
 	nextPollAt, priority := scheduleNextPoll(*apiTS, ts)
 
@@ -236,16 +330,88 @@ func (p *Poller) processPlayer(ctx context.Context, pl models.PlayerState) error
 		CrystalLeagueFame:   nullableInt64(resp.CrystalLeague),
 	}
 
-	return p.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where("region = ? AND player_id = ?", pl.Region, pl.PlayerID).
-			Save(&update).Error; err != nil {
-			return err
-		}
-		if err := tx.Create(&snapshot).Error; err != nil {
-			return err
-		}
+	return processResult{
+		playerState: pl,
+		updateState: update,
+		snapshot:    snapshot,
+		priority:    priority,
+		nextPollAt:  nextPollAt,
+	}
+}
+
+func (p *Poller) bulkUpsertStates(ctx context.Context, states []models.PlayerState) error {
+	if len(states) == 0 {
 		return nil
-	})
+	}
+
+	always := map[string]interface{}{
+		"name":          gorm.Expr("excluded.name"),
+		"guild_id":      gorm.Expr("excluded.guild_id"),
+		"guild_name":    gorm.Expr("excluded.guild_name"),
+		"alliance_id":   gorm.Expr("excluded.alliance_id"),
+		"alliance_name": gorm.Expr("excluded.alliance_name"),
+		"alliance_tag":  gorm.Expr("excluded.alliance_tag"),
+		"kill_fame":     gorm.Expr("excluded.kill_fame"),
+		"death_fame":    gorm.Expr("excluded.death_fame"),
+		"fame_ratio":    gorm.Expr("excluded.fame_ratio"),
+		"last_polled":   gorm.Expr("excluded.last_polled"),
+		"last_seen":     gorm.Expr("excluded.last_seen"),
+		"next_poll_at":  gorm.Expr("excluded.next_poll_at"),
+		"priority":      gorm.Expr("excluded.priority"),
+		"error_count":   gorm.Expr("excluded.error_count"),
+		"last_error":    gorm.Expr("excluded.last_error"),
+	}
+
+	statCols := []string{
+		"pve_total", "pve_royal", "pve_outlands", "pve_avalon",
+		"pve_hellgate", "pve_corrupted", "pve_mists",
+		"gather_fiber_total", "gather_fiber_royal", "gather_fiber_outlands", "gather_fiber_avalon",
+		"gather_hide_total", "gather_hide_royal", "gather_hide_outlands", "gather_hide_avalon",
+		"gather_ore_total", "gather_ore_royal", "gather_ore_outlands", "gather_ore_avalon",
+		"gather_rock_total", "gather_rock_royal", "gather_rock_outlands", "gather_rock_avalon",
+		"gather_wood_total", "gather_wood_royal", "gather_wood_outlands", "gather_wood_avalon",
+		"gather_all_total", "gather_all_royal", "gather_all_outlands", "gather_all_avalon",
+		"crafting_total", "crafting_royal", "crafting_outlands", "crafting_avalon",
+		"fishing_fame", "farming_fame", "crystal_league_fame",
+	}
+
+	assignments := make(map[string]interface{}, len(always)+len(statCols))
+	for k, v := range always {
+		assignments[k] = v
+	}
+	for _, col := range statCols {
+		assignments[col] = gorm.Expr(
+			fmt.Sprintf(
+				"CASE WHEN excluded.last_seen > player_state.last_seen THEN excluded.%s ELSE player_state.%s END",
+				col, col,
+			),
+		)
+	}
+
+	return p.db.WithContext(ctx).Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "region"}, {Name: "player_id"}},
+		DoUpdates: clause.Assignments(assignments),
+	}).Create(&states).Error
+}
+
+func (p *Poller) bulkUpsertSkips(ctx context.Context, states []models.PlayerState) error {
+	return p.db.WithContext(ctx).Clauses(clause.OnConflict{
+		Columns: []clause.Column{{Name: "region"}, {Name: "player_id"}},
+		DoUpdates: clause.AssignmentColumns([]string{
+			"next_poll_at",
+			"priority",
+		}),
+	}).Create(&states).Error
+}
+
+func (p *Poller) bulkUpsertFailures(ctx context.Context, states []models.PlayerState) error {
+	return p.db.WithContext(ctx).Clauses(clause.OnConflict{
+		Columns: []clause.Column{{Name: "region"}, {Name: "player_id"}},
+		DoUpdates: clause.AssignmentColumns([]string{
+			"error_count",
+			"next_poll_at",
+		}),
+	}).Create(&states).Error
 }
 
 func (p *Poller) fetchPlayer(ctx context.Context, playerID string) (*playerResponse, error) {
@@ -337,18 +503,6 @@ func failureBackoff(errorCount int) time.Duration {
 		backoff = max
 	}
 	return backoff
-}
-
-func (p *Poller) handleFailure(ctx context.Context, pl models.PlayerState) error {
-	nextErrCount := pl.ErrorCount + 1
-	backoff := failureBackoff(nextErrCount)
-	nextPoll := time.Now().UTC().Add(backoff)
-	return p.db.WithContext(ctx).Model(&models.PlayerState{}).
-		Where("region = ? AND player_id = ?", pl.Region, pl.PlayerID).
-		Updates(map[string]interface{}{
-			"error_count":  nextErrCount,
-			"next_poll_at": nextPoll,
-		}).Error
 }
 
 type playerResponse struct {

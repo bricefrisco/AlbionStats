@@ -161,19 +161,23 @@ func (p *Poller) upsertPlayers(ctx context.Context, players map[string]models.Pl
 		batch = append(batch, player)
 	}
 
+	condition := "excluded.last_seen > COALESCE(player_state.last_seen, '-infinity') + interval '6 hours'"
+
+	assignments := map[string]interface{}{
+		"name":          gorm.Expr(fmt.Sprintf("CASE WHEN %s THEN excluded.name ELSE player_state.name END", condition)),
+		"guild_id":      gorm.Expr(fmt.Sprintf("CASE WHEN %s THEN excluded.guild_id ELSE player_state.guild_id END", condition)),
+		"guild_name":    gorm.Expr(fmt.Sprintf("CASE WHEN %s THEN excluded.guild_name ELSE player_state.guild_name END", condition)),
+		"alliance_id":   gorm.Expr(fmt.Sprintf("CASE WHEN %s THEN excluded.alliance_id ELSE player_state.alliance_id END", condition)),
+		"alliance_name": gorm.Expr(fmt.Sprintf("CASE WHEN %s THEN excluded.alliance_name ELSE player_state.alliance_name END", condition)),
+		"alliance_tag":  gorm.Expr(fmt.Sprintf("CASE WHEN %s THEN excluded.alliance_tag ELSE player_state.alliance_tag END", condition)),
+		"last_seen":     gorm.Expr(fmt.Sprintf("CASE WHEN %s THEN excluded.last_seen ELSE player_state.last_seen END", condition)),
+		"priority":      gorm.Expr(fmt.Sprintf("CASE WHEN %s THEN 100 ELSE player_state.priority END", condition)),
+		"next_poll_at":  gorm.Expr(fmt.Sprintf("CASE WHEN %s THEN excluded.next_poll_at ELSE player_state.next_poll_at END", condition)),
+	}
+
 	return p.db.WithContext(ctx).Clauses(clause.OnConflict{
-		Columns: []clause.Column{{Name: "region"}, {Name: "player_id"}},
-		DoUpdates: clause.Assignments(map[string]interface{}{
-			"name":          clause.Column{Table: "excluded", Name: "name"},
-			"guild_id":      clause.Column{Table: "excluded", Name: "guild_id"},
-			"guild_name":    clause.Column{Table: "excluded", Name: "guild_name"},
-			"alliance_id":   clause.Column{Table: "excluded", Name: "alliance_id"},
-			"alliance_name": clause.Column{Table: "excluded", Name: "alliance_name"},
-			"alliance_tag":  clause.Column{Table: "excluded", Name: "alliance_tag"},
-			"last_seen":     clause.Column{Table: "excluded", Name: "last_seen"},
-			"priority":      100,
-			"next_poll_at":  gorm.Expr("NOW()"),
-		}),
+		Columns:   []clause.Column{{Name: "region"}, {Name: "player_id"}},
+		DoUpdates: clause.Assignments(assignments),
 	}).Create(&batch).Error
 }
 
