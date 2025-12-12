@@ -70,7 +70,7 @@ func (s *Server) search(c *gin.Context) {
 	}
 
 	var players []models.PlayerState
-	err := s.db.Select("player_id", "name").
+	err := s.db.Select("player_id", "name", "guild_name", "alliance_name").
 		Where("LOWER(name) LIKE LOWER(?)", query+"%").
 		Limit(6).
 		Order("name ASC").
@@ -82,15 +82,19 @@ func (s *Server) search(c *gin.Context) {
 	}
 
 	type PlayerSearchResult struct {
-		PlayerID string `json:"player_id"`
-		Name     string `json:"name"`
+		PlayerID     string  `json:"player_id"`
+		Name         string  `json:"name"`
+		GuildName    *string `json:"guild_name,omitempty"`
+		AllianceName *string `json:"alliance_name,omitempty"`
 	}
 
 	results := make([]PlayerSearchResult, len(players))
 	for i, player := range players {
 		results[i] = PlayerSearchResult{
-			PlayerID: player.PlayerID,
-			Name:     player.Name,
+			PlayerID:     player.PlayerID,
+			Name:         player.Name,
+			GuildName:    player.GuildName,
+			AllianceName: player.AllianceName,
 		}
 	}
 
