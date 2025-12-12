@@ -1,7 +1,12 @@
+import { useState } from 'react';
+
 import Page from './components/Page';
 import PlayersTracked from './components/PlayersTracked';
+import TimeRangeToggle from './components/TimeRangeToggle';
 
 const App = () => {
+  const [selectedRange, setSelectedRange] = useState('1w');
+
   return (
     <Page
       title="Albion Online Player Statistics"
@@ -9,11 +14,21 @@ const App = () => {
     >
       <div className="grid md:grid-cols-2 gap-6 mb-12">
         <div className="rounded-lg p-8 border border-white/10 min-h-[350px] flex flex-col">
-          <h4 className="text-lg font-semibold text-white mb-4">
-            Players Tracked
-          </h4>
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <h4 className="text-lg font-semibold text-white">
+              Players Tracked
+            </h4>
+            <TimeRangeToggle
+              value={selectedRange}
+              onChange={(range) => {
+                if (!range || !range.length) return;
+                console.log('range', range);
+                setSelectedRange(range[0]);
+              }}
+            />
+          </div>
           <div className="flex-1">
-            <PlayersTracked />
+            <PlayersTracked timeRange={selectedRange} />
           </div>
         </div>
 
