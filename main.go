@@ -12,6 +12,7 @@ import (
 	"albionstats/internal/api"
 	"albionstats/internal/config"
 	"albionstats/internal/killboard"
+	"albionstats/internal/metrics"
 	"albionstats/internal/playerpoller"
 
 	"gorm.io/driver/postgres"
@@ -64,6 +65,15 @@ func main() {
 
 	ctx, cancel := signalContext(context.Background())
 	defer cancel()
+
+	// Start metrics collector
+	metricsCollector := metrics.New(db, metrics.Config{
+		Interval: 5 * time.Minute,
+	})
+
+	go func() {
+		metricsCollector.Start(ctx)
+	}()
 
 	// Player poller runs continuously; it rate-limits internally.
 	go func() {

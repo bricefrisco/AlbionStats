@@ -203,7 +203,15 @@ CREATE TABLE player_stats_snapshots (
     PRIMARY KEY (region, player_id, ts)
 );
 
+CREATE TABLE metrics_timeseries (
+    metric TEXT NOT NULL,
+    ts TIMESTAMPTZ NOT NULL,
+    value BIGINT NOT NULL,
+    PRIMARY KEY (metric, ts)
+);
+
 SELECT create_hypertable('player_stats_snapshots', 'ts');
+SELECT create_hypertable('metrics_timeseries', 'ts');
 
 ALTER TABLE player_stats_snapshots
 SET (
