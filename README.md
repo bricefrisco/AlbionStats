@@ -2,7 +2,7 @@
 
 ![AlbionStats](https://i.imgur.com/zH6otmq.png)
 
-[![CodeFactor](https://www.codefactor.io/repository/github/bricefrisco/albionstats/badge)](https://www.codefactor.io/repository/github/bricefrisco/albionstats) [![CI](https://github.com/bricefrisco/AlbionStats/actions/workflows/cicd.yml/badge.svg)](https://github.com/bricefrisco/AlbionStats/actions/workflows/cicd.yml)
+[![CodeFactor](https://www.codefactor.io/repository/github/bricefrisco/albionstats/badge)](https://www.codefactor.io/repository/github/bricefrisco/albionstats) [![CI](https://github.com/bricefrisco/AlbionStats/actions/workflows/cicd.yml/badge.svg)](https://github.com/bricefrisco/AlbionStats/actions/workflows/cicd.yml) ![Raspberry Pi](https://img.shields.io/badge/Raspberry%20Pi-C51A4A?logo=raspberrypi&logoColor=white)
 
 Albion Online player statistics tracker that continuously polls the game API to collect and store player data.
 
