@@ -74,7 +74,7 @@ func New(db *gorm.DB, cfg Config) *Poller {
 	return &Poller{db: db, cfg: cfg}
 }
 
-func (p *Poller) Run(ctx context.Context) error {
+func (p *Poller) fetchPlayersToPoll(ctx context.Context) ([]models.PlayerState, error) {
 	var players []models.PlayerState
 	now := time.Now().UTC()
 	if err := p.db.WithContext(ctx).
@@ -82,22 +82,25 @@ func (p *Poller) Run(ctx context.Context) error {
 		Order("priority ASC, next_poll_at ASC").
 		Limit(p.cfg.PageSize).
 		Find(&players).Error; err != nil {
-		return fmt.Errorf("query players: %w", err)
+		return nil, fmt.Errorf("query players: %w", err)
 	}
-	if len(players) == 0 {
-		log.Printf("player-poller: no players to poll")
-		idle := time.Second
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-time.After(idle):
-			return nil
-		}
-	}
+	return players, nil
+}
 
+func (p *Poller) handleIdleState(ctx context.Context) error {
+	log.Printf("player-poller: no players to poll")
+	idle := time.Second
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-time.After(idle):
+		return nil
+	}
+}
+
+func (p *Poller) setupWorkers(ctx context.Context, players []models.PlayerState) (*time.Ticker, chan models.PlayerState, chan processResult, *sync.WaitGroup) {
 	rate := time.Second / time.Duration(p.cfg.RatePerSec)
 	ticker := time.NewTicker(rate)
-	defer ticker.Stop()
 
 	workerCount := p.workerCount(len(players))
 	jobs := make(chan models.PlayerState)
@@ -107,6 +110,7 @@ func (p *Poller) Run(ctx context.Context) error {
 
 	log.Printf("player-poller: batch size=%d rate=%d/s workers=%d", len(players), p.cfg.RatePerSec, workerCount)
 
+	// Start worker goroutines
 	for w := 0; w < workerCount; w++ {
 		wg.Add(1)
 		go func() {
@@ -125,6 +129,7 @@ func (p *Poller) Run(ctx context.Context) error {
 		}()
 	}
 
+	// Start job sender goroutine
 	go func() {
 		for _, pl := range players {
 			select {
@@ -137,9 +142,10 @@ func (p *Poller) Run(ctx context.Context) error {
 		close(jobs)
 	}()
 
-	wg.Wait()
-	close(results)
+	return ticker, jobs, results, &wg
+}
 
+func (p *Poller) processResults(results <-chan processResult) ([]models.PlayerState, []models.PlayerStatsSnapshot, []models.PlayerState, []models.PlayerState) {
 	var updates []models.PlayerState
 	var snapshots []models.PlayerStatsSnapshot
 	var deletes []models.PlayerState
@@ -166,6 +172,10 @@ func (p *Poller) Run(ctx context.Context) error {
 		snapshots = append(snapshots, res.snapshot)
 	}
 
+	return updates, snapshots, deletes, failures
+}
+
+func (p *Poller) applyDatabaseChanges(ctx context.Context, updates []models.PlayerState, snapshots []models.PlayerStatsSnapshot, deletes []models.PlayerState, failures []models.PlayerState) {
 	// apply deletes (grouped by region)
 	if len(deletes) > 0 {
 		log.Printf("player-poller: deleting %d players", len(deletes))
@@ -203,6 +213,26 @@ func (p *Poller) Run(ctx context.Context) error {
 			log.Printf("player-poller: insert snapshots err: %v", err)
 		}
 	}
+}
+
+func (p *Poller) Run(ctx context.Context) error {
+	players, err := p.fetchPlayersToPoll(ctx)
+	if err != nil {
+		return err
+	}
+	if len(players) == 0 {
+		return p.handleIdleState(ctx)
+	}
+
+	ticker, _, results, wg := p.setupWorkers(ctx, players)
+	defer ticker.Stop()
+
+	wg.Wait()
+	close(results)
+
+	updates, snapshots, deletes, failures := p.processResults(results)
+
+	p.applyDatabaseChanges(ctx, updates, snapshots, deletes, failures)
 
 	return nil
 }
