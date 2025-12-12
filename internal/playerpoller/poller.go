@@ -527,7 +527,7 @@ func scheduleNextPoll(apiTS, now time.Time) (time.Time, int) {
 }
 
 func failureBackoff(errorCount int) time.Duration {
-	base := 15 * time.Minute
+	base := 15 * time.Second
 	maxBackoff := 24 * time.Hour
 	// exponential backoff capped
 	shift := errorCount
