@@ -33,7 +33,7 @@ func New(db *gorm.DB, cfg Config) *Server {
 }
 
 func (s *Server) setupRoutes() {
-	v1 := s.router.Group("/v1")
+	v1 := s.router.Group("/albionstats/v1")
 	v1.GET("/search/:query", s.search)
 }
 
