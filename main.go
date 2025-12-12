@@ -17,7 +17,7 @@ import (
 )
 
 func main() {
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
+	log.SetFlags(log.Lshortfile)
 
 	cfg, err := config.Load()
 	if err != nil {
