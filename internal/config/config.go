@@ -22,6 +22,7 @@ type Config struct {
 	PlayerRate     int
 	PlayerBatch    int
 	UserAgent      string
+	APIPort        string
 }
 
 const (
@@ -34,6 +35,7 @@ const (
 	defaultPlayerRate     = 6
 	defaultPlayerBatch    = 100
 	defaultUserAgent      = "AlbionStats-KillboardPoller/1.0"
+	defaultAPIPort        = "8080"
 	defaultConfigPath     = ".env"
 )
 
@@ -60,6 +62,7 @@ func Load() (Config, error) {
 		PlayerRate:     intFrom(values, "ALBION_PLAYER_RATE", defaultPlayerRate),
 		PlayerBatch:    intFrom(values, "ALBION_PLAYER_BATCH", defaultPlayerBatch),
 		UserAgent:      valueWithDefault(values, "ALBION_USER_AGENT", defaultUserAgent),
+		APIPort:        valueWithDefault(values, "API_PORT", defaultAPIPort),
 	}
 
 	if cfg.DBDSN == "" {

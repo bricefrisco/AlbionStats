@@ -2,12 +2,14 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
+	"albionstats/internal/api"
 	"albionstats/internal/config"
 	"albionstats/internal/killboard"
 	"albionstats/internal/playerpoller"
@@ -28,6 +30,19 @@ func main() {
 	if err != nil {
 		log.Fatalf("db connect: %v", err)
 	}
+
+	// Start API server
+	apiServer := api.New(db, api.Config{
+		Port: cfg.APIPort,
+	})
+
+	go func() {
+		addr := fmt.Sprintf(":%s", cfg.APIPort)
+		log.Printf("starting API server on %s", addr)
+		if err := apiServer.Start(addr); err != nil {
+			log.Printf("API server error: %v", err)
+		}
+	}()
 
 	kbPoller := killboard.New(db, killboard.Config{
 		APIBase:        cfg.APIBase,
