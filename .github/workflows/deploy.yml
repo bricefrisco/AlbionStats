@@ -47,14 +47,14 @@ jobs:
         run: |
           scp albionstats pi:/usr/local/bin/albionstats_temp
 
-      # - name: Stop Service
-      #   run: |
-      #     ssh pi "sudo systemctl stop albionstats"
+      - name: Stop Service
+        run: |
+          ssh pi "sudo systemctl stop albionstats"
 
       - name: Replace binary
         run: |
           ssh pi "sudo mv /usr/local/bin/albionstats_temp /usr/local/bin/albionstats && sudo chmod +x /usr/local/bin/albionstats"
 
-      # - name: Start Service
-      #   run: |
-      #     ssh pi "sudo systemctl start albionstats"
+      - name: Start Service
+        run: |
+          ssh pi "sudo systemctl start albionstats"
