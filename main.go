@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"log"
-	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -30,24 +29,22 @@ func main() {
 		log.Fatalf("db connect: %v", err)
 	}
 
-	client := &http.Client{
-		Timeout: cfg.HTTPTimeout,
-	}
-
-	kbPoller := killboard.New(client, db, killboard.Config{
+	kbPoller := killboard.New(db, killboard.Config{
 		APIBase:        cfg.APIBase,
 		PageSize:       cfg.PageSize,
 		MaxPages:       cfg.MaxPages,
 		EventsInterval: cfg.EventsInterval,
 		Region:         cfg.Region,
+		HTTPTimeout:    cfg.HTTPTimeout,
 		UserAgent:      cfg.UserAgent,
 	})
 
-	playerPoller := playerpoller.New(client, db, playerpoller.Config{
-		APIBase:    cfg.APIBase,
-		PageSize:   cfg.PlayerBatch,
-		RatePerSec: cfg.PlayerRate,
-		UserAgent:  cfg.UserAgent,
+	playerPoller := playerpoller.New(db, playerpoller.Config{
+		APIBase:     cfg.APIBase,
+		PageSize:    cfg.PlayerBatch,
+		RatePerSec:  cfg.PlayerRate,
+		UserAgent:   cfg.UserAgent,
+		HTTPTimeout: cfg.HTTPTimeout,
 	})
 
 	ctx, cancel := signalContext(context.Background())

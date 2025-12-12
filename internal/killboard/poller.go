@@ -25,6 +25,7 @@ type Config struct {
 	EventsInterval time.Duration
 	Region         string
 	UserAgent      string
+	HTTPTimeout    time.Duration
 }
 
 type Poller struct {
@@ -33,7 +34,10 @@ type Poller struct {
 	cfg    Config
 }
 
-func New(client *http.Client, db *gorm.DB, cfg Config) *Poller {
+func New(db *gorm.DB, cfg Config) *Poller {
+	client := &http.Client{
+		Timeout: cfg.HTTPTimeout,
+	}
 	return &Poller{
 		client: client,
 		db:     db,
@@ -161,7 +165,7 @@ func (p *Poller) upsertPlayers(ctx context.Context, players map[string]models.Pl
 		batch = append(batch, player)
 	}
 
-	condition := "excluded.last_seen > COALESCE(player_state.last_seen, '-infinity') + interval '6 hours'"
+	condition := "COALESCE(player_state.last_polled, '-infinity') <= NOW() - interval '6 hours'"
 
 	assignments := map[string]interface{}{
 		"name":          gorm.Expr(fmt.Sprintf("CASE WHEN %s THEN excluded.name ELSE player_state.name END", condition)),

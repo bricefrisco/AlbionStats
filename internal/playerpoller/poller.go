@@ -22,17 +22,17 @@ import (
 )
 
 type Config struct {
-	APIBase    string
-	PageSize   int
-	RatePerSec int
-	UserAgent  string
-	Workers    int
+	APIBase     string
+	PageSize    int
+	RatePerSec  int
+	UserAgent   string
+	Workers     int
+	HTTPTimeout time.Duration
 }
 
 type Poller struct {
-	client *http.Client
-	db     *gorm.DB
-	cfg    Config
+	db  *gorm.DB
+	cfg Config
 }
 
 type processResult struct {
@@ -64,8 +64,14 @@ func (p *Poller) workerCount(n int) int {
 	return n
 }
 
-func New(client *http.Client, db *gorm.DB, cfg Config) *Poller {
-	return &Poller{client: client, db: db, cfg: cfg}
+func newHTTPClient(timeout time.Duration) *http.Client {
+	return &http.Client{
+		Timeout: timeout,
+	}
+}
+
+func New(db *gorm.DB, cfg Config) *Poller {
+	return &Poller{db: db, cfg: cfg}
 }
 
 func (p *Poller) Run(ctx context.Context) error {
@@ -114,7 +120,7 @@ func (p *Poller) Run(ctx context.Context) error {
 				case <-ticker.C:
 				}
 
-				results <- p.processPlayer(ctx, pl)
+				results <- p.processPlayer(ctx, newHTTPClient(p.cfg.HTTPTimeout), pl)
 			}
 		}()
 	}
@@ -201,9 +207,9 @@ func (p *Poller) Run(ctx context.Context) error {
 	return nil
 }
 
-func (p *Poller) processPlayer(ctx context.Context, pl models.PlayerState) processResult {
+func (p *Poller) processPlayer(ctx context.Context, client *http.Client, pl models.PlayerState) processResult {
 	ts := time.Now().UTC()
-	resp, err := p.fetchPlayer(ctx, pl.PlayerID)
+	resp, err := p.fetchPlayer(ctx, client, pl.PlayerID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return processResult{playerState: pl, delete: true}
@@ -414,7 +420,7 @@ func (p *Poller) bulkUpsertFailures(ctx context.Context, states []models.PlayerS
 	}).Create(&states).Error
 }
 
-func (p *Poller) fetchPlayer(ctx context.Context, playerID string) (*playerResponse, error) {
+func (p *Poller) fetchPlayer(ctx context.Context, client *http.Client, playerID string) (*playerResponse, error) {
 	u, err := url.Parse(fmt.Sprintf("%s/players/%s", p.cfg.APIBase, playerID))
 	if err != nil {
 		return nil, err
@@ -432,7 +438,7 @@ func (p *Poller) fetchPlayer(ctx context.Context, playerID string) (*playerRespo
 		req.Header.Set("User-Agent", p.cfg.UserAgent)
 	}
 
-	resp, err := p.client.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
