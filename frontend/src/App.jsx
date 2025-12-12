@@ -6,7 +6,7 @@ const App = () => {
   return (
     <Page
       title="Albion Online Player Statistics"
-      description="Search Albion Online players and view their statistics, guild affiliations, and PvE progression data."
+      description="Search Albion Online players and view their PvP, PvE, and gathering progression data."
     >
       <div className="grid md:grid-cols-2 gap-6 mb-12">
         <PlayersTracked />
@@ -14,22 +14,22 @@ const App = () => {
         <DataPoints />
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
-        <div className="rounded-lg p-6 border border-white/10">
+      <div className="grid md:grid-cols-2 gap-0">
+        <div className="p-6 border-r border-b border-white/10">
           <h3 className="text-xl font-semibold mb-3 text-white">PvP Fame</h3>
           <p className="text-gray-300">
             Track player versus player combat performance and kill/death ratios.
           </p>
         </div>
 
-        <div className="rounded-lg p-6 border border-white/10">
+        <div className="p-6 border-b border-white/10">
           <h3 className="text-xl font-semibold mb-3 text-white">PvE Fame</h3>
           <p className="text-gray-300">
             Monitor player versus environment progression and achievements.
           </p>
         </div>
 
-        <div className="rounded-lg p-6 border border-white/10">
+        <div className="p-6 border-r border-white/10">
           <h3 className="text-xl font-semibold mb-3 text-white">
             Gathering Fame
           </h3>
@@ -39,7 +39,7 @@ const App = () => {
           </p>
         </div>
 
-        <div className="rounded-lg p-6 border border-white/10">
+        <div className="p-6">
           <h3 className="text-xl font-semibold mb-3 text-white">
             Guild History
           </h3>

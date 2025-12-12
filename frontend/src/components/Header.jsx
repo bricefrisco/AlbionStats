@@ -2,7 +2,7 @@ import Search from './Search';
 
 const Header = () => {
   return (
-    <header className="border-b border-white/15">
+    <header className="sticky top-0 z-10 border-b border-white/15 bg-black/80 backdrop-blur-sm">
       <div className="max-w-7xl mx-auto border-l border-r border-white/15 flex items-center">
         <div className="py-3 px-5 text-lg font-bold">AlbionStats</div>
         <div className="flex-1 flex justify-center">
