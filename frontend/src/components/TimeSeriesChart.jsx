@@ -4,6 +4,7 @@ import React, {
   useRef,
   useEffect,
   useState,
+  useId,
 } from 'react';
 import { AreaClosed, Line, Bar } from '@visx/shape';
 import { curveMonotoneX } from '@visx/curve';
@@ -138,6 +139,11 @@ const TimeSeriesChart = withTooltip(({
     [showTooltip, xScale, yScale, data, xAccessor, yAccessor]
   );
 
+  // Generate stable IDs for gradients (must be after all hooks but before early returns)
+  const id = useId();
+  const backgroundGradientId = `bg-${id}`;
+  const areaGradientId = `area-${id}`;
+
   // Early returns after all hooks
   if (containerWidth < 10) return null;
   if (!dimensionsMeasured) {
@@ -180,10 +186,6 @@ const TimeSeriesChart = withTooltip(({
     color: 'white',
     borderRadius: '8px',
   };
-
-  // Generate stable IDs for gradients
-  const backgroundGradientId = 'area-background-gradient';
-  const areaGradientId = 'area-gradient';
 
   return (
     <div

@@ -5,7 +5,7 @@ import TimeRangeToggle from './TimeRangeToggle';
 
 // API endpoint configuration
 const API_BASE_URL = 'https://api.bricefrisco.com';
-const METRICS_ENDPOINT = '/albionstats/v1/metrics/players_total';
+const METRICS_ENDPOINT = '/albionstats/v1/metrics/snapshots_estimated';
 
 // Simple date formatter
 const formatDate = (date) => {
@@ -18,10 +18,20 @@ const formatDate = (date) => {
 
 // accessors
 const getDate = (d) => new Date(d.date);
-const getPlayerCount = (d) => d.players;
+const getDataPoints = (d) => d.datapoints;
 
-// PlayersTrackedChart component for Fast Refresh compatibility
-const PlayersTrackedChart = ({
+// Green color scheme for the chart
+const greenColors = {
+  background: '#1a1a1a',
+  background2: '#0a0a0a',
+  accentColor: '#15803d',
+  accentColorDark: '#166534',
+  gridColor: '#374151',
+  textColor: '#9CA3AF',
+};
+
+// DataPointsChart component for Fast Refresh compatibility
+const DataPointsChart = ({
   width: widthProp,
   height: heightProp,
   showTooltip,
@@ -32,13 +42,13 @@ const PlayersTrackedChart = ({
   timeRange = '1w',
 }) => {
   // API data state
-  const [playerData, setPlayerData] = useState([]);
+  const [dataPointsData, setDataPointsData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch player data from API
+  // Fetch data points data from API
   useEffect(() => {
-    const fetchPlayerData = async () => {
+    const fetchDataPointsData = async () => {
       try {
         setLoading(true);
         const response = await fetch(
@@ -53,21 +63,21 @@ const PlayersTrackedChart = ({
         // Transform API response to component format
         const transformedData = apiData.map((item) => ({
           date: item.timestamp, // Keep full timestamp for hourly granularity
-          players: item.value,
+          datapoints: item.value,
         }));
 
-        setPlayerData(transformedData);
+        setDataPointsData(transformedData);
         setError(null);
       } catch (err) {
-        console.error('Failed to fetch player data:', err);
-        setError('Failed to load player data');
-        setPlayerData([]);
+        console.error('Failed to fetch data points data:', err);
+        setError('Failed to load data points data');
+        setDataPointsData([]);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchPlayerData();
+    fetchDataPointsData();
   }, [timeRange]);
 
   // Show loading state
@@ -82,7 +92,7 @@ const PlayersTrackedChart = ({
           justifyContent: 'center',
         }}
       >
-        <div style={{ color: '#9CA3AF' }}>Loading player data...</div>
+        <div style={{ color: '#9CA3AF' }}>Loading data points...</div>
       </div>
     );
   }
@@ -108,15 +118,16 @@ const PlayersTrackedChart = ({
     <TimeSeriesChart
       width={widthProp}
       height={heightProp}
-      data={playerData}
+      data={dataPointsData}
       xAccessor={getDate}
-      yAccessor={getPlayerCount}
+      yAccessor={getDataPoints}
       xFormatter={formatDate}
       yFormatter={(value) => {
         const numValue = Number(value);
         if (isNaN(numValue)) return String(value || '');
         return numValue.toLocaleString();
       }}
+      colors={greenColors}
       showTooltip={showTooltip}
       hideTooltip={hideTooltip}
       tooltipData={tooltipData}
@@ -126,15 +137,15 @@ const PlayersTrackedChart = ({
   );
 };
 
-const PlayersTrackedChartWithTooltip = withTooltip(PlayersTrackedChart);
+const DataPointsChartWithTooltip = withTooltip(DataPointsChart);
 
-const PlayersTracked = () => {
+const DataPoints = () => {
   const [selectedRange, setSelectedRange] = useState('1w');
 
   return (
     <div className="rounded-lg p-8 min-h-[350px] flex flex-col">
       <div className="flex items-center justify-between gap-3 mb-4">
-        <h4 className="text-lg font-semibold text-white">Players Tracked</h4>
+        <h4 className="text-lg font-semibold text-white">Data Points</h4>
         <TimeRangeToggle
           value={selectedRange}
           onChange={(range) => {
@@ -145,10 +156,10 @@ const PlayersTracked = () => {
         />
       </div>
       <div className="flex-1">
-        <PlayersTrackedChartWithTooltip timeRange={selectedRange} />
+        <DataPointsChartWithTooltip timeRange={selectedRange} />
       </div>
     </div>
   );
 };
 
-export default PlayersTracked;
+export default DataPoints;
