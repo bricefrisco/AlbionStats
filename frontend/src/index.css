@@ -1,0 +1,6 @@
+@import 'tailwindcss';
+
+#root {
+  isolation: isolate;
+  font-family: 'Montserrat', sans-serif;
+}
