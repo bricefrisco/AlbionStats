@@ -211,7 +211,6 @@ CREATE TABLE metrics_timeseries (
 );
 
 SELECT create_hypertable('player_stats_snapshots', 'ts');
-SELECT create_hypertable('metrics_timeseries', 'ts');
 
 ALTER TABLE player_stats_snapshots
 SET (
@@ -221,6 +220,17 @@ SET (
 );
 
 SELECT add_compression_policy('player_stats_snapshots', INTERVAL '1 day');
+
+SELECT create_hypertable('metrics_timeseries', 'ts');
+
+ALTER TABLE metrics_timeseries
+SET (
+    timescaledb.compress,
+    timescaledb.compress_segmentby = 'metric',
+    timescaledb.compress_orderby = 'ts DESC'
+);
+
+SELECT add_compression_policy('metrics_timeseries', INTERVAL '1 day');
 
 ALTER TABLE player_state SET (fillfactor = 60);
 
