@@ -24,7 +24,7 @@ Allowing local connections:
 
 ```cmd
 sudo nano /etc/postgresql/17/main/postgresql.conf
-(Modify line) listen_addresses = '192.168.1.192'
+(Modify line) listen_addresses = 'localhost,192.168.1.192'
 ```
 
 ```cmd
