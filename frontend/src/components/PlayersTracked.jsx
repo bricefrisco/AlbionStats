@@ -109,6 +109,19 @@ const max = (data, accessor) => {
   return maximum;
 };
 
+// Simple min implementation
+const min = (data, accessor) => {
+  if (data.length === 0) return 0;
+
+  let minimum = Infinity;
+  for (const item of data) {
+    const value = accessor(item);
+    if (value < minimum) minimum = value;
+  }
+
+  return minimum;
+};
+
 // PlayersTrackedChart component for Fast Refresh compatibility
 const PlayersTrackedChart = ({
   width: widthProp,
@@ -120,7 +133,7 @@ const PlayersTrackedChart = ({
   tooltipLeft = 0,
 }) => {
   // Small margins for axis labels
-  const axisMargin = { top: 10, right: 10, bottom: 30, left: 50 };
+  const axisMargin = { top: 10, right: 0, bottom: 30, left: 50 };
   const containerRef = useRef(null);
   const [dimensions, setDimensions] = useState({ width: 350, height: 280 });
 
@@ -161,7 +174,10 @@ const PlayersTrackedChart = ({
     () =>
       scaleLinear({
         range: [height - axisMargin.bottom, axisMargin.top],
-        domain: [0, max(playerData, getPlayerCount) * 1.1],
+        domain: [
+          min(playerData, getPlayerCount) * 0.9,
+          max(playerData, getPlayerCount) * 1.1,
+        ],
         nice: true,
       }),
     [height, axisMargin.top, axisMargin.bottom]
