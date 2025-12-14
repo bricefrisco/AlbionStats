@@ -55,33 +55,39 @@ func main() {
 		metricsCollector.Run(ctx)
 	}()
 
-	// Start player poller
-	playerPoller := tasks.NewPlayerPoller(db, tasks.PlayerPollerConfig{
-		APIBase:     cfg.APIBase,
-		PageSize:    cfg.PlayerBatch,
-		RatePerSec:  cfg.PlayerRate,
-		UserAgent:   cfg.UserAgent,
-		HTTPTimeout: cfg.HTTPTimeout,
-	})
+	// Start player pollers for all regions
+	regions := []string{"americas", "europe", "asia"}
+	for _, region := range regions {
+		playerPoller := tasks.NewPlayerPoller(db, tasks.PlayerPollerConfig{
+			Region:      region,
+			PageSize:    cfg.PlayerBatch,
+			RatePerSec:  cfg.PlayerRate,
+			UserAgent:   cfg.UserAgent,
+			HTTPTimeout: cfg.HTTPTimeout,
+		})
 
-	go func() {
-		playerPoller.Run(ctx)
-	}()
+		go func(poller *tasks.PlayerPoller, regionName string) {
+			log.Printf("starting player poller for region: %s", regionName)
+			poller.Run(ctx)
+		}(playerPoller, region)
+	}
 
-	// Start killboard poller
-	kbPoller := tasks.NewKillboardPoller(db, tasks.KillboardConfig{
-		APIBase:        cfg.APIBase,
-		PageSize:       cfg.PageSize,
-		MaxPages:       cfg.MaxPages,
-		EventsInterval: cfg.EventsInterval,
-		Region:         cfg.Region,
-		HTTPTimeout:    cfg.HTTPTimeout,
-		UserAgent:      cfg.UserAgent,
-	})
+	// Start killboard pollers for all regions
+	for _, region := range regions {
+		kbPoller := tasks.NewKillboardPoller(db, tasks.KillboardConfig{
+			PageSize:       cfg.PageSize,
+			MaxPages:       cfg.MaxPages,
+			EventsInterval: cfg.EventsInterval,
+			Region:         region,
+			HTTPTimeout:    cfg.HTTPTimeout,
+			UserAgent:      cfg.UserAgent,
+		})
 
-	go func() {
-		kbPoller.Run(ctx)
-	}()
+		go func(poller *tasks.KillboardPoller, regionName string) {
+			log.Printf("starting killboard poller for region: %s", regionName)
+			poller.Run(ctx)
+		}(kbPoller, region)
+	}
 
 	// Wait for shutdown signal
 	<-ctx.Done()

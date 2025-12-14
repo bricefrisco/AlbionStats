@@ -17,7 +17,7 @@ import (
 )
 
 type PlayerPollerConfig struct {
-	APIBase     string
+	Region      string
 	PageSize    int
 	RatePerSec  int
 	UserAgent   string
@@ -66,7 +66,7 @@ func newHTTPClient(timeout time.Duration) *http.Client {
 }
 
 func NewPlayerPoller(db *gorm.DB, cfg PlayerPollerConfig) *PlayerPoller {
-	apiClient := api.NewClient(cfg.APIBase, cfg.UserAgent, cfg.HTTPTimeout)
+	apiClient := api.NewClient(cfg.Region, cfg.UserAgent, cfg.HTTPTimeout)
 	return &PlayerPoller{
 		apiClient: apiClient,
 		db:        db,
@@ -78,7 +78,7 @@ func (p *PlayerPoller) fetchPlayersToPoll(ctx context.Context) ([]database.Playe
 	var players []database.PlayerPoll
 	now := time.Now().UTC()
 	if err := p.db.WithContext(ctx).
-		Where("next_poll_at <= ?", now).
+		Where("region = ? AND next_poll_at <= ?", p.cfg.Region, now).
 		Order("next_poll_at ASC").
 		Limit(p.cfg.PageSize).
 		Find(&players).Error; err != nil {
@@ -88,7 +88,7 @@ func (p *PlayerPoller) fetchPlayersToPoll(ctx context.Context) ([]database.Playe
 }
 
 func (p *PlayerPoller) handleIdleState(ctx context.Context) error {
-	log.Printf("no players to poll")
+	log.Printf("[%s] no players to poll", p.cfg.Region)
 	idle := time.Second
 	select {
 	case <-ctx.Done():
@@ -108,7 +108,7 @@ func (p *PlayerPoller) setupWorkers(ctx context.Context, players []database.Play
 
 	var wg sync.WaitGroup
 
-	log.Printf("batch size=%d rate=%d/s workers=%d", len(players), p.cfg.RatePerSec, workerCount)
+	log.Printf("[%s] batch size=%d rate=%d/s workers=%d", p.cfg.Region, len(players), p.cfg.RatePerSec, workerCount)
 
 	// Start worker goroutines
 	for w := 0; w < workerCount; w++ {
@@ -116,7 +116,7 @@ func (p *PlayerPoller) setupWorkers(ctx context.Context, players []database.Play
 		go func() {
 			defer wg.Done()
 			for pl := range jobs {
-				log.Printf("worker fetching player_id=%s", pl.PlayerID)
+				log.Printf("[%s] worker fetching player_id=%s", p.cfg.Region, pl.PlayerID)
 				// shared rate limiter
 				select {
 				case <-ctx.Done():
@@ -154,7 +154,7 @@ func (p *PlayerPoller) processResults(results <-chan processResult) ([]database.
 
 	for res := range results {
 		if res.err != nil {
-			log.Printf("player=%s err=%v", res.playerPoll.PlayerID, res.err)
+			log.Printf("[%s] player=%s err=%v", p.cfg.Region, res.playerPoll.PlayerID, res.err)
 			nextErr := res.playerPoll.ErrorCount + 1
 			backoff := failureBackoff(nextErr)
 			failures = append(failures, database.PlayerPoll{
@@ -183,24 +183,24 @@ func (p *PlayerPoller) processResults(results <-chan processResult) ([]database.
 
 func (p *PlayerPoller) applyDatabaseChanges(ctx context.Context, updatePolls []database.PlayerPoll, statsLatest []database.PlayerStatsLatest, snapshots []database.PlayerStatsSnapshot, deletes []database.PlayerPoll, failures []database.PlayerPoll) {
 	if err := database.ApplyPlayerPollerDatabaseChanges(ctx, p.db, deletes, updatePolls, statsLatest, snapshots, failures); err != nil {
-		log.Printf("database changes error: %v", err)
+		log.Printf("[%s] database changes error: %v", p.cfg.Region, err)
 	}
 }
 
 func (p *PlayerPoller) Run(ctx context.Context) {
-	log.Printf("starting continuous polling")
+	log.Printf("[%s] starting continuous polling", p.cfg.Region)
 
 	for {
 		select {
 		case <-ctx.Done():
-			log.Printf("stopped")
+			log.Printf("[%s] stopped", p.cfg.Region)
 			return
 		default:
 		}
 
 		err := p.runBatch(ctx)
 		if err != nil {
-			log.Printf("batch error: %v", err)
+			log.Printf("[%s] batch error: %v", p.cfg.Region, err)
 		}
 	}
 }

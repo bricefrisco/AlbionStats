@@ -21,8 +21,24 @@ type Client struct {
 	userAgent  string
 }
 
-// NewClient creates a new Albion API client
-func NewClient(baseURL, userAgent string, timeout time.Duration) *Client {
+// regionToBaseURL maps a region to the appropriate Albion API base URL
+func regionToBaseURL(region string) string {
+	switch region {
+	case "americas":
+		return "https://gameinfo.albiononline.com"
+	case "europe":
+		return "https://gameinfo-ams.albiononline.com"
+	case "asia":
+		return "https://gameinfo-sgp.albiononline.com"
+	default:
+		// Default to americas if region is not recognized
+		return "https://gameinfo.albiononline.com"
+	}
+}
+
+// NewClient creates a new Albion API client for the specified region
+func NewClient(region, userAgent string, timeout time.Duration) *Client {
+	baseURL := regionToBaseURL(region)
 	return &Client{
 		httpClient: &http.Client{Timeout: timeout},
 		baseURL:    baseURL,
@@ -32,7 +48,7 @@ func NewClient(baseURL, userAgent string, timeout time.Duration) *Client {
 
 // FetchPlayer retrieves player data from the Albion API
 func (c *Client) FetchPlayer(ctx context.Context, playerID string) (*PlayerResponse, error) {
-	u, err := url.Parse(fmt.Sprintf("%s/players/%s", c.baseURL, playerID))
+	u, err := url.Parse(fmt.Sprintf("%s/api/gameinfo/players/%s", c.baseURL, playerID))
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +88,7 @@ func (c *Client) FetchPlayer(ctx context.Context, playerID string) (*PlayerRespo
 
 // FetchEvents retrieves killboard events from the Albion API
 func (c *Client) FetchEvents(ctx context.Context, limit, offset int) ([]Event, error) {
-	u, err := url.Parse(c.baseURL + "/events")
+	u, err := url.Parse(c.baseURL + "/api/gameinfo/events")
 	if err != nil {
 		return nil, err
 	}
