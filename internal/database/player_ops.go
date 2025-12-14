@@ -22,23 +22,10 @@ func UpsertPlayerPolls(ctx context.Context, db *gorm.DB, polls map[string]Player
 		batch = append(batch, playerPoll)
 	}
 
-	// Determine if this is killboard activity by checking if any poll has KillboardLastActivity set
-	isKillboard := false
-	for _, poll := range batch {
-		if poll.KillboardLastActivity != nil {
-			isKillboard = true
-			break
-		}
-	}
-
 	assignments := map[string]interface{}{
-		"next_poll_at": gorm.Expr("LEAST(player_polls.last_poll_at + INTERVAL '6 hours', player_polls.next_poll_at)"),
-	}
-
-	if isKillboard {
-		assignments["killboard_last_activity"] = gorm.Expr("excluded.killboard_last_activity")
-	} else {
-		assignments["last_encountered"] = gorm.Expr("excluded.last_encountered")
+		"next_poll_at":            gorm.Expr("LEAST(player_polls.last_poll_at + INTERVAL '6 hours', player_polls.next_poll_at)"),
+		"killboard_last_activity": gorm.Expr("excluded.killboard_last_activity"),
+		"other_last_activity":     gorm.Expr("excluded.other_last_activity"),
 	}
 
 	return db.WithContext(ctx).Clauses(clause.OnConflict{

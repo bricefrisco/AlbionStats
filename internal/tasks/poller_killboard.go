@@ -87,7 +87,6 @@ func (p *KillboardPoller) runBatch(ctx context.Context) {
 func (p *KillboardPoller) collectPlayers(events []api.Event, acc map[string]database.PlayerPoll) {
 	now := time.Now().UTC()
 	for _, ev := range events {
-		lastSeen := ev.TimeStamp
 		add := func(participant api.Participant) {
 			if participant.ID == "" {
 				return
@@ -100,7 +99,7 @@ func (p *KillboardPoller) collectPlayers(events []api.Event, acc map[string]data
 				Region:                p.cfg.Region,
 				PlayerID:              participant.ID,
 				NextPollAt:            now,
-				KillboardLastActivity: &lastSeen,
+				KillboardLastActivity: &ev.TimeStamp,
 				ErrorCount:            0,
 			}
 			acc[key] = playerPoll
