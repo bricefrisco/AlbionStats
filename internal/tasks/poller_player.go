@@ -214,7 +214,25 @@ func (p *PlayerPoller) applyDatabaseChanges(ctx context.Context, updates []datab
 	}
 }
 
-func (p *PlayerPoller) Run(ctx context.Context) error {
+func (p *PlayerPoller) Run(ctx context.Context) {
+	log.Printf("player-poller: starting continuous polling")
+
+	for {
+		select {
+		case <-ctx.Done():
+			log.Printf("player-poller: stopped")
+			return
+		default:
+		}
+
+		err := p.runBatch(ctx)
+		if err != nil {
+			log.Printf("player-poller: batch error: %v", err)
+		}
+	}
+}
+
+func (p *PlayerPoller) runBatch(ctx context.Context) error {
 	players, err := p.fetchPlayersToPoll(ctx)
 	if err != nil {
 		return err

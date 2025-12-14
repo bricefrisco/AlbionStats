@@ -44,31 +44,52 @@ func NewKillboardPoller(db *gorm.DB, cfg KillboardConfig) *KillboardPoller {
 	}
 }
 
-// Run fetches events pages and upserts discovered players into the database.
-func (p *KillboardPoller) Run(ctx context.Context) error {
+// Run fetches events pages and upserts discovered players into the database periodically.
+func (p *KillboardPoller) Run(ctx context.Context) {
+	log.Printf("poller: starting periodic killboard polling with interval %v", p.cfg.EventsInterval)
+
+	ticker := time.NewTicker(p.cfg.EventsInterval)
+	defer ticker.Stop()
+
+	// Run once immediately
+	p.runBatch(ctx)
+
+	for {
+		select {
+		case <-ctx.Done():
+			log.Printf("poller: stopped")
+			return
+		case <-ticker.C:
+			p.runBatch(ctx)
+		}
+	}
+}
+
+func (p *KillboardPoller) runBatch(ctx context.Context) {
 	log.Printf("poller: fetch events limit=%d offset=0", p.cfg.PageSize)
 	playerMap := make(map[string]database.PlayerState)
 	events, err := p.fetchEvents(ctx, p.cfg.PageSize, 0)
 	if err != nil {
-		return fmt.Errorf("fetch events: %w", err)
+		log.Printf("poller: fetch events error: %v", err)
+		return
 	}
 	if len(events) == 0 {
 		log.Printf("poller: no events returned")
-		return nil
+		return
 	}
 
 	p.collectPlayers(events, playerMap)
 	log.Printf("poller: events=%d players_collected=%d", len(events), len(playerMap))
 
 	if len(playerMap) == 0 {
-		return nil
+		return
 	}
 
 	if err := database.UpsertPlayers(ctx, p.db, playerMap); err != nil {
-		return err
+		log.Printf("poller: upsert players error: %v", err)
+		return
 	}
 	log.Printf("poller: upserted players=%d", len(playerMap))
-	return nil
 }
 
 func (p *KillboardPoller) fetchEvents(ctx context.Context, limit, offset int) ([]event, error) {

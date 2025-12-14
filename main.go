@@ -30,6 +30,9 @@ func main() {
 		log.Fatalf("db connect: %v", err)
 	}
 
+	ctx, cancel := signalContext(context.Background())
+	defer cancel()
+
 	// Start API server
 	apiServer := api.New(db, api.Config{
 		Port: cfg.APIPort,
@@ -38,11 +41,34 @@ func main() {
 	go func() {
 		addr := fmt.Sprintf(":%s", cfg.APIPort)
 		log.Printf("starting API server on %s", addr)
-		if err := apiServer.Start(addr); err != nil {
+		if err := apiServer.Run(addr); err != nil {
 			log.Printf("API server error: %v", err)
 		}
 	}()
 
+	// Start metrics collector
+	metricsCollector := tasks.NewCollector(db, tasks.CollectorConfig{
+		Interval: 5 * time.Minute,
+	})
+
+	go func() {
+		metricsCollector.Run(ctx)
+	}()
+
+	// Start player poller
+	playerPoller := tasks.NewPlayerPoller(db, tasks.PlayerPollerConfig{
+		APIBase:     cfg.APIBase,
+		PageSize:    cfg.PlayerBatch,
+		RatePerSec:  cfg.PlayerRate,
+		UserAgent:   cfg.UserAgent,
+		HTTPTimeout: cfg.HTTPTimeout,
+	})
+
+	go func() {
+		playerPoller.Run(ctx)
+	}()
+
+	// Start killboard poller
 	kbPoller := tasks.NewKillboardPoller(db, tasks.KillboardConfig{
 		APIBase:        cfg.APIBase,
 		PageSize:       cfg.PageSize,
@@ -53,62 +79,13 @@ func main() {
 		UserAgent:      cfg.UserAgent,
 	})
 
-	playerPoller := tasks.NewPlayerPoller(db, tasks.PlayerPollerConfig{
-		APIBase:     cfg.APIBase,
-		PageSize:    cfg.PlayerBatch,
-		RatePerSec:  cfg.PlayerRate,
-		UserAgent:   cfg.UserAgent,
-		HTTPTimeout: cfg.HTTPTimeout,
-	})
-
-	ctx, cancel := signalContext(context.Background())
-	defer cancel()
-
-	// Start metrics collector
-	metricsCollector := tasks.NewCollector(db, tasks.CollectorConfig{
-		Interval: 5 * time.Minute,
-	})
-
 	go func() {
-		metricsCollector.Start(ctx)
+		kbPoller.Run(ctx)
 	}()
 
-	// Player poller runs continuously; it rate-limits internally.
-	go func() {
-		for {
-			if err := playerPoller.Run(ctx); err != nil {
-				log.Printf("player poller error: %v", err)
-			}
-
-			select {
-			case <-ctx.Done():
-				return
-			default:
-			}
-		}
-	}()
-
-	ticker := time.NewTicker(cfg.EventsInterval)
-	defer ticker.Stop()
-
-	// Run killboard poller immediately once
-	log.Printf("loop: running killboard poller")
-	if err := kbPoller.Run(ctx); err != nil {
-		log.Printf("poller error: %v", err)
-	}
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-ticker.C:
-		}
-
-		log.Printf("loop: running killboard poller")
-		if err := kbPoller.Run(ctx); err != nil {
-			log.Printf("poller error: %v", err)
-		}
-	}
+	// Wait for shutdown signal
+	<-ctx.Done()
+	log.Printf("shutdown complete")
 }
 
 func signalContext(parent context.Context) (context.Context, context.CancelFunc) {

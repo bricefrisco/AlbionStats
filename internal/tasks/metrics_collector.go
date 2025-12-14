@@ -24,7 +24,7 @@ func NewCollector(db *gorm.DB, config CollectorConfig) *Collector {
 	}
 }
 
-func (c *Collector) Start(ctx context.Context) {
+func (c *Collector) Run(ctx context.Context) {
 	log.Printf("metrics: starting collector with interval %v", c.config.Interval)
 
 	ticker := time.NewTicker(c.config.Interval)

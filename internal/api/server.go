@@ -35,7 +35,7 @@ func (s *Server) setupRoutes() {
 	v1.GET("/metrics/:metricId", s.metrics)
 }
 
-func (s *Server) Start(addr string) error {
+func (s *Server) Run(addr string) error {
 	return s.router.Run(addr)
 }
 
