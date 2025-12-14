@@ -1,4 +1,4 @@
-package killboard
+package tasks
 
 import (
 	"context"
@@ -18,7 +18,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-type Config struct {
+type KillboardConfig struct {
 	APIBase        string
 	PageSize       int
 	MaxPages       int
@@ -28,17 +28,17 @@ type Config struct {
 	HTTPTimeout    time.Duration
 }
 
-type Poller struct {
+type KillboardPoller struct {
 	client *http.Client
 	db     *gorm.DB
-	cfg    Config
+	cfg    KillboardConfig
 }
 
-func New(db *gorm.DB, cfg Config) *Poller {
+func NewKillboardPoller(db *gorm.DB, cfg KillboardConfig) *KillboardPoller {
 	client := &http.Client{
 		Timeout: cfg.HTTPTimeout,
 	}
-	return &Poller{
+	return &KillboardPoller{
 		client: client,
 		db:     db,
 		cfg:    cfg,
@@ -46,7 +46,7 @@ func New(db *gorm.DB, cfg Config) *Poller {
 }
 
 // Run fetches events pages and upserts discovered players into the database.
-func (p *Poller) Run(ctx context.Context) error {
+func (p *KillboardPoller) Run(ctx context.Context) error {
 	log.Printf("poller: fetch events limit=%d offset=0", p.cfg.PageSize)
 	playerMap := make(map[string]models.PlayerState)
 	events, err := p.fetchEvents(ctx, p.cfg.PageSize, 0)
@@ -72,7 +72,7 @@ func (p *Poller) Run(ctx context.Context) error {
 	return nil
 }
 
-func (p *Poller) fetchEvents(ctx context.Context, limit, offset int) ([]event, error) {
+func (p *KillboardPoller) fetchEvents(ctx context.Context, limit, offset int) ([]event, error) {
 	u, err := url.Parse(p.cfg.APIBase + "/events")
 	if err != nil {
 		return nil, err
@@ -80,7 +80,7 @@ func (p *Poller) fetchEvents(ctx context.Context, limit, offset int) ([]event, e
 	q := u.Query()
 	q.Set("limit", fmt.Sprintf("%d", limit))
 	q.Set("offset", fmt.Sprintf("%d", offset))
-	q.Set("guid", randomGUID())
+	q.Set("guid", killboardRandomGUID())
 	u.RawQuery = q.Encode()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
@@ -109,7 +109,7 @@ func (p *Poller) fetchEvents(ctx context.Context, limit, offset int) ([]event, e
 	return events, nil
 }
 
-func randomGUID() string {
+func killboardRandomGUID() string {
 	buf := make([]byte, 16)
 	if _, err := rand.Read(buf); err != nil {
 		// Fallback to timestamp-based value if entropy fails
@@ -118,7 +118,7 @@ func randomGUID() string {
 	return hex.EncodeToString(buf)
 }
 
-func (p *Poller) collectPlayers(events []event, acc map[string]models.PlayerState) {
+func (p *KillboardPoller) collectPlayers(events []event, acc map[string]models.PlayerState) {
 	now := time.Now().UTC()
 	for _, ev := range events {
 		lastSeen := ev.TimeStamp
@@ -138,11 +138,11 @@ func (p *Poller) collectPlayers(events []event, acc map[string]models.PlayerStat
 				NextPollAt:   now,
 				ErrorCount:   0,
 				LastSeen:     &lastSeen,
-				GuildID:      nullableString(participant.GuildID),
-				GuildName:    nullableString(participant.GuildName),
-				AllianceID:   nullableString(participant.AllianceID),
-				AllianceName: nullableString(participant.AllianceName),
-				AllianceTag:  nullableString(participant.AllianceTag),
+				GuildID:      killboardNullableString(participant.GuildID),
+				GuildName:    killboardNullableString(participant.GuildName),
+				AllianceID:   killboardNullableString(participant.AllianceID),
+				AllianceName: killboardNullableString(participant.AllianceName),
+				AllianceTag:  killboardNullableString(participant.AllianceTag),
 			}
 			acc[key] = player
 		}
@@ -158,7 +158,7 @@ func (p *Poller) collectPlayers(events []event, acc map[string]models.PlayerStat
 	}
 }
 
-func (p *Poller) upsertPlayers(ctx context.Context, players map[string]models.PlayerState) error {
+func (p *KillboardPoller) upsertPlayers(ctx context.Context, players map[string]models.PlayerState) error {
 	batch := make([]models.PlayerState, 0, len(players))
 	for _, pl := range players {
 		player := pl // copy to avoid reference issues
@@ -204,7 +204,7 @@ type participant struct {
 	AllianceTag  string `json:"AllianceTag"`
 }
 
-func nullableString(val string) *string {
+func killboardNullableString(val string) *string {
 	if val == "" {
 		return nil
 	}

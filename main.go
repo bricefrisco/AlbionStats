@@ -11,9 +11,7 @@ import (
 
 	"albionstats/internal/api"
 	"albionstats/internal/config"
-	"albionstats/internal/killboard"
-	"albionstats/internal/metrics"
-	"albionstats/internal/playerpoller"
+	"albionstats/internal/tasks"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -45,7 +43,7 @@ func main() {
 		}
 	}()
 
-	kbPoller := killboard.New(db, killboard.Config{
+	kbPoller := tasks.NewKillboardPoller(db, tasks.KillboardConfig{
 		APIBase:        cfg.APIBase,
 		PageSize:       cfg.PageSize,
 		MaxPages:       cfg.MaxPages,
@@ -55,7 +53,7 @@ func main() {
 		UserAgent:      cfg.UserAgent,
 	})
 
-	playerPoller := playerpoller.New(db, playerpoller.Config{
+	playerPoller := tasks.NewPlayerPoller(db, tasks.PlayerPollerConfig{
 		APIBase:     cfg.APIBase,
 		PageSize:    cfg.PlayerBatch,
 		RatePerSec:  cfg.PlayerRate,
@@ -67,7 +65,7 @@ func main() {
 	defer cancel()
 
 	// Start metrics collector
-	metricsCollector := metrics.New(db, metrics.Config{
+	metricsCollector := tasks.NewCollector(db, tasks.CollectorConfig{
 		Interval: 5 * time.Minute,
 	})
 

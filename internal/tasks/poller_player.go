@@ -1,4 +1,4 @@
-package playerpoller
+package tasks
 
 import (
 	"context"
@@ -21,7 +21,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-type Config struct {
+type PlayerPollerConfig struct {
 	APIBase     string
 	PageSize    int
 	RatePerSec  int
@@ -30,9 +30,9 @@ type Config struct {
 	HTTPTimeout time.Duration
 }
 
-type Poller struct {
+type PlayerPoller struct {
 	db  *gorm.DB
-	cfg Config
+	cfg PlayerPollerConfig
 }
 
 type processResult struct {
@@ -45,7 +45,7 @@ type processResult struct {
 	priority    int
 }
 
-func (p *Poller) workerCount(n int) int {
+func (p *PlayerPoller) workerCount(n int) int {
 	if p.cfg.Workers > 0 {
 		if p.cfg.Workers < n {
 			return p.cfg.Workers
@@ -70,11 +70,11 @@ func newHTTPClient(timeout time.Duration) *http.Client {
 	}
 }
 
-func New(db *gorm.DB, cfg Config) *Poller {
-	return &Poller{db: db, cfg: cfg}
+func NewPlayerPoller(db *gorm.DB, cfg PlayerPollerConfig) *PlayerPoller {
+	return &PlayerPoller{db: db, cfg: cfg}
 }
 
-func (p *Poller) fetchPlayersToPoll(ctx context.Context) ([]models.PlayerState, error) {
+func (p *PlayerPoller) fetchPlayersToPoll(ctx context.Context) ([]models.PlayerState, error) {
 	var players []models.PlayerState
 	now := time.Now().UTC()
 	if err := p.db.WithContext(ctx).
@@ -87,7 +87,7 @@ func (p *Poller) fetchPlayersToPoll(ctx context.Context) ([]models.PlayerState, 
 	return players, nil
 }
 
-func (p *Poller) handleIdleState(ctx context.Context) error {
+func (p *PlayerPoller) handleIdleState(ctx context.Context) error {
 	log.Printf("player-poller: no players to poll")
 	idle := time.Second
 	select {
@@ -98,7 +98,7 @@ func (p *Poller) handleIdleState(ctx context.Context) error {
 	}
 }
 
-func (p *Poller) setupWorkers(ctx context.Context, players []models.PlayerState) (*time.Ticker, chan models.PlayerState, chan processResult, *sync.WaitGroup) {
+func (p *PlayerPoller) setupWorkers(ctx context.Context, players []models.PlayerState) (*time.Ticker, chan models.PlayerState, chan processResult, *sync.WaitGroup) {
 	rate := time.Second / time.Duration(p.cfg.RatePerSec)
 	ticker := time.NewTicker(rate)
 
@@ -145,7 +145,7 @@ func (p *Poller) setupWorkers(ctx context.Context, players []models.PlayerState)
 	return ticker, jobs, results, &wg
 }
 
-func (p *Poller) processResults(results <-chan processResult) ([]models.PlayerState, []models.PlayerStatsSnapshot, []models.PlayerState, []models.PlayerState) {
+func (p *PlayerPoller) processResults(results <-chan processResult) ([]models.PlayerState, []models.PlayerStatsSnapshot, []models.PlayerState, []models.PlayerState) {
 	var updates []models.PlayerState
 	var snapshots []models.PlayerStatsSnapshot
 	var deletes []models.PlayerState
@@ -175,7 +175,7 @@ func (p *Poller) processResults(results <-chan processResult) ([]models.PlayerSt
 	return updates, snapshots, deletes, failures
 }
 
-func (p *Poller) applyDatabaseChanges(ctx context.Context, updates []models.PlayerState, snapshots []models.PlayerStatsSnapshot, deletes []models.PlayerState, failures []models.PlayerState) {
+func (p *PlayerPoller) applyDatabaseChanges(ctx context.Context, updates []models.PlayerState, snapshots []models.PlayerStatsSnapshot, deletes []models.PlayerState, failures []models.PlayerState) {
 	// apply deletes (grouped by region)
 	if len(deletes) > 0 {
 		log.Printf("player-poller: deleting %d players", len(deletes))
@@ -215,7 +215,7 @@ func (p *Poller) applyDatabaseChanges(ctx context.Context, updates []models.Play
 	}
 }
 
-func (p *Poller) Run(ctx context.Context) error {
+func (p *PlayerPoller) Run(ctx context.Context) error {
 	players, err := p.fetchPlayersToPoll(ctx)
 	if err != nil {
 		return err
@@ -237,7 +237,7 @@ func (p *Poller) Run(ctx context.Context) error {
 	return nil
 }
 
-func (p *Poller) processPlayer(ctx context.Context, client *http.Client, pl models.PlayerState) processResult {
+func (p *PlayerPoller) processPlayer(ctx context.Context, client *http.Client, pl models.PlayerState) processResult {
 	ts := time.Now().UTC()
 	resp, err := p.fetchPlayer(ctx, client, pl.PlayerID)
 	if err != nil {
@@ -259,52 +259,52 @@ func (p *Poller) processPlayer(ctx context.Context, client *http.Client, pl mode
 		TS:                  ts,
 		APITimestamp:        apiTS,
 		Name:                resp.Name,
-		GuildID:             nullableString(resp.GuildId),
-		GuildName:           nullableString(resp.GuildName),
-		AllianceID:          nullableString(resp.AllianceId),
-		AllianceName:        nullableString(resp.AllianceName),
-		AllianceTag:         nullableString(resp.AllianceTag),
-		KillFame:            nullableInt64(resp.KillFame),
-		DeathFame:           nullableInt64(resp.DeathFame),
-		FameRatio:           nullableFloat64(resp.FameRatio),
-		CraftingTotal:       nullableInt64(resp.LifetimeStatistics.Crafting.Total),
-		CraftingRoyal:       nullableInt64(resp.LifetimeStatistics.Crafting.Royal),
-		CraftingOutlands:    nullableInt64(resp.LifetimeStatistics.Crafting.Outlands),
-		CraftingAvalon:      nullableInt64(resp.LifetimeStatistics.Crafting.Avalon),
-		FishingFame:         nullableInt64(resp.FishingFame),
-		FarmingFame:         nullableInt64(resp.FarmingFame),
-		CrystalLeagueFame:   nullableInt64(resp.CrystalLeague),
-		PveTotal:            nullableInt64(resp.LifetimeStatistics.PvE.Total),
-		PveRoyal:            nullableInt64(resp.LifetimeStatistics.PvE.Royal),
-		PveOutlands:         nullableInt64(resp.LifetimeStatistics.PvE.Outlands),
-		PveAvalon:           nullableInt64(resp.LifetimeStatistics.PvE.Avalon),
-		PveHellgate:         nullableInt64(resp.LifetimeStatistics.PvE.Hellgate),
-		PveCorrupted:        nullableInt64(resp.LifetimeStatistics.PvE.CorruptedDungeon),
-		PveMists:            nullableInt64(resp.LifetimeStatistics.PvE.Mists),
-		GatherFiberTotal:    nullableInt64(resp.LifetimeStatistics.Gathering.Fiber.Total),
-		GatherFiberRoyal:    nullableInt64(resp.LifetimeStatistics.Gathering.Fiber.Royal),
-		GatherFiberOutlands: nullableInt64(resp.LifetimeStatistics.Gathering.Fiber.Outlands),
-		GatherFiberAvalon:   nullableInt64(resp.LifetimeStatistics.Gathering.Fiber.Avalon),
-		GatherHideTotal:     nullableInt64(resp.LifetimeStatistics.Gathering.Hide.Total),
-		GatherHideRoyal:     nullableInt64(resp.LifetimeStatistics.Gathering.Hide.Royal),
-		GatherHideOutlands:  nullableInt64(resp.LifetimeStatistics.Gathering.Hide.Outlands),
-		GatherHideAvalon:    nullableInt64(resp.LifetimeStatistics.Gathering.Hide.Avalon),
-		GatherOreTotal:      nullableInt64(resp.LifetimeStatistics.Gathering.Ore.Total),
-		GatherOreRoyal:      nullableInt64(resp.LifetimeStatistics.Gathering.Ore.Royal),
-		GatherOreOutlands:   nullableInt64(resp.LifetimeStatistics.Gathering.Ore.Outlands),
-		GatherOreAvalon:     nullableInt64(resp.LifetimeStatistics.Gathering.Ore.Avalon),
-		GatherRockTotal:     nullableInt64(resp.LifetimeStatistics.Gathering.Rock.Total),
-		GatherRockRoyal:     nullableInt64(resp.LifetimeStatistics.Gathering.Rock.Royal),
-		GatherRockOutlands:  nullableInt64(resp.LifetimeStatistics.Gathering.Rock.Outlands),
-		GatherRockAvalon:    nullableInt64(resp.LifetimeStatistics.Gathering.Rock.Avalon),
-		GatherWoodTotal:     nullableInt64(resp.LifetimeStatistics.Gathering.Wood.Total),
-		GatherWoodRoyal:     nullableInt64(resp.LifetimeStatistics.Gathering.Wood.Royal),
-		GatherWoodOutlands:  nullableInt64(resp.LifetimeStatistics.Gathering.Wood.Outlands),
-		GatherWoodAvalon:    nullableInt64(resp.LifetimeStatistics.Gathering.Wood.Avalon),
-		GatherAllTotal:      nullableInt64(resp.LifetimeStatistics.Gathering.All.Total),
-		GatherAllRoyal:      nullableInt64(resp.LifetimeStatistics.Gathering.All.Royal),
-		GatherAllOutlands:   nullableInt64(resp.LifetimeStatistics.Gathering.All.Outlands),
-		GatherAllAvalon:     nullableInt64(resp.LifetimeStatistics.Gathering.All.Avalon),
+		GuildID:             playerNullableString(resp.GuildId),
+		GuildName:           playerNullableString(resp.GuildName),
+		AllianceID:          playerNullableString(resp.AllianceId),
+		AllianceName:        playerNullableString(resp.AllianceName),
+		AllianceTag:         playerNullableString(resp.AllianceTag),
+		KillFame:            playerNullableInt64(resp.KillFame),
+		DeathFame:           playerNullableInt64(resp.DeathFame),
+		FameRatio:           playerNullableFloat64(resp.FameRatio),
+		CraftingTotal:       playerNullableInt64(resp.LifetimeStatistics.Crafting.Total),
+		CraftingRoyal:       playerNullableInt64(resp.LifetimeStatistics.Crafting.Royal),
+		CraftingOutlands:    playerNullableInt64(resp.LifetimeStatistics.Crafting.Outlands),
+		CraftingAvalon:      playerNullableInt64(resp.LifetimeStatistics.Crafting.Avalon),
+		FishingFame:         playerNullableInt64(resp.FishingFame),
+		FarmingFame:         playerNullableInt64(resp.FarmingFame),
+		CrystalLeagueFame:   playerNullableInt64(resp.CrystalLeague),
+		PveTotal:            playerNullableInt64(resp.LifetimeStatistics.PvE.Total),
+		PveRoyal:            playerNullableInt64(resp.LifetimeStatistics.PvE.Royal),
+		PveOutlands:         playerNullableInt64(resp.LifetimeStatistics.PvE.Outlands),
+		PveAvalon:           playerNullableInt64(resp.LifetimeStatistics.PvE.Avalon),
+		PveHellgate:         playerNullableInt64(resp.LifetimeStatistics.PvE.Hellgate),
+		PveCorrupted:        playerNullableInt64(resp.LifetimeStatistics.PvE.CorruptedDungeon),
+		PveMists:            playerNullableInt64(resp.LifetimeStatistics.PvE.Mists),
+		GatherFiberTotal:    playerNullableInt64(resp.LifetimeStatistics.Gathering.Fiber.Total),
+		GatherFiberRoyal:    playerNullableInt64(resp.LifetimeStatistics.Gathering.Fiber.Royal),
+		GatherFiberOutlands: playerNullableInt64(resp.LifetimeStatistics.Gathering.Fiber.Outlands),
+		GatherFiberAvalon:   playerNullableInt64(resp.LifetimeStatistics.Gathering.Fiber.Avalon),
+		GatherHideTotal:     playerNullableInt64(resp.LifetimeStatistics.Gathering.Hide.Total),
+		GatherHideRoyal:     playerNullableInt64(resp.LifetimeStatistics.Gathering.Hide.Royal),
+		GatherHideOutlands:  playerNullableInt64(resp.LifetimeStatistics.Gathering.Hide.Outlands),
+		GatherHideAvalon:    playerNullableInt64(resp.LifetimeStatistics.Gathering.Hide.Avalon),
+		GatherOreTotal:      playerNullableInt64(resp.LifetimeStatistics.Gathering.Ore.Total),
+		GatherOreRoyal:      playerNullableInt64(resp.LifetimeStatistics.Gathering.Ore.Royal),
+		GatherOreOutlands:   playerNullableInt64(resp.LifetimeStatistics.Gathering.Ore.Outlands),
+		GatherOreAvalon:     playerNullableInt64(resp.LifetimeStatistics.Gathering.Ore.Avalon),
+		GatherRockTotal:     playerNullableInt64(resp.LifetimeStatistics.Gathering.Rock.Total),
+		GatherRockRoyal:     playerNullableInt64(resp.LifetimeStatistics.Gathering.Rock.Royal),
+		GatherRockOutlands:  playerNullableInt64(resp.LifetimeStatistics.Gathering.Rock.Outlands),
+		GatherRockAvalon:    playerNullableInt64(resp.LifetimeStatistics.Gathering.Rock.Avalon),
+		GatherWoodTotal:     playerNullableInt64(resp.LifetimeStatistics.Gathering.Wood.Total),
+		GatherWoodRoyal:     playerNullableInt64(resp.LifetimeStatistics.Gathering.Wood.Royal),
+		GatherWoodOutlands:  playerNullableInt64(resp.LifetimeStatistics.Gathering.Wood.Outlands),
+		GatherWoodAvalon:    playerNullableInt64(resp.LifetimeStatistics.Gathering.Wood.Avalon),
+		GatherAllTotal:      playerNullableInt64(resp.LifetimeStatistics.Gathering.All.Total),
+		GatherAllRoyal:      playerNullableInt64(resp.LifetimeStatistics.Gathering.All.Royal),
+		GatherAllOutlands:   playerNullableInt64(resp.LifetimeStatistics.Gathering.All.Outlands),
+		GatherAllAvalon:     playerNullableInt64(resp.LifetimeStatistics.Gathering.All.Avalon),
 	}
 
 	// Update player_state identity and activity tracking
@@ -312,58 +312,58 @@ func (p *Poller) processPlayer(ctx context.Context, client *http.Client, pl mode
 		Region:              pl.Region,
 		PlayerID:            pl.PlayerID,
 		Name:                resp.Name,
-		GuildID:             nullableString(resp.GuildId),
-		GuildName:           nullableString(resp.GuildName),
-		AllianceID:          nullableString(resp.AllianceId),
-		AllianceName:        nullableString(resp.AllianceName),
-		AllianceTag:         nullableString(resp.AllianceTag),
+		GuildID:             playerNullableString(resp.GuildId),
+		GuildName:           playerNullableString(resp.GuildName),
+		AllianceID:          playerNullableString(resp.AllianceId),
+		AllianceName:        playerNullableString(resp.AllianceName),
+		AllianceTag:         playerNullableString(resp.AllianceTag),
 		LastPolled:          &ts,
 		LastSeen:            apiTS,
 		NextPollAt:          nextPollAt,
 		Priority:            priority,
 		ErrorCount:          0,
 		LastError:           nil,
-		KillFame:            nullableInt64(resp.KillFame),
-		DeathFame:           nullableInt64(resp.DeathFame),
-		FameRatio:           nullableFloat64(resp.FameRatio),
-		PveTotal:            nullableInt64(resp.LifetimeStatistics.PvE.Total),
-		PveRoyal:            nullableInt64(resp.LifetimeStatistics.PvE.Royal),
-		PveOutlands:         nullableInt64(resp.LifetimeStatistics.PvE.Outlands),
-		PveAvalon:           nullableInt64(resp.LifetimeStatistics.PvE.Avalon),
-		PveHellgate:         nullableInt64(resp.LifetimeStatistics.PvE.Hellgate),
-		PveCorrupted:        nullableInt64(resp.LifetimeStatistics.PvE.CorruptedDungeon),
-		PveMists:            nullableInt64(resp.LifetimeStatistics.PvE.Mists),
-		GatherFiberTotal:    nullableInt64(resp.LifetimeStatistics.Gathering.Fiber.Total),
-		GatherFiberRoyal:    nullableInt64(resp.LifetimeStatistics.Gathering.Fiber.Royal),
-		GatherFiberOutlands: nullableInt64(resp.LifetimeStatistics.Gathering.Fiber.Outlands),
-		GatherFiberAvalon:   nullableInt64(resp.LifetimeStatistics.Gathering.Fiber.Avalon),
-		GatherHideTotal:     nullableInt64(resp.LifetimeStatistics.Gathering.Hide.Total),
-		GatherHideRoyal:     nullableInt64(resp.LifetimeStatistics.Gathering.Hide.Royal),
-		GatherHideOutlands:  nullableInt64(resp.LifetimeStatistics.Gathering.Hide.Outlands),
-		GatherHideAvalon:    nullableInt64(resp.LifetimeStatistics.Gathering.Hide.Avalon),
-		GatherOreTotal:      nullableInt64(resp.LifetimeStatistics.Gathering.Ore.Total),
-		GatherOreRoyal:      nullableInt64(resp.LifetimeStatistics.Gathering.Ore.Royal),
-		GatherOreOutlands:   nullableInt64(resp.LifetimeStatistics.Gathering.Ore.Outlands),
-		GatherOreAvalon:     nullableInt64(resp.LifetimeStatistics.Gathering.Ore.Avalon),
-		GatherRockTotal:     nullableInt64(resp.LifetimeStatistics.Gathering.Rock.Total),
-		GatherRockRoyal:     nullableInt64(resp.LifetimeStatistics.Gathering.Rock.Royal),
-		GatherRockOutlands:  nullableInt64(resp.LifetimeStatistics.Gathering.Rock.Outlands),
-		GatherRockAvalon:    nullableInt64(resp.LifetimeStatistics.Gathering.Rock.Avalon),
-		GatherWoodTotal:     nullableInt64(resp.LifetimeStatistics.Gathering.Wood.Total),
-		GatherWoodRoyal:     nullableInt64(resp.LifetimeStatistics.Gathering.Wood.Royal),
-		GatherWoodOutlands:  nullableInt64(resp.LifetimeStatistics.Gathering.Wood.Outlands),
-		GatherWoodAvalon:    nullableInt64(resp.LifetimeStatistics.Gathering.Wood.Avalon),
-		GatherAllTotal:      nullableInt64(resp.LifetimeStatistics.Gathering.All.Total),
-		GatherAllRoyal:      nullableInt64(resp.LifetimeStatistics.Gathering.All.Royal),
-		GatherAllOutlands:   nullableInt64(resp.LifetimeStatistics.Gathering.All.Outlands),
-		GatherAllAvalon:     nullableInt64(resp.LifetimeStatistics.Gathering.All.Avalon),
-		CraftingTotal:       nullableInt64(resp.LifetimeStatistics.Crafting.Total),
-		CraftingRoyal:       nullableInt64(resp.LifetimeStatistics.Crafting.Royal),
-		CraftingOutlands:    nullableInt64(resp.LifetimeStatistics.Crafting.Outlands),
-		CraftingAvalon:      nullableInt64(resp.LifetimeStatistics.Crafting.Avalon),
-		FishingFame:         nullableInt64(resp.FishingFame),
-		FarmingFame:         nullableInt64(resp.FarmingFame),
-		CrystalLeagueFame:   nullableInt64(resp.CrystalLeague),
+		KillFame:            playerNullableInt64(resp.KillFame),
+		DeathFame:           playerNullableInt64(resp.DeathFame),
+		FameRatio:           playerNullableFloat64(resp.FameRatio),
+		PveTotal:            playerNullableInt64(resp.LifetimeStatistics.PvE.Total),
+		PveRoyal:            playerNullableInt64(resp.LifetimeStatistics.PvE.Royal),
+		PveOutlands:         playerNullableInt64(resp.LifetimeStatistics.PvE.Outlands),
+		PveAvalon:           playerNullableInt64(resp.LifetimeStatistics.PvE.Avalon),
+		PveHellgate:         playerNullableInt64(resp.LifetimeStatistics.PvE.Hellgate),
+		PveCorrupted:        playerNullableInt64(resp.LifetimeStatistics.PvE.CorruptedDungeon),
+		PveMists:            playerNullableInt64(resp.LifetimeStatistics.PvE.Mists),
+		GatherFiberTotal:    playerNullableInt64(resp.LifetimeStatistics.Gathering.Fiber.Total),
+		GatherFiberRoyal:    playerNullableInt64(resp.LifetimeStatistics.Gathering.Fiber.Royal),
+		GatherFiberOutlands: playerNullableInt64(resp.LifetimeStatistics.Gathering.Fiber.Outlands),
+		GatherFiberAvalon:   playerNullableInt64(resp.LifetimeStatistics.Gathering.Fiber.Avalon),
+		GatherHideTotal:     playerNullableInt64(resp.LifetimeStatistics.Gathering.Hide.Total),
+		GatherHideRoyal:     playerNullableInt64(resp.LifetimeStatistics.Gathering.Hide.Royal),
+		GatherHideOutlands:  playerNullableInt64(resp.LifetimeStatistics.Gathering.Hide.Outlands),
+		GatherHideAvalon:    playerNullableInt64(resp.LifetimeStatistics.Gathering.Hide.Avalon),
+		GatherOreTotal:      playerNullableInt64(resp.LifetimeStatistics.Gathering.Ore.Total),
+		GatherOreRoyal:      playerNullableInt64(resp.LifetimeStatistics.Gathering.Ore.Royal),
+		GatherOreOutlands:   playerNullableInt64(resp.LifetimeStatistics.Gathering.Ore.Outlands),
+		GatherOreAvalon:     playerNullableInt64(resp.LifetimeStatistics.Gathering.Ore.Avalon),
+		GatherRockTotal:     playerNullableInt64(resp.LifetimeStatistics.Gathering.Rock.Total),
+		GatherRockRoyal:     playerNullableInt64(resp.LifetimeStatistics.Gathering.Rock.Royal),
+		GatherRockOutlands:  playerNullableInt64(resp.LifetimeStatistics.Gathering.Rock.Outlands),
+		GatherRockAvalon:    playerNullableInt64(resp.LifetimeStatistics.Gathering.Rock.Avalon),
+		GatherWoodTotal:     playerNullableInt64(resp.LifetimeStatistics.Gathering.Wood.Total),
+		GatherWoodRoyal:     playerNullableInt64(resp.LifetimeStatistics.Gathering.Wood.Royal),
+		GatherWoodOutlands:  playerNullableInt64(resp.LifetimeStatistics.Gathering.Wood.Outlands),
+		GatherWoodAvalon:    playerNullableInt64(resp.LifetimeStatistics.Gathering.Wood.Avalon),
+		GatherAllTotal:      playerNullableInt64(resp.LifetimeStatistics.Gathering.All.Total),
+		GatherAllRoyal:      playerNullableInt64(resp.LifetimeStatistics.Gathering.All.Royal),
+		GatherAllOutlands:   playerNullableInt64(resp.LifetimeStatistics.Gathering.All.Outlands),
+		GatherAllAvalon:     playerNullableInt64(resp.LifetimeStatistics.Gathering.All.Avalon),
+		CraftingTotal:       playerNullableInt64(resp.LifetimeStatistics.Crafting.Total),
+		CraftingRoyal:       playerNullableInt64(resp.LifetimeStatistics.Crafting.Royal),
+		CraftingOutlands:    playerNullableInt64(resp.LifetimeStatistics.Crafting.Outlands),
+		CraftingAvalon:      playerNullableInt64(resp.LifetimeStatistics.Crafting.Avalon),
+		FishingFame:         playerNullableInt64(resp.FishingFame),
+		FarmingFame:         playerNullableInt64(resp.FarmingFame),
+		CrystalLeagueFame:   playerNullableInt64(resp.CrystalLeague),
 	}
 
 	return processResult{
@@ -375,7 +375,7 @@ func (p *Poller) processPlayer(ctx context.Context, client *http.Client, pl mode
 	}
 }
 
-func (p *Poller) bulkUpsertStates(ctx context.Context, states []models.PlayerState) error {
+func (p *PlayerPoller) bulkUpsertStates(ctx context.Context, states []models.PlayerState) error {
 	if len(states) == 0 {
 		return nil
 	}
@@ -430,7 +430,7 @@ func (p *Poller) bulkUpsertStates(ctx context.Context, states []models.PlayerSta
 	}).Create(&states).Error
 }
 
-func (p *Poller) bulkUpsertSkips(ctx context.Context, states []models.PlayerState) error {
+func (p *PlayerPoller) bulkUpsertSkips(ctx context.Context, states []models.PlayerState) error {
 	return p.db.WithContext(ctx).Clauses(clause.OnConflict{
 		Columns: []clause.Column{{Name: "region"}, {Name: "player_id"}},
 		DoUpdates: clause.AssignmentColumns([]string{
@@ -440,7 +440,7 @@ func (p *Poller) bulkUpsertSkips(ctx context.Context, states []models.PlayerStat
 	}).Create(&states).Error
 }
 
-func (p *Poller) bulkUpsertFailures(ctx context.Context, states []models.PlayerState) error {
+func (p *PlayerPoller) bulkUpsertFailures(ctx context.Context, states []models.PlayerState) error {
 	return p.db.WithContext(ctx).Clauses(clause.OnConflict{
 		Columns: []clause.Column{{Name: "region"}, {Name: "player_id"}},
 		DoUpdates: clause.AssignmentColumns([]string{
@@ -450,13 +450,13 @@ func (p *Poller) bulkUpsertFailures(ctx context.Context, states []models.PlayerS
 	}).Create(&states).Error
 }
 
-func (p *Poller) fetchPlayer(ctx context.Context, client *http.Client, playerID string) (*playerResponse, error) {
+func (p *PlayerPoller) fetchPlayer(ctx context.Context, client *http.Client, playerID string) (*playerResponse, error) {
 	u, err := url.Parse(fmt.Sprintf("%s/players/%s", p.cfg.APIBase, playerID))
 	if err != nil {
 		return nil, err
 	}
 	q := u.Query()
-	q.Set("guid", randomGUID())
+	q.Set("guid", playerRandomGUID())
 	q.Set("t", fmt.Sprintf("%d", time.Now().UnixNano()))
 	u.RawQuery = q.Encode()
 
@@ -489,7 +489,7 @@ func (p *Poller) fetchPlayer(ctx context.Context, client *http.Client, playerID 
 	return &pr, nil
 }
 
-func randomGUID() string {
+func playerRandomGUID() string {
 	buf := make([]byte, 16)
 	if _, err := rand.Read(buf); err != nil {
 		return fmt.Sprintf("%d", time.Now().UnixNano())
@@ -497,18 +497,18 @@ func randomGUID() string {
 	return hex.EncodeToString(buf)
 }
 
-func nullableString(val string) *string {
+func playerNullableString(val string) *string {
 	if val == "" {
 		return nil
 	}
 	return &val
 }
 
-func nullableInt64(val int64) *int64 {
+func playerNullableInt64(val int64) *int64 {
 	return &val
 }
 
-func nullableFloat64(val float64) *float64 {
+func playerNullableFloat64(val float64) *float64 {
 	return &val
 }
 

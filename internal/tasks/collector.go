@@ -1,4 +1,4 @@
-package metrics
+package tasks
 
 import (
 	"context"
@@ -8,16 +8,16 @@ import (
 	"gorm.io/gorm"
 )
 
-type Config struct {
+type CollectorConfig struct {
 	Interval time.Duration
 }
 
 type Collector struct {
 	db     *gorm.DB
-	config Config
+	config CollectorConfig
 }
 
-func New(db *gorm.DB, config Config) *Collector {
+func NewCollector(db *gorm.DB, config CollectorConfig) *Collector {
 	return &Collector{
 		db:     db,
 		config: config,

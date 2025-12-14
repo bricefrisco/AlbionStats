@@ -247,5 +247,5 @@ CREATE INDEX player_state_priority_poll_idx
 ON player_state (priority, next_poll_at);
 
 CREATE INDEX idx_player_name_lower
-ON player_state (lower(name));
+ON player_state (region, lower(name));
 ```
