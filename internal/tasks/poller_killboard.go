@@ -59,7 +59,7 @@ func (p *KillboardPoller) Run(ctx context.Context) {
 
 func (p *KillboardPoller) runBatch(ctx context.Context) {
 	log.Printf("fetch events limit=%d offset=0", p.cfg.PageSize)
-	playerMap := make(map[string]database.PlayerState)
+	playerMap := make(map[string]database.PlayerPoll)
 	events, err := p.apiClient.FetchEvents(ctx, p.cfg.PageSize, 0)
 	if err != nil {
 		log.Printf("fetch events error: %v", err)
@@ -77,21 +77,14 @@ func (p *KillboardPoller) runBatch(ctx context.Context) {
 		return
 	}
 
-	if err := database.UpsertPlayers(ctx, p.db, playerMap); err != nil {
-		log.Printf("upsert players error: %v", err)
+	if err := database.UpsertPlayerPolls(ctx, p.db, playerMap); err != nil {
+		log.Printf("upsert player polls error: %v", err)
 		return
 	}
-	log.Printf("upserted players=%d", len(playerMap))
-
-	// Debug: log player names
-	var playerNames []string
-	for _, player := range playerMap {
-		playerNames = append(playerNames, player.Name)
-	}
-	log.Printf("debug: upserted players: %v", playerNames)
+	log.Printf("upserted player polls=%d", len(playerMap))
 }
 
-func (p *KillboardPoller) collectPlayers(events []api.Event, acc map[string]database.PlayerState) {
+func (p *KillboardPoller) collectPlayers(events []api.Event, acc map[string]database.PlayerPoll) {
 	now := time.Now().UTC()
 	for _, ev := range events {
 		lastSeen := ev.TimeStamp
@@ -103,21 +96,14 @@ func (p *KillboardPoller) collectPlayers(events []api.Event, acc map[string]data
 			if _, exists := acc[key]; exists {
 				return
 			}
-			player := database.PlayerState{
-				Region:       p.cfg.Region,
-				PlayerID:     participant.ID,
-				Name:         participant.Name,
-				Priority:     100,
-				NextPollAt:   now,
-				ErrorCount:   0,
-				LastSeen:     &lastSeen,
-				GuildID:      api.NullableString(participant.GuildID),
-				GuildName:    api.NullableString(participant.GuildName),
-				AllianceID:   api.NullableString(participant.AllianceID),
-				AllianceName: api.NullableString(participant.AllianceName),
-				AllianceTag:  api.NullableString(participant.AllianceTag),
+			playerPoll := database.PlayerPoll{
+				Region:                p.cfg.Region,
+				PlayerID:              participant.ID,
+				NextPollAt:            now,
+				KillboardLastActivity: &lastSeen,
+				ErrorCount:            0,
 			}
-			acc[key] = player
+			acc[key] = playerPoll
 		}
 
 		add(ev.Killer)

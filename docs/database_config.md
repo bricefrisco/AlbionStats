@@ -42,102 +42,134 @@ CREATE EXTENSION IF NOT EXISTS timescaledb;
 \dx
 ```
 
+## Data Access Patterns
+
 ## Tables
 
 ```sql
 CREATE TYPE region_enum AS ENUM ( 'americas', 'europe', 'asia');
 
-CREATE TABLE player_state (
+-----------------------
+-- player_polls
+-----------------------
+CREATE TABLE player_polls (
+    region                          region_enum NOT NULL,
+    player_id                       TEXT NOT NULL,
+    next_poll_at                    TIMESTAMPTZ NOT NULL,
+    error_count                     SMALLINT NOT NULL DEFAULT 0,
+    last_encountered                TIMESTAMPTZ,
+    killboard_last_activity         TIMESTAMPTZ,
+    other_last_activity             TIMESTAMPTZ,
+    last_poll_at                    TIMESTAMPTZ,
+
+    PRIMARY KEY (region, player_id),
+
+    CHECK (
+        last_encountered IS NOT NULL OR     -- Added through the API
+        killboard_last_activity IS NOT NULL -- Added through killboard crawler
+    )
+);
+
+CREATE INDEX player_polls_poll_idx ON player_polls(next_poll_at DESC);
+
+-----------------------
+-- player_stats_latest
+-----------------------
+CREATE TABLE player_stats_latest (
     region                  region_enum NOT NULL,
     player_id               TEXT NOT NULL,
+    ts                      TIMESTAMPTZ NOT NULL,
 
+    -- Last seen timestamps
+    last_encountered        TIMESTAMPTZ,
+    killboard_last_activity TIMESTAMPTZ,
+    other_last_activity     TIMESTAMPTZ,
+    
     -- Identity
-    name                    TEXT,
+    name                    TEXT NOT NULL,
     guild_id                TEXT,
     guild_name              TEXT,
     alliance_id             TEXT,
     alliance_name           TEXT,
     alliance_tag            TEXT,
 
-    -- Activity tracking
-    last_seen               TIMESTAMPTZ,
-    last_polled             TIMESTAMPTZ,
-
-    -- Scheduling
-    priority                INTEGER NOT NULL DEFAULT 300,
-    next_poll_at            TIMESTAMPTZ NOT NULL DEFAULT now(),
-
-    -- Error handling
-    error_count             INTEGER NOT NULL DEFAULT 0,
-    last_error              TEXT,
-
     -- Fame counters
-    kill_fame               BIGINT,
-    death_fame              BIGINT,
+    kill_fame               BIGINT NOT NULL,
+    death_fame              BIGINT NOT NULL,
     fame_ratio              DOUBLE PRECISION,
 
     -- PvE Fame
-    pve_total               BIGINT,
-    pve_royal               BIGINT,
-    pve_outlands            BIGINT,
-    pve_avalon              BIGINT,
-    pve_hellgate            BIGINT,
-    pve_corrupted           BIGINT,
-    pve_mists               BIGINT,
+    pve_total               BIGINT NOT NULL,
+    pve_royal               BIGINT NOT NULL,
+    pve_outlands            BIGINT NOT NULL,
+    pve_avalon              BIGINT NOT NULL,
+    pve_hellgate            BIGINT NOT NULL,
+    pve_corrupted           BIGINT NOT NULL,
+    pve_mists               BIGINT NOT NULL,
 
     -- Gathering Fame Breakdown
-    gather_fiber_total      BIGINT,
-    gather_fiber_royal      BIGINT,
-    gather_fiber_outlands   BIGINT,
-    gather_fiber_avalon     BIGINT,
+    gather_fiber_total      BIGINT NOT NULL,
+    gather_fiber_royal      BIGINT NOT NULL,
+    gather_fiber_outlands   BIGINT NOT NULL,
+    gather_fiber_avalon     BIGINT NOT NULL,
 
-    gather_hide_total       BIGINT,
-    gather_hide_royal       BIGINT,
-    gather_hide_outlands    BIGINT,
-    gather_hide_avalon      BIGINT,
+    gather_hide_total       BIGINT NOT NULL,
+    gather_hide_royal       BIGINT NOT NULL,
+    gather_hide_outlands    BIGINT NOT NULL,
+    gather_hide_avalon      BIGINT NOT NULL,
 
-    gather_ore_total        BIGINT,
-    gather_ore_royal        BIGINT,
-    gather_ore_outlands     BIGINT,
-    gather_ore_avalon       BIGINT,
+    gather_ore_total        BIGINT NOT NULL,
+    gather_ore_royal        BIGINT NOT NULL,
+    gather_ore_outlands     BIGINT NOT NULL,
+    gather_ore_avalon       BIGINT NOT NULL,
 
-    gather_rock_total       BIGINT,
-    gather_rock_royal       BIGINT,
-    gather_rock_outlands    BIGINT,
-    gather_rock_avalon      BIGINT,
+    gather_rock_total       BIGINT NOT NULL,
+    gather_rock_royal       BIGINT NOT NULL,
+    gather_rock_outlands    BIGINT NOT NULL,
+    gather_rock_avalon      BIGINT NOT NULL,
 
-    gather_wood_total       BIGINT,
-    gather_wood_royal       BIGINT,
-    gather_wood_outlands    BIGINT,
-    gather_wood_avalon      BIGINT,
+    gather_wood_total       BIGINT NOT NULL,
+    gather_wood_royal       BIGINT NOT NULL,
+    gather_wood_outlands    BIGINT NOT NULL,
+    gather_wood_avalon      BIGINT NOT NULL,
 
-    gather_all_total        BIGINT,
-    gather_all_royal        BIGINT,
-    gather_all_outlands     BIGINT,
-    gather_all_avalon       BIGINT,
+    gather_all_total        BIGINT NOT NULL,
+    gather_all_royal        BIGINT NOT NULL,
+    gather_all_outlands     BIGINT NOT NULL,
+    gather_all_avalon       BIGINT NOT NULL,
 
     -- Crafting Fame Breakdown
-    crafting_total          BIGINT,
-    crafting_royal          BIGINT,
-    crafting_outlands       BIGINT,
-    crafting_avalon         BIGINT,
+    crafting_total          BIGINT NOT NULL,
+    crafting_royal          BIGINT NOT NULL,
+    crafting_outlands       BIGINT NOT NULL,
+    crafting_avalon         BIGINT NOT NULL,
 
     -- Misc Lifetime Stats
-    fishing_fame        BIGINT,
-    farming_fame        BIGINT,
-    crystal_league_fame BIGINT,
+    fishing_fame        BIGINT NOT NULL,
+    farming_fame        BIGINT NOT NULL,
+    crystal_league_fame BIGINT NOT NULL,
 
     PRIMARY KEY (region, player_id)
 );
 
+CREATE INDEX idx_player_name_lower
+ON player_stats_latest (region, lower(name));
+
+-----------------------
+-- player_stats_snapshots
+-----------------------
 CREATE TABLE player_stats_snapshots (
     region                  region_enum NOT NULL,
     player_id               TEXT NOT NULL,
     ts                      TIMESTAMPTZ NOT NULL,
-    api_timestamp           TIMESTAMPTZ,
 
+    -- Last seen timestamps
+    last_encountered        TIMESTAMPTZ,
+    killboard_last_activity TIMESTAMPTZ,
+    other_last_activity     TIMESTAMPTZ,
+    
     -- Identity
-    name                    TEXT,
+    name                    TEXT NOT NULL,
     guild_id                TEXT,
     guild_name              TEXT,
     alliance_id             TEXT,
@@ -145,69 +177,62 @@ CREATE TABLE player_stats_snapshots (
     alliance_tag            TEXT,
 
     -- Fame counters
-    kill_fame               BIGINT,
-    death_fame              BIGINT,
+    kill_fame               BIGINT NOT NULL,
+    death_fame              BIGINT NOT NULL,
     fame_ratio              DOUBLE PRECISION,
 
     -- PvE Fame
-    pve_total               BIGINT,
-    pve_royal               BIGINT,
-    pve_outlands            BIGINT,
-    pve_avalon              BIGINT,
-    pve_hellgate            BIGINT,
-    pve_corrupted           BIGINT,
-    pve_mists               BIGINT,
+    pve_total               BIGINT NOT NULL,
+    pve_royal               BIGINT NOT NULL,
+    pve_outlands            BIGINT NOT NULL,
+    pve_avalon              BIGINT NOT NULL,
+    pve_hellgate            BIGINT NOT NULL,
+    pve_corrupted           BIGINT NOT NULL,
+    pve_mists               BIGINT NOT NULL,
 
     -- Gathering Fame Breakdown
-    gather_fiber_total      BIGINT,
-    gather_fiber_royal      BIGINT,
-    gather_fiber_outlands   BIGINT,
-    gather_fiber_avalon     BIGINT,
+    gather_fiber_total      BIGINT NOT NULL,
+    gather_fiber_royal      BIGINT NOT NULL,
+    gather_fiber_outlands   BIGINT NOT NULL,
+    gather_fiber_avalon     BIGINT NOT NULL,
 
-    gather_hide_total       BIGINT,
-    gather_hide_royal       BIGINT,
-    gather_hide_outlands    BIGINT,
-    gather_hide_avalon      BIGINT,
+    gather_hide_total       BIGINT NOT NULL,
+    gather_hide_royal       BIGINT NOT NULL,
+    gather_hide_outlands    BIGINT NOT NULL,
+    gather_hide_avalon      BIGINT NOT NULL,
 
-    gather_ore_total        BIGINT,
-    gather_ore_royal        BIGINT,
-    gather_ore_outlands     BIGINT,
-    gather_ore_avalon       BIGINT,
+    gather_ore_total        BIGINT NOT NULL,
+    gather_ore_royal        BIGINT NOT NULL,
+    gather_ore_outlands     BIGINT NOT NULL,
+    gather_ore_avalon       BIGINT NOT NULL,
 
-    gather_rock_total       BIGINT,
-    gather_rock_royal       BIGINT,
-    gather_rock_outlands    BIGINT,
-    gather_rock_avalon      BIGINT,
+    gather_rock_total       BIGINT NOT NULL,
+    gather_rock_royal       BIGINT NOT NULL,
+    gather_rock_outlands    BIGINT NOT NULL,
+    gather_rock_avalon      BIGINT NOT NULL,
 
-    gather_wood_total       BIGINT,
-    gather_wood_royal       BIGINT,
-    gather_wood_outlands    BIGINT,
-    gather_wood_avalon      BIGINT,
+    gather_wood_total       BIGINT NOT NULL,
+    gather_wood_royal       BIGINT NOT NULL,
+    gather_wood_outlands    BIGINT NOT NULL,
+    gather_wood_avalon      BIGINT NOT NULL,
 
-    gather_all_total        BIGINT,
-    gather_all_royal        BIGINT,
-    gather_all_outlands     BIGINT,
-    gather_all_avalon       BIGINT,
+    gather_all_total        BIGINT NOT NULL,
+    gather_all_royal        BIGINT NOT NULL,
+    gather_all_outlands     BIGINT NOT NULL,
+    gather_all_avalon       BIGINT NOT NULL,
 
     -- Crafting Fame Breakdown
-    crafting_total          BIGINT,
-    crafting_royal          BIGINT,
-    crafting_outlands       BIGINT,
-    crafting_avalon         BIGINT,
+    crafting_total          BIGINT NOT NULL,
+    crafting_royal          BIGINT NOT NULL,
+    crafting_outlands       BIGINT NOT NULL,
+    crafting_avalon         BIGINT NOT NULL,
 
     -- Misc Lifetime Stats
-    fishing_fame        BIGINT,
-    farming_fame        BIGINT,
-    crystal_league_fame BIGINT,
+    fishing_fame        BIGINT NOT NULL,
+    farming_fame        BIGINT NOT NULL,
+    crystal_league_fame BIGINT NOT NULL,
 
     PRIMARY KEY (region, player_id, ts)
-);
-
-CREATE TABLE metrics_timeseries (
-    metric TEXT NOT NULL,
-    ts TIMESTAMPTZ NOT NULL,
-    value BIGINT NOT NULL,
-    PRIMARY KEY (metric, ts)
 );
 
 SELECT create_hypertable('player_stats_snapshots', 'ts');
@@ -221,31 +246,25 @@ SET (
 
 SELECT add_compression_policy('player_stats_snapshots', INTERVAL '1 day');
 
-SELECT create_hypertable('metrics_timeseries', 'ts');
+-----------------------
+-- metrics
+-----------------------
+CREATE TABLE metrics (
+    metric TEXT NOT NULL,
+    ts TIMESTAMPTZ NOT NULL,
+    value BIGINT NOT NULL,
+    PRIMARY KEY (metric, ts)
+);
 
-ALTER TABLE metrics_timeseries
+SELECT create_hypertable('metrics', 'ts');
+
+ALTER TABLE metrics
 SET (
     timescaledb.compress,
     timescaledb.compress_segmentby = 'metric',
     timescaledb.compress_orderby = 'ts DESC'
 );
 
-SELECT add_compression_policy('metrics_timeseries', INTERVAL '1 day');
+SELECT add_compression_policy('metrics', INTERVAL '1 day');
 
-ALTER TABLE player_state SET (fillfactor = 60);
-
-ALTER TABLE player_poll_state SET (
-    autovacuum_vacuum_scale_factor = 0.0,
-    autovacuum_vacuum_threshold = 100,
-    autovacuum_analyze_scale_factor = 0.0,
-    autovacuum_analyze_threshold = 100,
-    autovacuum_vacuum_cost_limit = 2000,
-    autovacuum_vacuum_cost_delay = 2
-);
-
-CREATE INDEX player_state_priority_poll_idx
-ON player_state (priority, next_poll_at);
-
-CREATE INDEX idx_player_name_lower
-ON player_state (region, lower(name));
 ```

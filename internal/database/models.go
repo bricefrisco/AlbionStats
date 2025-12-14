@@ -155,3 +155,19 @@ type PlayerStatsSnapshot struct {
 func (PlayerStatsSnapshot) TableName() string {
 	return "player_stats_snapshots"
 }
+
+// PlayerPoll represents a player poll record for scheduling and tracking
+type PlayerPoll struct {
+	Region                string     `gorm:"column:region;primaryKey;type:region_enum"`
+	PlayerID              string     `gorm:"column:player_id;primaryKey"`
+	NextPollAt            time.Time  `gorm:"column:next_poll_at;not null"`
+	ErrorCount            int        `gorm:"column:error_count;default:0"`
+	LastEncountered       *time.Time `gorm:"column:last_encountered"`
+	KillboardLastActivity *time.Time `gorm:"column:killboard_last_activity"`
+	OtherLastActivity     *time.Time `gorm:"column:other_last_activity"`
+	LastPollAt            *time.Time `gorm:"column:last_poll_at"`
+}
+
+func (PlayerPoll) TableName() string {
+	return "player_polls"
+}

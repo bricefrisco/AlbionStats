@@ -117,3 +117,42 @@ func UpsertPlayers(ctx context.Context, db *gorm.DB, players map[string]PlayerSt
 		DoUpdates: clause.Assignments(assignments),
 	}).Create(&batch).Error
 }
+
+// UpsertPlayerPolls performs a bulk upsert of player polls.
+// Automatically detects whether this is killboard activity or general player discovery
+// based on which activity timestamp fields are populated.
+func UpsertPlayerPolls(ctx context.Context, db *gorm.DB, polls map[string]PlayerPoll) error {
+	if len(polls) == 0 {
+		return nil
+	}
+
+	batch := make([]PlayerPoll, 0, len(polls))
+	for _, poll := range polls {
+		playerPoll := poll // copy to avoid reference issues
+		batch = append(batch, playerPoll)
+	}
+
+	// Determine if this is killboard activity by checking if any poll has KillboardLastActivity set
+	isKillboard := false
+	for _, poll := range batch {
+		if poll.KillboardLastActivity != nil {
+			isKillboard = true
+			break
+		}
+	}
+
+	assignments := map[string]interface{}{
+		"next_poll_at": gorm.Expr("LEAST(player_polls.last_poll_at + INTERVAL '6 hours', player_polls.next_poll_at)"),
+	}
+
+	if isKillboard {
+		assignments["killboard_last_activity"] = gorm.Expr("excluded.killboard_last_activity")
+	} else {
+		assignments["last_encountered"] = gorm.Expr("excluded.last_encountered")
+	}
+
+	return db.WithContext(ctx).Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "region"}, {Name: "player_id"}},
+		DoUpdates: clause.Assignments(assignments),
+	}).Create(&batch).Error
+}
