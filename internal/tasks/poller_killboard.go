@@ -77,7 +77,7 @@ func (p *KillboardPoller) runBatch(ctx context.Context) {
 		return
 	}
 
-	if err := database.UpsertPlayerPolls(ctx, p.db, playerMap); err != nil {
+	if err := database.UpsertKillboardPlayerPolls(ctx, p.db, playerMap); err != nil {
 		log.Printf("upsert player polls error: %v", err)
 		return
 	}
@@ -100,7 +100,6 @@ func (p *KillboardPoller) collectPlayers(events []api.Event, acc map[string]data
 				PlayerID:              participant.ID,
 				NextPollAt:            now,
 				KillboardLastActivity: &ev.TimeStamp,
-				ErrorCount:            0,
 			}
 			acc[key] = playerPoll
 		}

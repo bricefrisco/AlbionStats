@@ -8,10 +8,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-// UpsertPlayerPolls performs a bulk upsert of player polls.
-// Automatically detects whether this is killboard activity or general player discovery
-// based on which activity timestamp fields are populated.
-func UpsertPlayerPolls(ctx context.Context, db *gorm.DB, polls map[string]PlayerPoll) error {
+func UpsertKillboardPlayerPolls(ctx context.Context, db *gorm.DB, polls map[string]PlayerPoll) error {
 	if len(polls) == 0 {
 		return nil
 	}
@@ -25,13 +22,24 @@ func UpsertPlayerPolls(ctx context.Context, db *gorm.DB, polls map[string]Player
 	assignments := map[string]interface{}{
 		"next_poll_at":            gorm.Expr("LEAST(player_polls.last_poll_at + INTERVAL '6 hours', player_polls.next_poll_at)"),
 		"killboard_last_activity": gorm.Expr("excluded.killboard_last_activity"),
-		"other_last_activity":     gorm.Expr("excluded.other_last_activity"),
 	}
 
 	return db.WithContext(ctx).Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "region"}, {Name: "player_id"}},
 		DoUpdates: clause.Assignments(assignments),
 	}).Create(&batch).Error
+}
+
+func UpsertLastEncounteredPlayerPolls(ctx context.Context, db *gorm.DB, poll PlayerPoll) error {
+	assignments := map[string]interface{}{
+		"next_poll_at":     gorm.Expr("LEAST(player_polls.last_poll_at + INTERVAL '6 hours', player_polls.next_poll_at)"),
+		"last_encountered": gorm.Expr("excluded.last_encountered"),
+	}
+
+	return db.WithContext(ctx).Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "region"}, {Name: "player_id"}},
+		DoUpdates: clause.Assignments(assignments),
+	}).Create(&poll).Error
 }
 
 // BulkUpsertPlayerStatsLatest performs a bulk upsert of player stats latest records.
@@ -70,7 +78,7 @@ func BulkInsertPlayerStatsSnapshots(ctx context.Context, db *gorm.DB, snapshots 
 	return db.WithContext(ctx).Create(&snapshots).Error
 }
 
-// BulkUpsertPlayerPolls performs a bulk upsert of player polls.
+// BulkUpsertPlayerPollsKillboard performs a bulk upsert of player polls.
 // Updates all relevant fields for both successful polls and failures.
 func BulkUpsertPlayerPolls(ctx context.Context, db *gorm.DB, polls []PlayerPoll) error {
 	if len(polls) == 0 {
