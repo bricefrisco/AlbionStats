@@ -1,7 +1,7 @@
 package api
 
 import (
-	"albionstats/internal/models"
+	"albionstats/internal/database"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -32,7 +32,7 @@ func (s *Server) search(c *gin.Context) {
 		return
 	}
 
-	var players []models.PlayerState
+	var players []database.PlayerState
 	err := s.db.Select("player_id", "name", "guild_name", "alliance_name").
 		Where("region = ? AND LOWER(name) LIKE LOWER(?)", server, query+"%").
 		Limit(6).

@@ -12,10 +12,9 @@ import (
 	"net/url"
 	"time"
 
-	"albionstats/internal/models"
+	"albionstats/internal/database"
 
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 type KillboardConfig struct {
@@ -48,7 +47,7 @@ func NewKillboardPoller(db *gorm.DB, cfg KillboardConfig) *KillboardPoller {
 // Run fetches events pages and upserts discovered players into the database.
 func (p *KillboardPoller) Run(ctx context.Context) error {
 	log.Printf("poller: fetch events limit=%d offset=0", p.cfg.PageSize)
-	playerMap := make(map[string]models.PlayerState)
+	playerMap := make(map[string]database.PlayerState)
 	events, err := p.fetchEvents(ctx, p.cfg.PageSize, 0)
 	if err != nil {
 		return fmt.Errorf("fetch events: %w", err)
@@ -65,7 +64,7 @@ func (p *KillboardPoller) Run(ctx context.Context) error {
 		return nil
 	}
 
-	if err := p.upsertPlayers(ctx, playerMap); err != nil {
+	if err := database.UpsertPlayers(ctx, p.db, playerMap); err != nil {
 		return err
 	}
 	log.Printf("poller: upserted players=%d", len(playerMap))
@@ -118,7 +117,7 @@ func killboardRandomGUID() string {
 	return hex.EncodeToString(buf)
 }
 
-func (p *KillboardPoller) collectPlayers(events []event, acc map[string]models.PlayerState) {
+func (p *KillboardPoller) collectPlayers(events []event, acc map[string]database.PlayerState) {
 	now := time.Now().UTC()
 	for _, ev := range events {
 		lastSeen := ev.TimeStamp
@@ -130,7 +129,7 @@ func (p *KillboardPoller) collectPlayers(events []event, acc map[string]models.P
 			if _, exists := acc[key]; exists {
 				return
 			}
-			player := models.PlayerState{
+			player := database.PlayerState{
 				Region:       p.cfg.Region,
 				PlayerID:     participant.ID,
 				Name:         participant.Name,
@@ -156,33 +155,6 @@ func (p *KillboardPoller) collectPlayers(events []event, acc map[string]models.P
 			add(gm)
 		}
 	}
-}
-
-func (p *KillboardPoller) upsertPlayers(ctx context.Context, players map[string]models.PlayerState) error {
-	batch := make([]models.PlayerState, 0, len(players))
-	for _, pl := range players {
-		player := pl // copy to avoid reference issues
-		batch = append(batch, player)
-	}
-
-	condition := "COALESCE(player_state.last_polled, '-infinity') <= NOW() - interval '6 hours'"
-
-	assignments := map[string]interface{}{
-		"name":          gorm.Expr(fmt.Sprintf("CASE WHEN %s THEN excluded.name ELSE player_state.name END", condition)),
-		"guild_id":      gorm.Expr(fmt.Sprintf("CASE WHEN %s THEN excluded.guild_id ELSE player_state.guild_id END", condition)),
-		"guild_name":    gorm.Expr(fmt.Sprintf("CASE WHEN %s THEN excluded.guild_name ELSE player_state.guild_name END", condition)),
-		"alliance_id":   gorm.Expr(fmt.Sprintf("CASE WHEN %s THEN excluded.alliance_id ELSE player_state.alliance_id END", condition)),
-		"alliance_name": gorm.Expr(fmt.Sprintf("CASE WHEN %s THEN excluded.alliance_name ELSE player_state.alliance_name END", condition)),
-		"alliance_tag":  gorm.Expr(fmt.Sprintf("CASE WHEN %s THEN excluded.alliance_tag ELSE player_state.alliance_tag END", condition)),
-		"last_seen":     gorm.Expr(fmt.Sprintf("CASE WHEN %s THEN excluded.last_seen ELSE player_state.last_seen END", condition)),
-		"priority":      gorm.Expr(fmt.Sprintf("CASE WHEN %s THEN 100 ELSE player_state.priority END", condition)),
-		"next_poll_at":  gorm.Expr(fmt.Sprintf("CASE WHEN %s THEN excluded.next_poll_at ELSE player_state.next_poll_at END", condition)),
-	}
-
-	return p.db.WithContext(ctx).Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: "region"}, {Name: "player_id"}},
-		DoUpdates: clause.Assignments(assignments),
-	}).Create(&batch).Error
 }
 
 type event struct {
