@@ -2,11 +2,14 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
+	"albionstats/internal/api"
 	"albionstats/internal/config"
 	"albionstats/internal/tasks"
 
@@ -31,39 +34,39 @@ func main() {
 	defer cancel()
 
 	// Start API server
-	// apiServer := api.New(db, api.Config{
-	// 	Port: cfg.APIPort,
-	// })
+	apiServer := api.New(db, api.Config{
+		Port: cfg.APIPort,
+	})
 
-	// go func() {
-	// 	addr := fmt.Sprintf(":%s", cfg.APIPort)
-	// 	log.Printf("starting API server on %s", addr)
-	// 	if err := apiServer.Run(addr); err != nil {
-	// 		log.Printf("API server error: %v", err)
-	// 	}
-	// }()
+	go func() {
+		addr := fmt.Sprintf(":%s", cfg.APIPort)
+		log.Printf("starting API server on %s", addr)
+		if err := apiServer.Run(addr); err != nil {
+			log.Printf("API server error: %v", err)
+		}
+	}()
 
 	// Start metrics collector
-	// metricsCollector := tasks.NewCollector(db, tasks.CollectorConfig{
-	// 	Interval: 5 * time.Minute,
-	// })
+	metricsCollector := tasks.NewCollector(db, tasks.CollectorConfig{
+		Interval: 5 * time.Minute,
+	})
 
-	// go func() {
-	// 	metricsCollector.Run(ctx)
-	// }()
+	go func() {
+		metricsCollector.Run(ctx)
+	}()
 
 	// Start player poller
-	// playerPoller := tasks.NewPlayerPoller(db, tasks.PlayerPollerConfig{
-	// 	APIBase:     cfg.APIBase,
-	// 	PageSize:    cfg.PlayerBatch,
-	// 	RatePerSec:  cfg.PlayerRate,
-	// 	UserAgent:   cfg.UserAgent,
-	// 	HTTPTimeout: cfg.HTTPTimeout,
-	// })
+	playerPoller := tasks.NewPlayerPoller(db, tasks.PlayerPollerConfig{
+		APIBase:     cfg.APIBase,
+		PageSize:    cfg.PlayerBatch,
+		RatePerSec:  cfg.PlayerRate,
+		UserAgent:   cfg.UserAgent,
+		HTTPTimeout: cfg.HTTPTimeout,
+	})
 
-	// go func() {
-	// 	playerPoller.Run(ctx)
-	// }()
+	go func() {
+		playerPoller.Run(ctx)
+	}()
 
 	// Start killboard poller
 	kbPoller := tasks.NewKillboardPoller(db, tasks.KillboardConfig{

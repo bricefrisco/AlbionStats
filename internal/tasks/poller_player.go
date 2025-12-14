@@ -32,13 +32,12 @@ type PlayerPoller struct {
 }
 
 type processResult struct {
-	playerState database.PlayerState
-	updateState database.PlayerState
+	playerPoll  database.PlayerPoll
+	updatePoll  database.PlayerPoll
+	statsLatest database.PlayerStatsLatest
 	snapshot    database.PlayerStatsSnapshot
 	delete      bool
 	err         error
-	nextPollAt  time.Time
-	priority    int
 }
 
 func (p *PlayerPoller) workerCount(n int) int {
@@ -75,12 +74,12 @@ func NewPlayerPoller(db *gorm.DB, cfg PlayerPollerConfig) *PlayerPoller {
 	}
 }
 
-func (p *PlayerPoller) fetchPlayersToPoll(ctx context.Context) ([]database.PlayerState, error) {
-	var players []database.PlayerState
+func (p *PlayerPoller) fetchPlayersToPoll(ctx context.Context) ([]database.PlayerPoll, error) {
+	var players []database.PlayerPoll
 	now := time.Now().UTC()
 	if err := p.db.WithContext(ctx).
 		Where("next_poll_at <= ?", now).
-		Order("priority ASC, next_poll_at ASC").
+		Order("next_poll_at ASC").
 		Limit(p.cfg.PageSize).
 		Find(&players).Error; err != nil {
 		return nil, fmt.Errorf("query players: %w", err)
@@ -99,12 +98,12 @@ func (p *PlayerPoller) handleIdleState(ctx context.Context) error {
 	}
 }
 
-func (p *PlayerPoller) setupWorkers(ctx context.Context, players []database.PlayerState) (*time.Ticker, chan database.PlayerState, chan processResult, *sync.WaitGroup) {
+func (p *PlayerPoller) setupWorkers(ctx context.Context, players []database.PlayerPoll) (*time.Ticker, chan database.PlayerPoll, chan processResult, *sync.WaitGroup) {
 	rate := time.Second / time.Duration(p.cfg.RatePerSec)
 	ticker := time.NewTicker(rate)
 
 	workerCount := p.workerCount(len(players))
-	jobs := make(chan database.PlayerState)
+	jobs := make(chan database.PlayerPoll)
 	results := make(chan processResult, len(players))
 
 	var wg sync.WaitGroup
@@ -117,7 +116,7 @@ func (p *PlayerPoller) setupWorkers(ctx context.Context, players []database.Play
 		go func() {
 			defer wg.Done()
 			for pl := range jobs {
-				log.Printf("worker fetching player_id=%s name=%s", pl.PlayerID, pl.Name)
+				log.Printf("worker fetching player_id=%s", pl.PlayerID)
 				// shared rate limiter
 				select {
 				case <-ctx.Done():
@@ -146,73 +145,45 @@ func (p *PlayerPoller) setupWorkers(ctx context.Context, players []database.Play
 	return ticker, jobs, results, &wg
 }
 
-func (p *PlayerPoller) processResults(results <-chan processResult) ([]database.PlayerState, []database.PlayerStatsSnapshot, []database.PlayerState, []database.PlayerState) {
-	var updates []database.PlayerState
+func (p *PlayerPoller) processResults(results <-chan processResult) ([]database.PlayerPoll, []database.PlayerStatsLatest, []database.PlayerStatsSnapshot, []database.PlayerPoll, []database.PlayerPoll) {
+	var updatePolls []database.PlayerPoll
+	var statsLatest []database.PlayerStatsLatest
 	var snapshots []database.PlayerStatsSnapshot
-	var deletes []database.PlayerState
-	var failures []database.PlayerState
+	var deletes []database.PlayerPoll
+	var failures []database.PlayerPoll
 
 	for res := range results {
 		if res.err != nil {
-			log.Printf("player=%s err=%v", res.playerState.PlayerID, res.err)
-			nextErr := res.playerState.ErrorCount + 1
+			log.Printf("player=%s err=%v", res.playerPoll.PlayerID, res.err)
+			nextErr := res.playerPoll.ErrorCount + 1
 			backoff := failureBackoff(nextErr)
-			failures = append(failures, database.PlayerState{
-				Region:     res.playerState.Region,
-				PlayerID:   res.playerState.PlayerID,
-				ErrorCount: nextErr,
-				NextPollAt: time.Now().UTC().Add(backoff),
+			failures = append(failures, database.PlayerPoll{
+				Region:                res.playerPoll.Region,
+				PlayerID:              res.playerPoll.PlayerID,
+				NextPollAt:            time.Now().UTC().Add(backoff),
+				ErrorCount:            nextErr,
+				LastEncountered:       res.playerPoll.LastEncountered,
+				KillboardLastActivity: res.playerPoll.KillboardLastActivity,
+				OtherLastActivity:     res.playerPoll.OtherLastActivity,
+				LastPollAt:            res.playerPoll.LastPollAt,
 			})
 			continue
 		}
 		if res.delete {
-			deletes = append(deletes, res.playerState)
+			deletes = append(deletes, res.playerPoll)
 			continue
 		}
-		updates = append(updates, res.updateState)
+		updatePolls = append(updatePolls, res.updatePoll)
+		statsLatest = append(statsLatest, res.statsLatest)
 		snapshots = append(snapshots, res.snapshot)
 	}
 
-	return updates, snapshots, deletes, failures
+	return updatePolls, statsLatest, snapshots, deletes, failures
 }
 
-func (p *PlayerPoller) applyDatabaseChanges(ctx context.Context, updates []database.PlayerState, snapshots []database.PlayerStatsSnapshot, deletes []database.PlayerState, failures []database.PlayerState) {
-	// apply deletes (grouped by region)
-	if len(deletes) > 0 {
-		log.Printf("deleting %d players", len(deletes))
-		regionBuckets := make(map[string][]string)
-		for _, d := range deletes {
-			regionBuckets[d.Region] = append(regionBuckets[d.Region], d.PlayerID)
-		}
-		for region, ids := range regionBuckets {
-			if err := p.db.WithContext(ctx).Delete(&database.PlayerState{}, "region = ? AND player_id IN ?", region, ids).Error; err != nil {
-				log.Printf("delete err region=%s ids=%d: %v", region, len(ids), err)
-			}
-		}
-	}
-
-	// upsert player_state
-	if len(updates) > 0 {
-		log.Printf("upserting %d players", len(updates))
-		if err := database.BulkUpsertStates(ctx, p.db, updates); err != nil {
-			log.Printf("upsert states err: %v", err)
-		}
-	}
-
-	// apply failures (increment error_count, backoff)
-	if len(failures) > 0 {
-		log.Printf("upserting %d errors", len(failures))
-		if err := database.BulkUpsertFailures(ctx, p.db, failures); err != nil {
-			log.Printf("failure upsert err: %v", err)
-		}
-	}
-
-	// insert snapshots
-	if len(snapshots) > 0 {
-		log.Printf("inserting %d snapshots", len(snapshots))
-		if err := p.db.WithContext(ctx).Create(&snapshots).Error; err != nil {
-			log.Printf("insert snapshots err: %v", err)
-		}
+func (p *PlayerPoller) applyDatabaseChanges(ctx context.Context, updatePolls []database.PlayerPoll, statsLatest []database.PlayerStatsLatest, snapshots []database.PlayerStatsSnapshot, deletes []database.PlayerPoll, failures []database.PlayerPoll) {
+	if err := database.ApplyPlayerPollerDatabaseChanges(ctx, p.db, deletes, updatePolls, statsLatest, snapshots, failures); err != nil {
+		log.Printf("database changes error: %v", err)
 	}
 }
 
@@ -249,162 +220,194 @@ func (p *PlayerPoller) runBatch(ctx context.Context) error {
 	wg.Wait()
 	close(results)
 
-	updates, snapshots, deletes, failures := p.processResults(results)
+	updatePolls, statsLatest, snapshots, deletes, failures := p.processResults(results)
 
-	p.applyDatabaseChanges(ctx, updates, snapshots, deletes, failures)
+	p.applyDatabaseChanges(ctx, updatePolls, statsLatest, snapshots, deletes, failures)
 
 	return nil
 }
 
-func (p *PlayerPoller) processPlayer(ctx context.Context, pl database.PlayerState) processResult {
+func (p *PlayerPoller) processPlayer(ctx context.Context, pl database.PlayerPoll) processResult {
 	ts := time.Now().UTC()
 	resp, err := p.apiClient.FetchPlayer(ctx, pl.PlayerID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return processResult{playerState: pl, delete: true}
+			return processResult{playerPoll: pl, delete: true}
 		}
-		return processResult{playerState: pl, err: fmt.Errorf("fetch player %s: %w", pl.PlayerID, err)}
+		return processResult{playerPoll: pl, err: fmt.Errorf("fetch player %s: %w", pl.PlayerID, err)}
 	}
 
 	apiTS := resp.LifetimeStatistics.Timestamp
 	if apiTS == nil {
-		return processResult{playerState: pl, delete: true}
+		return processResult{playerPoll: pl, delete: true}
 	}
-	nextPollAt, priority := scheduleNextPoll(*apiTS, ts)
+	nextPollAt, err := scheduleNextPoll(pl.LastEncountered, pl.KillboardLastActivity, pl.OtherLastActivity, ts)
+	if err != nil {
+		return processResult{playerPoll: pl, err: fmt.Errorf("schedule next poll: %w", err)}
+	}
 
+	// Create stats latest record
+	statsLatest := database.PlayerStatsLatest{
+		Region:                pl.Region,
+		PlayerID:              pl.PlayerID,
+		TS:                    ts,
+		LastEncountered:       pl.LastEncountered,
+		KillboardLastActivity: pl.KillboardLastActivity,
+		OtherLastActivity:     resp.LifetimeStatistics.Timestamp,
+		Name:                  resp.Name,
+		GuildID:               api.NullableString(resp.GuildId),
+		GuildName:             api.NullableString(resp.GuildName),
+		AllianceID:            api.NullableString(resp.AllianceId),
+		AllianceName:          api.NullableString(resp.AllianceName),
+		AllianceTag:           api.NullableString(resp.AllianceTag),
+		KillFame:              resp.KillFame,
+		DeathFame:             resp.DeathFame,
+		FameRatio:             api.NullableFloat64(resp.FameRatio),
+		PveTotal:              resp.LifetimeStatistics.PvE.Total,
+		PveRoyal:              resp.LifetimeStatistics.PvE.Royal,
+		PveOutlands:           resp.LifetimeStatistics.PvE.Outlands,
+		PveAvalon:             resp.LifetimeStatistics.PvE.Avalon,
+		PveHellgate:           resp.LifetimeStatistics.PvE.Hellgate,
+		PveCorrupted:          resp.LifetimeStatistics.PvE.CorruptedDungeon,
+		PveMists:              resp.LifetimeStatistics.PvE.Mists,
+		GatherFiberTotal:      resp.LifetimeStatistics.Gathering.Fiber.Total,
+		GatherFiberRoyal:      resp.LifetimeStatistics.Gathering.Fiber.Royal,
+		GatherFiberOutlands:   resp.LifetimeStatistics.Gathering.Fiber.Outlands,
+		GatherFiberAvalon:     resp.LifetimeStatistics.Gathering.Fiber.Avalon,
+		GatherHideTotal:       resp.LifetimeStatistics.Gathering.Hide.Total,
+		GatherHideRoyal:       resp.LifetimeStatistics.Gathering.Hide.Royal,
+		GatherHideOutlands:    resp.LifetimeStatistics.Gathering.Hide.Outlands,
+		GatherHideAvalon:      resp.LifetimeStatistics.Gathering.Hide.Avalon,
+		GatherOreTotal:        resp.LifetimeStatistics.Gathering.Ore.Total,
+		GatherOreRoyal:        resp.LifetimeStatistics.Gathering.Ore.Royal,
+		GatherOreOutlands:     resp.LifetimeStatistics.Gathering.Ore.Outlands,
+		GatherOreAvalon:       resp.LifetimeStatistics.Gathering.Ore.Avalon,
+		GatherRockTotal:       resp.LifetimeStatistics.Gathering.Rock.Total,
+		GatherRockRoyal:       resp.LifetimeStatistics.Gathering.Rock.Royal,
+		GatherRockOutlands:    resp.LifetimeStatistics.Gathering.Rock.Outlands,
+		GatherRockAvalon:      resp.LifetimeStatistics.Gathering.Rock.Avalon,
+		GatherWoodTotal:       resp.LifetimeStatistics.Gathering.Wood.Total,
+		GatherWoodRoyal:       resp.LifetimeStatistics.Gathering.Wood.Royal,
+		GatherWoodOutlands:    resp.LifetimeStatistics.Gathering.Wood.Outlands,
+		GatherWoodAvalon:      resp.LifetimeStatistics.Gathering.Wood.Avalon,
+		GatherAllTotal:        resp.LifetimeStatistics.Gathering.All.Total,
+		GatherAllRoyal:        resp.LifetimeStatistics.Gathering.All.Royal,
+		GatherAllOutlands:     resp.LifetimeStatistics.Gathering.All.Outlands,
+		GatherAllAvalon:       resp.LifetimeStatistics.Gathering.All.Avalon,
+		CraftingTotal:         resp.LifetimeStatistics.Crafting.Total,
+		CraftingRoyal:         resp.LifetimeStatistics.Crafting.Royal,
+		CraftingOutlands:      resp.LifetimeStatistics.Crafting.Outlands,
+		CraftingAvalon:        resp.LifetimeStatistics.Crafting.Avalon,
+		FishingFame:           resp.FishingFame,
+		FarmingFame:           resp.FarmingFame,
+		CrystalLeagueFame:     resp.CrystalLeague,
+	}
+
+	// Create snapshot record
 	snapshot := database.PlayerStatsSnapshot{
-		Region:              pl.Region,
-		PlayerID:            pl.PlayerID,
-		TS:                  ts,
-		APITimestamp:        apiTS,
-		Name:                resp.Name,
-		GuildID:             api.NullableString(resp.GuildId),
-		GuildName:           api.NullableString(resp.GuildName),
-		AllianceID:          api.NullableString(resp.AllianceId),
-		AllianceName:        api.NullableString(resp.AllianceName),
-		AllianceTag:         api.NullableString(resp.AllianceTag),
-		KillFame:            api.NullableInt64(resp.KillFame),
-		DeathFame:           api.NullableInt64(resp.DeathFame),
-		FameRatio:           api.NullableFloat64(resp.FameRatio),
-		CraftingTotal:       api.NullableInt64(resp.LifetimeStatistics.Crafting.Total),
-		CraftingRoyal:       api.NullableInt64(resp.LifetimeStatistics.Crafting.Royal),
-		CraftingOutlands:    api.NullableInt64(resp.LifetimeStatistics.Crafting.Outlands),
-		CraftingAvalon:      api.NullableInt64(resp.LifetimeStatistics.Crafting.Avalon),
-		FishingFame:         api.NullableInt64(resp.FishingFame),
-		FarmingFame:         api.NullableInt64(resp.FarmingFame),
-		CrystalLeagueFame:   api.NullableInt64(resp.CrystalLeague),
-		PveTotal:            api.NullableInt64(resp.LifetimeStatistics.PvE.Total),
-		PveRoyal:            api.NullableInt64(resp.LifetimeStatistics.PvE.Royal),
-		PveOutlands:         api.NullableInt64(resp.LifetimeStatistics.PvE.Outlands),
-		PveAvalon:           api.NullableInt64(resp.LifetimeStatistics.PvE.Avalon),
-		PveHellgate:         api.NullableInt64(resp.LifetimeStatistics.PvE.Hellgate),
-		PveCorrupted:        api.NullableInt64(resp.LifetimeStatistics.PvE.CorruptedDungeon),
-		PveMists:            api.NullableInt64(resp.LifetimeStatistics.PvE.Mists),
-		GatherFiberTotal:    api.NullableInt64(resp.LifetimeStatistics.Gathering.Fiber.Total),
-		GatherFiberRoyal:    api.NullableInt64(resp.LifetimeStatistics.Gathering.Fiber.Royal),
-		GatherFiberOutlands: api.NullableInt64(resp.LifetimeStatistics.Gathering.Fiber.Outlands),
-		GatherFiberAvalon:   api.NullableInt64(resp.LifetimeStatistics.Gathering.Fiber.Avalon),
-		GatherHideTotal:     api.NullableInt64(resp.LifetimeStatistics.Gathering.Hide.Total),
-		GatherHideRoyal:     api.NullableInt64(resp.LifetimeStatistics.Gathering.Hide.Royal),
-		GatherHideOutlands:  api.NullableInt64(resp.LifetimeStatistics.Gathering.Hide.Outlands),
-		GatherHideAvalon:    api.NullableInt64(resp.LifetimeStatistics.Gathering.Hide.Avalon),
-		GatherOreTotal:      api.NullableInt64(resp.LifetimeStatistics.Gathering.Ore.Total),
-		GatherOreRoyal:      api.NullableInt64(resp.LifetimeStatistics.Gathering.Ore.Royal),
-		GatherOreOutlands:   api.NullableInt64(resp.LifetimeStatistics.Gathering.Ore.Outlands),
-		GatherOreAvalon:     api.NullableInt64(resp.LifetimeStatistics.Gathering.Ore.Avalon),
-		GatherRockTotal:     api.NullableInt64(resp.LifetimeStatistics.Gathering.Rock.Total),
-		GatherRockRoyal:     api.NullableInt64(resp.LifetimeStatistics.Gathering.Rock.Royal),
-		GatherRockOutlands:  api.NullableInt64(resp.LifetimeStatistics.Gathering.Rock.Outlands),
-		GatherRockAvalon:    api.NullableInt64(resp.LifetimeStatistics.Gathering.Rock.Avalon),
-		GatherWoodTotal:     api.NullableInt64(resp.LifetimeStatistics.Gathering.Wood.Total),
-		GatherWoodRoyal:     api.NullableInt64(resp.LifetimeStatistics.Gathering.Wood.Royal),
-		GatherWoodOutlands:  api.NullableInt64(resp.LifetimeStatistics.Gathering.Wood.Outlands),
-		GatherWoodAvalon:    api.NullableInt64(resp.LifetimeStatistics.Gathering.Wood.Avalon),
-		GatherAllTotal:      api.NullableInt64(resp.LifetimeStatistics.Gathering.All.Total),
-		GatherAllRoyal:      api.NullableInt64(resp.LifetimeStatistics.Gathering.All.Royal),
-		GatherAllOutlands:   api.NullableInt64(resp.LifetimeStatistics.Gathering.All.Outlands),
-		GatherAllAvalon:     api.NullableInt64(resp.LifetimeStatistics.Gathering.All.Avalon),
+		Region:                pl.Region,
+		PlayerID:              pl.PlayerID,
+		TS:                    ts,
+		LastEncountered:       pl.LastEncountered,
+		KillboardLastActivity: pl.KillboardLastActivity,
+		OtherLastActivity:     resp.LifetimeStatistics.Timestamp,
+		Name:                  resp.Name,
+		GuildID:               api.NullableString(resp.GuildId),
+		GuildName:             api.NullableString(resp.GuildName),
+		AllianceID:            api.NullableString(resp.AllianceId),
+		AllianceName:          api.NullableString(resp.AllianceName),
+		AllianceTag:           api.NullableString(resp.AllianceTag),
+		KillFame:              resp.KillFame,
+		DeathFame:             resp.DeathFame,
+		FameRatio:             api.NullableFloat64(resp.FameRatio),
+		PveTotal:              resp.LifetimeStatistics.PvE.Total,
+		PveRoyal:              resp.LifetimeStatistics.PvE.Royal,
+		PveOutlands:           resp.LifetimeStatistics.PvE.Outlands,
+		PveAvalon:             resp.LifetimeStatistics.PvE.Avalon,
+		PveHellgate:           resp.LifetimeStatistics.PvE.Hellgate,
+		PveCorrupted:          resp.LifetimeStatistics.PvE.CorruptedDungeon,
+		PveMists:              resp.LifetimeStatistics.PvE.Mists,
+		GatherFiberTotal:      resp.LifetimeStatistics.Gathering.Fiber.Total,
+		GatherFiberRoyal:      resp.LifetimeStatistics.Gathering.Fiber.Royal,
+		GatherFiberOutlands:   resp.LifetimeStatistics.Gathering.Fiber.Outlands,
+		GatherFiberAvalon:     resp.LifetimeStatistics.Gathering.Fiber.Avalon,
+		GatherHideTotal:       resp.LifetimeStatistics.Gathering.Hide.Total,
+		GatherHideRoyal:       resp.LifetimeStatistics.Gathering.Hide.Royal,
+		GatherHideOutlands:    resp.LifetimeStatistics.Gathering.Hide.Outlands,
+		GatherHideAvalon:      resp.LifetimeStatistics.Gathering.Hide.Avalon,
+		GatherOreTotal:        resp.LifetimeStatistics.Gathering.Ore.Total,
+		GatherOreRoyal:        resp.LifetimeStatistics.Gathering.Ore.Royal,
+		GatherOreOutlands:     resp.LifetimeStatistics.Gathering.Ore.Outlands,
+		GatherOreAvalon:       resp.LifetimeStatistics.Gathering.Ore.Avalon,
+		GatherRockTotal:       resp.LifetimeStatistics.Gathering.Rock.Total,
+		GatherRockRoyal:       resp.LifetimeStatistics.Gathering.Rock.Royal,
+		GatherRockOutlands:    resp.LifetimeStatistics.Gathering.Rock.Outlands,
+		GatherRockAvalon:      resp.LifetimeStatistics.Gathering.Rock.Avalon,
+		GatherWoodTotal:       resp.LifetimeStatistics.Gathering.Wood.Total,
+		GatherWoodRoyal:       resp.LifetimeStatistics.Gathering.Wood.Royal,
+		GatherWoodOutlands:    resp.LifetimeStatistics.Gathering.Wood.Outlands,
+		GatherWoodAvalon:      resp.LifetimeStatistics.Gathering.Wood.Avalon,
+		GatherAllTotal:        resp.LifetimeStatistics.Gathering.All.Total,
+		GatherAllRoyal:        resp.LifetimeStatistics.Gathering.All.Royal,
+		GatherAllOutlands:     resp.LifetimeStatistics.Gathering.All.Outlands,
+		GatherAllAvalon:       resp.LifetimeStatistics.Gathering.All.Avalon,
+		CraftingTotal:         resp.LifetimeStatistics.Crafting.Total,
+		CraftingRoyal:         resp.LifetimeStatistics.Crafting.Royal,
+		CraftingOutlands:      resp.LifetimeStatistics.Crafting.Outlands,
+		CraftingAvalon:        resp.LifetimeStatistics.Crafting.Avalon,
+		FishingFame:           resp.FishingFame,
+		FarmingFame:           resp.FarmingFame,
+		CrystalLeagueFame:     resp.CrystalLeague,
 	}
 
-	// Update player_state identity and activity tracking
-	update := database.PlayerState{
-		Region:              pl.Region,
-		PlayerID:            pl.PlayerID,
-		Name:                resp.Name,
-		GuildID:             api.NullableString(resp.GuildId),
-		GuildName:           api.NullableString(resp.GuildName),
-		AllianceID:          api.NullableString(resp.AllianceId),
-		AllianceName:        api.NullableString(resp.AllianceName),
-		AllianceTag:         api.NullableString(resp.AllianceTag),
-		LastPolled:          &ts,
-		LastSeen:            apiTS,
-		NextPollAt:          nextPollAt,
-		Priority:            priority,
-		ErrorCount:          0,
-		LastError:           nil,
-		KillFame:            api.NullableInt64(resp.KillFame),
-		DeathFame:           api.NullableInt64(resp.DeathFame),
-		FameRatio:           api.NullableFloat64(resp.FameRatio),
-		PveTotal:            api.NullableInt64(resp.LifetimeStatistics.PvE.Total),
-		PveRoyal:            api.NullableInt64(resp.LifetimeStatistics.PvE.Royal),
-		PveOutlands:         api.NullableInt64(resp.LifetimeStatistics.PvE.Outlands),
-		PveAvalon:           api.NullableInt64(resp.LifetimeStatistics.PvE.Avalon),
-		PveHellgate:         api.NullableInt64(resp.LifetimeStatistics.PvE.Hellgate),
-		PveCorrupted:        api.NullableInt64(resp.LifetimeStatistics.PvE.CorruptedDungeon),
-		PveMists:            api.NullableInt64(resp.LifetimeStatistics.PvE.Mists),
-		GatherFiberTotal:    api.NullableInt64(resp.LifetimeStatistics.Gathering.Fiber.Total),
-		GatherFiberRoyal:    api.NullableInt64(resp.LifetimeStatistics.Gathering.Fiber.Royal),
-		GatherFiberOutlands: api.NullableInt64(resp.LifetimeStatistics.Gathering.Fiber.Outlands),
-		GatherFiberAvalon:   api.NullableInt64(resp.LifetimeStatistics.Gathering.Fiber.Avalon),
-		GatherHideTotal:     api.NullableInt64(resp.LifetimeStatistics.Gathering.Hide.Total),
-		GatherHideRoyal:     api.NullableInt64(resp.LifetimeStatistics.Gathering.Hide.Royal),
-		GatherHideOutlands:  api.NullableInt64(resp.LifetimeStatistics.Gathering.Hide.Outlands),
-		GatherHideAvalon:    api.NullableInt64(resp.LifetimeStatistics.Gathering.Hide.Avalon),
-		GatherOreTotal:      api.NullableInt64(resp.LifetimeStatistics.Gathering.Ore.Total),
-		GatherOreRoyal:      api.NullableInt64(resp.LifetimeStatistics.Gathering.Ore.Royal),
-		GatherOreOutlands:   api.NullableInt64(resp.LifetimeStatistics.Gathering.Ore.Outlands),
-		GatherOreAvalon:     api.NullableInt64(resp.LifetimeStatistics.Gathering.Ore.Avalon),
-		GatherRockTotal:     api.NullableInt64(resp.LifetimeStatistics.Gathering.Rock.Total),
-		GatherRockRoyal:     api.NullableInt64(resp.LifetimeStatistics.Gathering.Rock.Royal),
-		GatherRockOutlands:  api.NullableInt64(resp.LifetimeStatistics.Gathering.Rock.Outlands),
-		GatherRockAvalon:    api.NullableInt64(resp.LifetimeStatistics.Gathering.Rock.Avalon),
-		GatherWoodTotal:     api.NullableInt64(resp.LifetimeStatistics.Gathering.Wood.Total),
-		GatherWoodRoyal:     api.NullableInt64(resp.LifetimeStatistics.Gathering.Wood.Royal),
-		GatherWoodOutlands:  api.NullableInt64(resp.LifetimeStatistics.Gathering.Wood.Outlands),
-		GatherWoodAvalon:    api.NullableInt64(resp.LifetimeStatistics.Gathering.Wood.Avalon),
-		GatherAllTotal:      api.NullableInt64(resp.LifetimeStatistics.Gathering.All.Total),
-		GatherAllRoyal:      api.NullableInt64(resp.LifetimeStatistics.Gathering.All.Royal),
-		GatherAllOutlands:   api.NullableInt64(resp.LifetimeStatistics.Gathering.All.Outlands),
-		GatherAllAvalon:     api.NullableInt64(resp.LifetimeStatistics.Gathering.All.Avalon),
-		CraftingTotal:       api.NullableInt64(resp.LifetimeStatistics.Crafting.Total),
-		CraftingRoyal:       api.NullableInt64(resp.LifetimeStatistics.Crafting.Royal),
-		CraftingOutlands:    api.NullableInt64(resp.LifetimeStatistics.Crafting.Outlands),
-		CraftingAvalon:      api.NullableInt64(resp.LifetimeStatistics.Crafting.Avalon),
-		FishingFame:         api.NullableInt64(resp.FishingFame),
-		FarmingFame:         api.NullableInt64(resp.FarmingFame),
-		CrystalLeagueFame:   api.NullableInt64(resp.CrystalLeague),
+	// Update player poll record
+	updatePoll := database.PlayerPoll{
+		Region:                pl.Region,
+		PlayerID:              pl.PlayerID,
+		LastPollAt:            &ts,
+		NextPollAt:            nextPollAt,
+		ErrorCount:            0,
+		OtherLastActivity:     resp.LifetimeStatistics.Timestamp,
+		LastEncountered:       pl.LastEncountered,
+		KillboardLastActivity: pl.KillboardLastActivity,
 	}
 
 	return processResult{
-		playerState: pl,
-		updateState: update,
+		playerPoll:  pl,
+		updatePoll:  updatePoll,
+		statsLatest: statsLatest,
 		snapshot:    snapshot,
-		priority:    priority,
-		nextPollAt:  nextPollAt,
 	}
 }
 
-func scheduleNextPoll(apiTS, now time.Time) (time.Time, int) {
-	staleness := now.Sub(apiTS)
+func scheduleNextPoll(lastEncountered, killboardLastActivity, otherLastActivity *time.Time, now time.Time) (time.Time, error) {
+	// Find the most recent activity timestamp among the three
+	var mostRecent *time.Time
+	if lastEncountered != nil {
+		mostRecent = lastEncountered
+	}
+	if killboardLastActivity != nil && (mostRecent == nil || killboardLastActivity.After(*mostRecent)) {
+		mostRecent = killboardLastActivity
+	}
+	if otherLastActivity != nil && (mostRecent == nil || otherLastActivity.After(*mostRecent)) {
+		mostRecent = otherLastActivity
+	}
+
+	// If no activity timestamps are available, this should never happen
+	if mostRecent == nil {
+		return time.Time{}, fmt.Errorf("no activity timestamps available for player")
+	}
+
+	staleness := now.Sub(*mostRecent)
 	switch {
 	case staleness <= 24*time.Hour:
-		return now.Add(6 * time.Hour), 200
+		return now.Add(6 * time.Hour), nil
 	case staleness <= 7*24*time.Hour:
-		return now.Add(24 * time.Hour), 300
+		return now.Add(24 * time.Hour), nil
 	case staleness <= 30*24*time.Hour:
-		return now.Add(48 * time.Hour), 400
+		return now.Add(48 * time.Hour), nil
 	default:
-		return now.Add(24 * 30 * time.Hour), 500
+		return now.Add(24 * 30 * time.Hour), nil
 	}
 }
 

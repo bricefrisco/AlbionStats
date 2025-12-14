@@ -32,7 +32,7 @@ func (s *Server) search(c *gin.Context) {
 		return
 	}
 
-	var players []database.PlayerState
+	var players []database.PlayerStatsLatest
 	err := s.db.Select("player_id", "name", "guild_name", "alliance_name").
 		Where("region = ? AND LOWER(name) LIKE LOWER(?)", server, query+"%").
 		Limit(6).

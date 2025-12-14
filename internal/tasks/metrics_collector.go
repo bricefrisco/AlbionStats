@@ -49,9 +49,9 @@ func (c *Collector) collect(ctx context.Context) {
 
 	// Execute the metrics insertion query
 	err := c.db.WithContext(ctx).Exec(`
-		INSERT INTO metrics_timeseries (metric, ts, value)
+		INSERT INTO metrics (metric, ts, value)
 		VALUES
-			('players_total', now(), (SELECT COUNT(*) FROM player_state)),
+			('players_total', now(), (SELECT COUNT(*) FROM player_stats_latest)),
 			('snapshots_estimated', now(),
 				(SELECT approximate_row_count('player_stats_snapshots')))
 	`).Error
