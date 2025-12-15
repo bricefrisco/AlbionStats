@@ -70,7 +70,7 @@ CREATE TABLE player_polls (
     )
 );
 
-CREATE INDEX player_polls_poll_idx ON player_polls(next_poll_at DESC);
+CREATE INDEX player_polls_poll_idx ON player_polls(region, next_poll_at DESC);
 
 -----------------------
 -- player_stats_latest

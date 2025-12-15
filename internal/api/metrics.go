@@ -31,7 +31,7 @@ func (s *Server) metrics(c *gin.Context) {
 			SELECT
 				time_bucket('1 hour', ts) AS timestamp,
 				max(value) AS value
-			FROM metrics_timeseries
+			FROM metrics
 			WHERE metric = $1 AND ts >= NOW() - INTERVAL '1 week'
 			GROUP BY 1
 			ORDER BY 1`
@@ -42,7 +42,7 @@ func (s *Server) metrics(c *gin.Context) {
 			SELECT
 				time_bucket('1 day', ts) AS timestamp,
 				max(value) AS value
-			FROM metrics_timeseries
+			FROM metrics
 			WHERE metric = $1 AND ts >= NOW() - INTERVAL '1 month'
 			GROUP BY 1
 			ORDER BY 1`
@@ -53,7 +53,7 @@ func (s *Server) metrics(c *gin.Context) {
 			SELECT
 				time_bucket('1 week', ts) AS timestamp,
 				max(value) AS value
-			FROM metrics_timeseries
+			FROM metrics
 			WHERE metric = $1 AND ts >= NOW() - INTERVAL '1 year'
 			GROUP BY 1
 			ORDER BY 1`
@@ -64,7 +64,7 @@ func (s *Server) metrics(c *gin.Context) {
 			SELECT
 				time_bucket('1 month', ts) AS timestamp,
 				max(value) AS value
-			FROM metrics_timeseries
+			FROM metrics
 			WHERE metric = $1
 			GROUP BY 1
 			ORDER BY 1`
