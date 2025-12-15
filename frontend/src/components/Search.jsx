@@ -19,7 +19,7 @@ export default function Search() {
   };
 
   React.useEffect(() => {
-    if (!searchValue.trim()) {
+    if (!searchValue.trim() || searchValue.trim().length < 3) {
       setSearchResults([]);
       setIsLoading(false);
       return undefined;
@@ -63,7 +63,7 @@ export default function Search() {
     status = `No players found for "${searchValue}"`;
   }
 
-  const shouldRenderPopup = searchValue.trim() !== '';
+  const shouldRenderPopup = searchValue.trim().length >= 3;
 
   return (
     <Autocomplete.Root
