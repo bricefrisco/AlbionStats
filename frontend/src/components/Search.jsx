@@ -1,7 +1,9 @@
 import * as React from 'react';
 import { Autocomplete } from '@base-ui/react/autocomplete';
+import { useRegion } from './RegionContext';
 
 export default function Search() {
+  const { region } = useRegion();
   const [searchValue, setSearchValue] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(false);
   const [searchResults, setSearchResults] = React.useState([]);
@@ -29,7 +31,7 @@ export default function Search() {
     async function fetchPlayers() {
       try {
         const response = await fetch(
-          `https://api.bricefrisco.com/albionstats/v1/search/${encodeURIComponent(searchValue)}`
+          `https://api.bricefrisco.com/albionstats/v1/search/${region}/${encodeURIComponent(searchValue)}`
         );
         if (!response.ok) {
           throw new Error('Failed to fetch players');
@@ -50,7 +52,7 @@ export default function Search() {
     return () => {
       clearTimeout(timeoutId);
     };
-  }, [searchValue]);
+  }, [searchValue, region]);
 
   let status = `${searchResults.length} result${searchResults.length === 1 ? '' : 's'} found`;
   if (isLoading) {

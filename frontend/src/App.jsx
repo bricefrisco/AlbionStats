@@ -1,9 +1,11 @@
 import Page from './components/Page';
 import PlayersTracked from './components/PlayersTracked';
 import DataPoints from './components/DataPoints';
+import { RegionProvider } from './components/RegionContext';
 
 const App = () => {
   return (
+    <RegionProvider>
     <Page
       title="Albion Online Player Statistics"
       description="Search Albion Online players and view their PvP, PvE, and gathering progression data."
@@ -49,6 +51,7 @@ const App = () => {
         </div>
       </div>
     </Page>
+    </RegionProvider>
   );
 };
 
