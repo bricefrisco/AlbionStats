@@ -52,8 +52,7 @@ func (c *Collector) collect(ctx context.Context) {
 		INSERT INTO metrics (metric, ts, value)
 		VALUES
 			('players_total', now(), (SELECT COUNT(*) FROM player_stats_latest)),
-			('snapshots_estimated', now(),
-				(SELECT approximate_row_count('player_stats_snapshots')))
+			('snapshots', now(), (SELECT COUNT(*) FROM 'player_stats_snapshots'))
 	`).Error
 
 	if err != nil {
