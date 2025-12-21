@@ -20,6 +20,58 @@ import {
 import { localPoint } from '@visx/event';
 import { LinearGradient } from '@visx/gradient';
 
+const formatYAxisValue = (value) => {
+  if (value === undefined || value === null) return '';
+
+  const absValue = Math.abs(value);
+  if (absValue < 1000) return `${value}`;
+
+  const suffixes = [
+    { threshold: 1_000_000_000, symbol: 'b' },
+    { threshold: 1_000_000, symbol: 'm' },
+    { threshold: 1_000, symbol: 'k' },
+  ];
+
+  for (const { threshold, symbol } of suffixes) {
+    if (absValue >= threshold) {
+      const scaled = value / threshold;
+      const absScaled = Math.abs(scaled);
+      let formattedScaled;
+
+      if (absScaled >= 100) {
+        formattedScaled = Math.round(scaled);
+      } else if (absScaled >= 10) {
+        formattedScaled = Math.round(scaled * 10) / 10;
+      } else {
+        formattedScaled = Math.round(scaled * 100) / 100;
+      }
+
+      const normalized = Number(formattedScaled).toString();
+      return `${normalized}${symbol}`;
+    }
+  }
+
+  return `${value}`;
+};
+
+const formatTooltipValue = (value) => {
+  if (value === undefined || value === null) return '';
+
+  const numericValue =
+    typeof value === 'number' ? value : Number(value);
+
+  if (!Number.isFinite(numericValue)) {
+    return `${value}`;
+  }
+
+  const formatter = new Intl.NumberFormat(undefined, {
+    minimumFractionDigits: Number.isInteger(numericValue) ? 0 : 2,
+    maximumFractionDigits: 2,
+  });
+
+  return formatter.format(numericValue);
+};
+
 const TimeSeriesChart = withTooltip(
   ({
     data,
@@ -262,7 +314,7 @@ const TimeSeriesChart = withTooltip(
               dx: '-0.25em',
               dy: '0.25em',
             }}
-            tickFormat={yFormatter}
+          tickFormat={yFormatter ?? formatYAxisValue}
           />
 
           <AxisBottom
@@ -322,9 +374,12 @@ const TimeSeriesChart = withTooltip(
               left={tooltipLeft + 12}
               style={tooltipStyles}
             >
-              {yFormatter
-                ? yFormatter(yAccessor(tooltipData))
-                : yAccessor(tooltipData)}
+              {(() => {
+                const yValue = yAccessor(tooltipData);
+                return yFormatter
+                  ? yFormatter(yValue)
+                  : formatTooltipValue(yValue);
+              })()}
             </TooltipWithBounds>
             <Tooltip
               top={containerHeight - margins.bottom + 16}

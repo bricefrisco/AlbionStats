@@ -112,11 +112,6 @@ const PlayersTrackedChart = ({
       xAccessor={getDate}
       yAccessor={getPlayerCount}
       xFormatter={formatDate}
-      yFormatter={(value) => {
-        const numValue = Number(value);
-        if (isNaN(numValue)) return String(value || '');
-        return numValue.toLocaleString();
-      }}
       showTooltip={showTooltip}
       hideTooltip={hideTooltip}
       tooltipData={tooltipData}

@@ -122,11 +122,6 @@ const DataPointsChart = ({
       xAccessor={getDate}
       yAccessor={getDataPoints}
       xFormatter={formatDate}
-      yFormatter={(value) => {
-        const numValue = Number(value);
-        if (isNaN(numValue)) return String(value || '');
-        return numValue.toLocaleString();
-      }}
       colors={greenColors}
       showTooltip={showTooltip}
       hideTooltip={hideTooltip}
