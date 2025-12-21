@@ -84,13 +84,14 @@ const TimeSeriesChart = withTooltip(
       const minVal = Math.min(...data.map(yAccessor));
       const maxVal = Math.max(...data.map(yAccessor));
       const difference = maxVal - minVal;
-      const yAxisRange = difference * 2;
+      const padding = difference * 0.25;
 
-      const center = (minVal + maxVal) / 2;
+      const domainMin = Math.max(0, minVal - padding);
+      const domainMax = maxVal + padding;
 
       return scaleLinear({
         range: [containerHeight - margins.bottom, margins.top],
-        domain: [center - yAxisRange / 2, center + yAxisRange / 2],
+        domain: [domainMin, domainMax],
         nice: true,
       });
     }, [containerHeight, margins.top, margins.bottom, data, yAccessor]);
