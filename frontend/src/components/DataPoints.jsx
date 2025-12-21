@@ -5,7 +5,7 @@ import TimeRangeToggle from './TimeRangeToggle';
 
 // API endpoint configuration
 const API_BASE_URL = 'https://api.bricefrisco.com';
-const METRICS_ENDPOINT = '/albionstats/v1/metrics/snapshots_estimated';
+const METRICS_ENDPOINT = '/albionstats/v1/metrics/snapshots';
 
 // Simple date formatter
 const formatDate = (date) => {
