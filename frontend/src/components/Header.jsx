@@ -1,6 +1,7 @@
+import { Link } from 'react-router-dom';
 import Search from './Search';
 import Select from './Select';
-import { useRegion } from './RegionContext';
+import { useRegion } from './useRegion';
 
 const regions = [
   { label: 'Americas', value: 'americas' },
@@ -14,7 +15,12 @@ const Header = () => {
   return (
     <header className="sticky top-0 z-10 border-b border-white/15 bg-black/80 backdrop-blur-sm">
       <div className="max-w-7xl mx-auto border-l border-r border-white/15 grid grid-cols-3 items-center">
-        <div className="py-3 px-5 text-lg font-bold">AlbionStats</div>
+        <Link
+          to="/"
+          className="py-3 px-5 text-lg font-bold hover:underline"
+        >
+          AlbionStats
+        </Link>
         <div className="flex justify-center">
           <Search />
         </div>

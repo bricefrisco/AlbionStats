@@ -1,10 +1,31 @@
 import * as React from 'react';
 import { Autocomplete } from '@base-ui/react/autocomplete';
-import { useRegion } from './RegionContext';
+import { useNavigate } from 'react-router-dom';
+import { useRegion } from './useRegion';
+
+const memoizedStorage = {
+  get: () => {
+    try {
+      if (typeof window === 'undefined') return '';
+      return window.sessionStorage.getItem('searchValue') ?? '';
+    } catch {
+      return '';
+    }
+  },
+  set: (value) => {
+    try {
+      if (typeof window === 'undefined') return;
+      window.sessionStorage.setItem('searchValue', value);
+    } catch {
+      /* ignore */
+    }
+  },
+};
 
 export default function Search() {
+  const navigate = useNavigate();
   const { region } = useRegion();
-  const [searchValue, setSearchValue] = React.useState('');
+  const [searchValue, setSearchValueState] = React.useState(memoizedStorage.get);
   const [isLoading, setIsLoading] = React.useState(false);
   const [searchResults, setSearchResults] = React.useState([]);
   const [error, setError] = React.useState(null);
@@ -65,6 +86,16 @@ export default function Search() {
 
   const shouldRenderPopup = searchValue.trim().length >= 3;
 
+  const setSearchValue = (value) => {
+    setSearchValueState(value);
+    memoizedStorage.set(value);
+  };
+
+  const handleSelect = (player) => {
+    setSearchValue(player.name);
+    navigate(`/players/${region}/${encodeURIComponent(player.name)}`);
+  };
+
   return (
     <Autocomplete.Root
       items={searchResults}
@@ -99,24 +130,30 @@ export default function Search() {
               <Autocomplete.List className="max-h-64 overflow-auto">
                 {(player) => (
                   <Autocomplete.Item
+                    asChild
                     key={player.player_id}
-                    className="px-3 py-2 hover:bg-white/10 cursor-pointer text-white"
                     value={player}
                   >
-                    <div className="flex flex-col">
-                      <div className="font-medium">{player.name}</div>
-                      {formatGuildAlliance(
-                        player.guild_name,
-                        player.alliance_name
-                      ) && (
-                        <div className="text-xs text-gray-400">
-                          {formatGuildAlliance(
-                            player.guild_name,
-                            player.alliance_name
-                          )}
-                        </div>
-                      )}
-                    </div>
+                    <button
+                      type="button"
+                      className="w-full text-left px-3 py-2 hover:bg-white/10 cursor-pointer text-white"
+                      onClick={() => handleSelect(player)}
+                    >
+                      <div className="flex flex-col">
+                        <div className="font-medium">{player.name}</div>
+                        {formatGuildAlliance(
+                          player.guild_name,
+                          player.alliance_name
+                        ) && (
+                          <div className="text-xs text-gray-400">
+                            {formatGuildAlliance(
+                              player.guild_name,
+                              player.alliance_name
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </button>
                   </Autocomplete.Item>
                 )}
               </Autocomplete.List>
