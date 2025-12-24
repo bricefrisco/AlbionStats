@@ -98,6 +98,7 @@ export default function Search() {
 
   return (
     <Autocomplete.Root
+      openOnInputClick={shouldRenderPopup}
       items={searchResults}
       value={searchValue}
       onValueChange={setSearchValue}

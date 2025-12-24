@@ -33,6 +33,7 @@ func (s *Server) setupRoutes() {
 	v1 := s.router.Group("/albionstats/v1")
 	v1.GET("/search/:server/:query", s.search)
 	v1.GET("/metrics/:metricId", s.metrics)
+	v1.GET("/players/:server/:name", s.player)
 }
 
 func (s *Server) Run(addr string) error {
