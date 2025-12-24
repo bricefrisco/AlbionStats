@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { useParams } from 'react-router-dom';
 import Page from '../components/Page';
+import PlayerDetail from '../components/PlayerDetail';
 import { RegionProvider } from '../components/RegionContext';
 
 const Player = () => {
@@ -72,8 +73,7 @@ const Player = () => {
         title={`Player ${decodedName ?? 'Profile'}`}
         description={`${detailMessage}.`}
       >
-        <div className="rounded-lg border border-white/10 bg-white/5 px-6 pt-2 pb-4">
-          <div className="mt-2 space-y-3">
+        <div className="mt-2 space-y-3">
             {isLoadingStats && (
               <p className="text-sm text-gray-400">Loading player stats…</p>
             )}
@@ -81,49 +81,91 @@ const Player = () => {
               <p className="text-sm text-red-400">{statsError}</p>
             )}
             {playerStats && !statsError && (
-              <div className="flex flex-col gap-6 md:flex-row">
-                <div className="flex-1 space-y-3">
-                  <div>
-                    <p className="text-xs uppercase text-gray-400">Kill Fame</p>
-                    <p className="text-white">
-                      {formatNumber(playerStats.KillFame)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs uppercase text-gray-400">Death Fame</p>
-                    <p className="text-white">
-                      {formatNumber(playerStats.DeathFame)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs uppercase text-gray-400">Fame Ratio</p>
-                    <p className="text-white">
-                      {playerStats.FameRatio != null
-                        ? Number(playerStats.FameRatio).toFixed(2)
-                        : 'N/A'}
-                    </p>
-                  </div>
-                </div>
+              <div className="columns-1 md:columns-2">
                 {(playerStats.GuildName || playerStats.AllianceName) && (
-                  <div className="flex-1 space-y-3">
-                    {playerStats.GuildName && (
-                      <div>
-                        <p className="text-xs uppercase text-gray-400">Guild</p>
-                        <p className="text-white">{playerStats.GuildName}</p>
-                      </div>
-                    )}
-                    {playerStats.AllianceName && (
-                      <div>
-                        <p className="text-xs uppercase text-gray-400">Alliance</p>
-                        <p className="text-white">{playerStats.AllianceName}</p>
-                      </div>
-                    )}
-                  </div>
+                  <PlayerDetail title="Guild">
+                    <div className="grid grid-cols-2 gap-3 items-start">
+                      {playerStats.GuildName && (
+                        <PlayerDetail.Item label="Guild">
+                          {playerStats.GuildName}
+                        </PlayerDetail.Item>
+                      )}
+                      {playerStats.AllianceName && (
+                        <PlayerDetail.Item label="Alliance">
+                          {playerStats.AllianceName}
+                        </PlayerDetail.Item>
+                      )}
+                    </div>
+                  </PlayerDetail>
                 )}
+                <PlayerDetail title="Crafting">
+                  <PlayerDetail.Item label="Crafting Fame">
+                    {formatNumber(playerStats.CraftingTotal)}
+                  </PlayerDetail.Item>
+                </PlayerDetail>
+                <PlayerDetail title="Player Versus Environment">
+                  <PlayerDetail.Item label="Total">
+                    {formatNumber(playerStats.PveTotal)}
+                  </PlayerDetail.Item>
+                  <div className="grid grid-cols-2 gap-3 items-start">
+                    <PlayerDetail.Item label="Royal Continent">
+                      {formatNumber(playerStats.PveRoyal)}
+                    </PlayerDetail.Item>
+                    <PlayerDetail.Item label="Outlands">
+                      {formatNumber(playerStats.PveOutlands)}
+                    </PlayerDetail.Item>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 items-start">
+                    <PlayerDetail.Item label="Avalonian Roads">
+                      {formatNumber(playerStats.PveAvalon)}
+                    </PlayerDetail.Item>
+                    <PlayerDetail.Item label="Mists">
+                      {formatNumber(playerStats.PveMists)}
+                    </PlayerDetail.Item>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 items-start">
+                    <PlayerDetail.Item label="Hellgates">
+                      {formatNumber(playerStats.PveHellgate)}
+                    </PlayerDetail.Item>
+                    <PlayerDetail.Item label="Corrupted Dungeons">
+                      {formatNumber(playerStats.PveCorrupted)}
+                    </PlayerDetail.Item>
+                  </div>
+                </PlayerDetail>
+                <PlayerDetail title="Player Versus Player">
+                  <div className="grid grid-cols-2 gap-3 items-start">
+                    <PlayerDetail.Item label="Kill Fame">
+                      {formatNumber(playerStats.KillFame)}
+                    </PlayerDetail.Item>
+                    <PlayerDetail.Item label="Death Fame">
+                      {formatNumber(playerStats.DeathFame)}
+                    </PlayerDetail.Item>
+                  </div>
+                  <PlayerDetail.Item label="Fame Ratio">
+                    {playerStats.FameRatio != null
+                      ? Number(playerStats.FameRatio).toFixed(2)
+                      : 'N/A'}
+                  </PlayerDetail.Item>
+                </PlayerDetail>
+                <PlayerDetail title="Gathering">
+                  <PlayerDetail.Item label="Total">
+                    {formatNumber(playerStats.GatherAllTotal)}
+                  </PlayerDetail.Item>
+                  <div className="grid grid-cols-2 gap-3 items-start">
+                    <PlayerDetail.Item label="Royal Continent">
+                      {formatNumber(playerStats.GatherAllRoyal)}
+                    </PlayerDetail.Item>
+                    <PlayerDetail.Item label="Outlands">
+                      {formatNumber(playerStats.GatherAllOutlands)}
+                    </PlayerDetail.Item>
+                  </div>
+                  <PlayerDetail.Item label="Avalonian Roads">
+                    {formatNumber(playerStats.GatherAllAvalon)}
+                  </PlayerDetail.Item>
+                </PlayerDetail>
               </div>
             )}
           </div>
-        </div>
       </Page>
     </RegionProvider>
   );
