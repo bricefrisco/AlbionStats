@@ -2,7 +2,8 @@ package tasks
 
 import (
 	"context"
-	"log"
+	"fmt"
+	"log/slog"
 	"time"
 
 	"gorm.io/gorm"
@@ -15,17 +16,23 @@ type CollectorConfig struct {
 type Collector struct {
 	db     *gorm.DB
 	config CollectorConfig
+	log    *slog.Logger
 }
 
-func NewCollector(db *gorm.DB, config CollectorConfig) *Collector {
+func NewCollector(db *gorm.DB, logger *slog.Logger, config CollectorConfig) (*Collector, error) {
+	if logger == nil {
+		return nil, fmt.Errorf("logger is required")
+	}
+
 	return &Collector{
 		db:     db,
 		config: config,
-	}
+		log:    logger.With("component", "metrics_collector"),
+	}, nil
 }
 
 func (c *Collector) Run(ctx context.Context) {
-	log.Printf("metrics: starting collector with interval %v", c.config.Interval)
+	c.log.Info("collector started", "interval", c.config.Interval)
 
 	ticker := time.NewTicker(c.config.Interval)
 	defer ticker.Stop()
@@ -36,7 +43,7 @@ func (c *Collector) Run(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			log.Printf("metrics: collector stopped")
+			c.log.Info("collector stopped")
 			return
 		case <-ticker.C:
 			c.collect(ctx)
@@ -45,7 +52,8 @@ func (c *Collector) Run(ctx context.Context) {
 }
 
 func (c *Collector) collect(ctx context.Context) {
-	log.Printf("metrics: collecting metrics")
+	start := time.Now()
+	c.log.Info("metrics collection started")
 
 	// Execute the metrics insertion query
 	err := c.db.WithContext(ctx).Exec(`
@@ -56,9 +64,9 @@ func (c *Collector) collect(ctx context.Context) {
 	`).Error
 
 	if err != nil {
-		log.Printf("metrics: failed to collect metrics: %v", err)
+		c.log.Error("metrics collection failed", "err", err, "duration_ms", time.Since(start).Milliseconds())
 		return
 	}
 
-	log.Printf("metrics: successfully collected metrics")
+	c.log.Info("metrics collection succeeded", "duration_ms", time.Since(start).Milliseconds())
 }

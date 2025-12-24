@@ -2,7 +2,8 @@ package tasks
 
 import (
 	"context"
-	"log"
+	"fmt"
+	"log/slog"
 	"time"
 
 	"albionstats/internal/api"
@@ -24,20 +25,25 @@ type KillboardPoller struct {
 	apiClient *api.Client
 	db        *gorm.DB
 	cfg       KillboardConfig
+	log       *slog.Logger
 }
 
-func NewKillboardPoller(db *gorm.DB, cfg KillboardConfig) *KillboardPoller {
+func NewKillboardPoller(db *gorm.DB, logger *slog.Logger, cfg KillboardConfig) (*KillboardPoller, error) {
+	if logger == nil {
+		return nil, fmt.Errorf("logger is required")
+	}
 	apiClient := api.NewClient(cfg.Region, cfg.UserAgent, cfg.HTTPTimeout)
 	return &KillboardPoller{
 		apiClient: apiClient,
 		db:        db,
 		cfg:       cfg,
-	}
+		log:       logger.With("component", "killboard_poller", "region", cfg.Region),
+	}, nil
 }
 
 // Run fetches events pages and upserts discovered players into the database periodically.
 func (p *KillboardPoller) Run(ctx context.Context) {
-	log.Printf("[%s] starting periodic killboard polling with interval %v", p.cfg.Region, p.cfg.EventsInterval)
+	p.log.Info("killboard polling started", "interval", p.cfg.EventsInterval, "page_size", p.cfg.PageSize)
 
 	ticker := time.NewTicker(p.cfg.EventsInterval)
 	defer ticker.Stop()
@@ -48,7 +54,7 @@ func (p *KillboardPoller) Run(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			log.Printf("[%s] stopped", p.cfg.Region)
+			p.log.Info("killboard polling stopped")
 			return
 		case <-ticker.C:
 			p.runBatch(ctx)
@@ -57,30 +63,31 @@ func (p *KillboardPoller) Run(ctx context.Context) {
 }
 
 func (p *KillboardPoller) runBatch(ctx context.Context) {
-	log.Printf("[%s] fetch events limit=%d offset=0", p.cfg.Region, p.cfg.PageSize)
+	start := time.Now()
+	p.log.Info("fetch events", "limit", p.cfg.PageSize, "offset", 0)
 	playerMap := make(map[string]database.PlayerPoll)
 	events, err := p.apiClient.FetchEvents(ctx, p.cfg.PageSize, 0)
 	if err != nil {
-		log.Printf("[%s] fetch events error: %v", p.cfg.Region, err)
+		p.log.Error("fetch events failed", "err", err)
 		return
 	}
 	if len(events) == 0 {
-		log.Printf("[%s] no events returned", p.cfg.Region)
+		p.log.Info("no events returned")
 		return
 	}
 
 	p.collectPlayers(events, playerMap)
-	log.Printf("[%s] events=%d players_collected=%d", p.cfg.Region, len(events), len(playerMap))
+	p.log.Info("events processed", "events", len(events), "players_collected", len(playerMap))
 
 	if len(playerMap) == 0 {
 		return
 	}
 
 	if err := database.UpsertKillboardPlayerPolls(ctx, p.db, playerMap); err != nil {
-		log.Printf("[%s] upsert player polls error: %v", p.cfg.Region, err)
+		p.log.Error("upsert player polls failed", "err", err, "players", len(playerMap))
 		return
 	}
-	log.Printf("[%s] upserted player polls=%d", p.cfg.Region, len(playerMap))
+	p.log.Info("upserted player polls", "count", len(playerMap), "duration_ms", time.Since(start).Milliseconds())
 }
 
 func (p *KillboardPoller) collectPlayers(events []api.Event, acc map[string]database.PlayerPoll) {

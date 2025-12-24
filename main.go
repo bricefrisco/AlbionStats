@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
@@ -30,6 +31,10 @@ func main() {
 		log.Fatalf("db connect: %v", err)
 	}
 
+	appLogger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		AddSource: true,
+	}))
+
 	ctx, cancel := signalContext(context.Background())
 	defer cancel()
 
@@ -47,9 +52,12 @@ func main() {
 	}()
 
 	// Start metrics collector
-	metricsCollector := tasks.NewCollector(db, tasks.CollectorConfig{
+	metricsCollector, err := tasks.NewCollector(db, appLogger, tasks.CollectorConfig{
 		Interval: 5 * time.Minute,
 	})
+	if err != nil {
+		log.Fatalf("metrics collector init: %v", err)
+	}
 
 	go func() {
 		metricsCollector.Run(ctx)
@@ -58,13 +66,16 @@ func main() {
 	// Start player pollers for all regions
 	regions := []string{"americas", "europe", "asia"}
 	for _, region := range regions {
-		playerPoller := tasks.NewPlayerPoller(db, tasks.PlayerPollerConfig{
+		playerPoller, err := tasks.NewPlayerPoller(db, appLogger, tasks.PlayerPollerConfig{
 			Region:      region,
 			PageSize:    cfg.PlayerBatch,
 			RatePerSec:  cfg.PlayerRate,
 			UserAgent:   cfg.UserAgent,
 			HTTPTimeout: cfg.HTTPTimeout,
 		})
+		if err != nil {
+			log.Fatalf("player poller init (%s): %v", region, err)
+		}
 
 		go func(poller *tasks.PlayerPoller, regionName string) {
 			log.Printf("starting player poller for region: %s", regionName)
@@ -74,7 +85,7 @@ func main() {
 
 	// Start killboard pollers for all regions
 	for _, region := range regions {
-		kbPoller := tasks.NewKillboardPoller(db, tasks.KillboardConfig{
+		kbPoller, err := tasks.NewKillboardPoller(db, appLogger, tasks.KillboardConfig{
 			PageSize:       cfg.PageSize,
 			MaxPages:       cfg.MaxPages,
 			EventsInterval: cfg.EventsInterval,
@@ -82,6 +93,9 @@ func main() {
 			HTTPTimeout:    cfg.HTTPTimeout,
 			UserAgent:      cfg.UserAgent,
 		})
+		if err != nil {
+			log.Fatalf("killboard poller init (%s): %v", region, err)
+		}
 
 		go func(poller *tasks.KillboardPoller, regionName string) {
 			log.Printf("starting killboard poller for region: %s", regionName)

@@ -3,8 +3,7 @@ package tasks
 import (
 	"context"
 	"fmt"
-	"log"
-	"net/http"
+	"log/slog"
 	"sync"
 	"time"
 
@@ -29,6 +28,7 @@ type PlayerPoller struct {
 	apiClient *api.Client
 	db        *gorm.DB
 	cfg       PlayerPollerConfig
+	log       *slog.Logger
 }
 
 type processResult struct {
@@ -59,19 +59,17 @@ func (p *PlayerPoller) workerCount(n int) int {
 	return n
 }
 
-func newHTTPClient(timeout time.Duration) *http.Client {
-	return &http.Client{
-		Timeout: timeout,
+func NewPlayerPoller(db *gorm.DB, logger *slog.Logger, cfg PlayerPollerConfig) (*PlayerPoller, error) {
+	if logger == nil {
+		return nil, fmt.Errorf("logger is required")
 	}
-}
-
-func NewPlayerPoller(db *gorm.DB, cfg PlayerPollerConfig) *PlayerPoller {
 	apiClient := api.NewClient(cfg.Region, cfg.UserAgent, cfg.HTTPTimeout)
 	return &PlayerPoller{
 		apiClient: apiClient,
 		db:        db,
 		cfg:       cfg,
-	}
+		log:       logger.With("component", "player_poller", "region", cfg.Region),
+	}, nil
 }
 
 func (p *PlayerPoller) fetchPlayersToPoll(ctx context.Context) ([]database.PlayerPoll, error) {
@@ -88,7 +86,7 @@ func (p *PlayerPoller) fetchPlayersToPoll(ctx context.Context) ([]database.Playe
 }
 
 func (p *PlayerPoller) handleIdleState(ctx context.Context) error {
-	log.Printf("[%s] no players to poll", p.cfg.Region)
+	p.log.Info("no players to poll")
 	idle := time.Second
 	select {
 	case <-ctx.Done():
@@ -108,7 +106,7 @@ func (p *PlayerPoller) setupWorkers(ctx context.Context, players []database.Play
 
 	var wg sync.WaitGroup
 
-	log.Printf("[%s] batch size=%d rate=%d/s workers=%d", p.cfg.Region, len(players), p.cfg.RatePerSec, workerCount)
+	p.log.Info("starting batch", "players", len(players), "rate_per_sec", p.cfg.RatePerSec, "workers", workerCount)
 
 	// Start worker goroutines
 	for w := 0; w < workerCount; w++ {
@@ -116,7 +114,7 @@ func (p *PlayerPoller) setupWorkers(ctx context.Context, players []database.Play
 		go func() {
 			defer wg.Done()
 			for pl := range jobs {
-				log.Printf("[%s] worker fetching player_id=%s", p.cfg.Region, pl.PlayerID)
+				p.log.Debug("fetching player", "player_id", pl.PlayerID)
 				// shared rate limiter
 				select {
 				case <-ctx.Done():
@@ -154,7 +152,7 @@ func (p *PlayerPoller) processResults(results <-chan processResult) ([]database.
 
 	for res := range results {
 		if res.err != nil {
-			log.Printf("[%s] player=%s err=%v", p.cfg.Region, res.playerPoll.PlayerID, res.err)
+			p.log.Warn("player poll failed", "player_id", res.playerPoll.PlayerID, "err", res.err)
 			nextErr := res.playerPoll.ErrorCount + 1
 			backoff := failureBackoff(nextErr)
 			failures = append(failures, database.PlayerPoll{
@@ -183,24 +181,24 @@ func (p *PlayerPoller) processResults(results <-chan processResult) ([]database.
 
 func (p *PlayerPoller) applyDatabaseChanges(ctx context.Context, updatePolls []database.PlayerPoll, statsLatest []database.PlayerStatsLatest, snapshots []database.PlayerStatsSnapshot, deletes []database.PlayerPoll, failures []database.PlayerPoll) {
 	if err := database.ApplyPlayerPollerDatabaseChanges(ctx, p.db, deletes, updatePolls, statsLatest, snapshots, failures); err != nil {
-		log.Printf("[%s] database changes error: %v", p.cfg.Region, err)
+		p.log.Error("database changes error", "err", err)
 	}
 }
 
 func (p *PlayerPoller) Run(ctx context.Context) {
-	log.Printf("[%s] starting continuous polling", p.cfg.Region)
+	p.log.Info("player polling started")
 
 	for {
 		select {
 		case <-ctx.Done():
-			log.Printf("[%s] stopped", p.cfg.Region)
+			p.log.Info("player polling stopped")
 			return
 		default:
 		}
 
 		err := p.runBatch(ctx)
 		if err != nil {
-			log.Printf("[%s] batch error: %v", p.cfg.Region, err)
+			p.log.Error("batch error", "err", err)
 		}
 	}
 }
