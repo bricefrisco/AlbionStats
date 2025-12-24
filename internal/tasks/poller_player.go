@@ -86,7 +86,7 @@ func (p *PlayerPoller) fetchPlayersToPoll(ctx context.Context) ([]database.Playe
 }
 
 func (p *PlayerPoller) handleIdleState(ctx context.Context) error {
-	p.log.Info("no players to poll")
+	p.log.Debug("no players to poll")
 	idle := time.Second
 	select {
 	case <-ctx.Done():
@@ -105,8 +105,6 @@ func (p *PlayerPoller) setupWorkers(ctx context.Context, players []database.Play
 	results := make(chan processResult, len(players))
 
 	var wg sync.WaitGroup
-
-	p.log.Info("starting batch", "players", len(players), "rate_per_sec", p.cfg.RatePerSec, "workers", workerCount)
 
 	// Start worker goroutines
 	for w := 0; w < workerCount; w++ {
@@ -204,6 +202,8 @@ func (p *PlayerPoller) Run(ctx context.Context) {
 }
 
 func (p *PlayerPoller) runBatch(ctx context.Context) error {
+	start := time.Now()
+
 	players, err := p.fetchPlayersToPoll(ctx)
 	if err != nil {
 		return err
@@ -211,6 +211,8 @@ func (p *PlayerPoller) runBatch(ctx context.Context) error {
 	if len(players) == 0 {
 		return p.handleIdleState(ctx)
 	}
+
+	p.log.Info("starting batch", "players", len(players), "duration_ms", time.Since(start).Milliseconds())
 
 	ticker, _, results, wg := p.setupWorkers(ctx, players)
 	defer ticker.Stop()
@@ -221,6 +223,8 @@ func (p *PlayerPoller) runBatch(ctx context.Context) error {
 	updatePolls, statsLatest, snapshots, deletes, failures := p.processResults(results)
 
 	p.applyDatabaseChanges(ctx, updatePolls, statsLatest, snapshots, deletes, failures)
+
+	p.log.Info("batch completed", "players", len(players), "duration_ms", time.Since(start).Milliseconds())
 
 	return nil
 }

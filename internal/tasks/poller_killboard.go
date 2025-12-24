@@ -68,11 +68,11 @@ func (p *KillboardPoller) runBatch(ctx context.Context) {
 	playerMap := make(map[string]database.PlayerPoll)
 	events, err := p.apiClient.FetchEvents(ctx, p.cfg.PageSize, 0)
 	if err != nil {
-		p.log.Error("fetch events failed", "err", err)
+		p.log.Warn("fetch events failed", "err", err)
 		return
 	}
 	if len(events) == 0 {
-		p.log.Info("no events returned")
+		p.log.Warn("no events returned")
 		return
 	}
 
