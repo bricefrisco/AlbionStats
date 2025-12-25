@@ -1,5 +1,6 @@
 import { useParams } from 'react-router-dom';
 import Page from '../components/Page';
+import PlayerCharts from '../components/PlayerCharts';
 import PlayerDetails from '../components/PlayerDetails';
 import { RegionProvider } from '../components/RegionContext';
 
@@ -21,6 +22,7 @@ const Player = () => {
       >
         <div className="mt-2 space-y-3">
             <PlayerDetails region={region} decodedName={decodedName} />
+            <PlayerCharts />
           </div>
       </Page>
     </RegionProvider>
