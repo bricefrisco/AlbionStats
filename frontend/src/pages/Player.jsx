@@ -22,7 +22,10 @@ const Player = () => {
       >
         <div className="mt-2 space-y-3">
             <PlayerDetails region={region} decodedName={decodedName} />
-            <PlayerCharts />
+            <PlayerCharts
+              region={region}
+              playerName={decodedName}
+            />
           </div>
       </Page>
     </RegionProvider>

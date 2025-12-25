@@ -2,19 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { withTooltip } from '@visx/tooltip';
 import TimeSeriesChart from './TimeSeriesChart';
 import TimeRangeToggle from './TimeRangeToggle';
+import { formatDate } from '../utils/formatters';
 
 // API endpoint configuration
 const API_BASE_URL = 'https://api.bricefrisco.com';
 const METRICS_ENDPOINT = '/albionstats/v1/metrics/snapshots';
-
-// Simple date formatter
-const formatDate = (date) => {
-  return new Date(date).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: '2-digit',
-  });
-};
 
 // accessors
 const getDate = (d) => new Date(d.date);

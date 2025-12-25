@@ -19,39 +19,11 @@ import {
 } from '@visx/tooltip';
 import { localPoint } from '@visx/event';
 import { LinearGradient } from '@visx/gradient';
+import { formatCompactNumber } from '../utils/formatters';
 
 const formatYAxisValue = (value) => {
   if (value === undefined || value === null) return '';
-
-  const absValue = Math.abs(value);
-  if (absValue < 1000) return `${value}`;
-
-  const suffixes = [
-    { threshold: 1_000_000_000, symbol: 'b' },
-    { threshold: 1_000_000, symbol: 'm' },
-    { threshold: 1_000, symbol: 'k' },
-  ];
-
-  for (const { threshold, symbol } of suffixes) {
-    if (absValue >= threshold) {
-      const scaled = value / threshold;
-      const absScaled = Math.abs(scaled);
-      let formattedScaled;
-
-      if (absScaled >= 100) {
-        formattedScaled = Math.round(scaled);
-      } else if (absScaled >= 10) {
-        formattedScaled = Math.round(scaled * 10) / 10;
-      } else {
-        formattedScaled = Math.round(scaled * 100) / 100;
-      }
-
-      const normalized = Number(formattedScaled).toString();
-      return `${normalized}${symbol}`;
-    }
-  }
-
-  return `${value}`;
+  return formatCompactNumber(value);
 };
 
 const formatTooltipValue = (value) => {
