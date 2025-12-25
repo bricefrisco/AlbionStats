@@ -50,21 +50,8 @@ func BulkUpsertPlayerStatsLatest(ctx context.Context, db *gorm.DB, stats []Playe
 	}
 
 	return db.WithContext(ctx).Clauses(clause.OnConflict{
-		Columns: []clause.Column{{Name: "region"}, {Name: "player_id"}},
-		DoUpdates: clause.AssignmentColumns([]string{
-			"ts", "last_encountered", "name", "guild_id", "guild_name", "alliance_id",
-			"alliance_name", "alliance_tag", "kill_fame", "death_fame", "fame_ratio",
-			"pve_total", "pve_royal", "pve_outlands", "pve_avalon", "pve_hellgate",
-			"pve_corrupted", "pve_mists", "gather_fiber_total", "gather_fiber_royal",
-			"gather_fiber_outlands", "gather_fiber_avalon", "gather_hide_total",
-			"gather_hide_royal", "gather_hide_outlands", "gather_hide_avalon",
-			"gather_ore_total", "gather_ore_royal", "gather_ore_outlands", "gather_ore_avalon",
-			"gather_rock_total", "gather_rock_royal", "gather_rock_outlands", "gather_rock_avalon",
-			"gather_wood_total", "gather_wood_royal", "gather_wood_outlands", "gather_wood_avalon",
-			"gather_all_total", "gather_all_royal", "gather_all_outlands", "gather_all_avalon",
-			"crafting_total", "crafting_royal", "crafting_outlands", "crafting_avalon",
-			"fishing_fame", "farming_fame", "crystal_league_fame",
-		}),
+		Columns:   []clause.Column{{Name: "region"}, {Name: "player_id"}},
+		UpdateAll: true,
 	}).Create(&stats).Error
 }
 
