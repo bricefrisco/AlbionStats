@@ -59,6 +59,7 @@ const TimeSeriesChart = withTooltip(
       gridColor: '#374151',
       textColor: '#9CA3AF',
     },
+    subtleGradient = false,
     margins = { top: 14, right: 0, bottom: 30, left: 54 },
     showTooltip,
     hideTooltip,
@@ -153,6 +154,8 @@ const TimeSeriesChart = withTooltip(
     const id = useId();
     const backgroundGradientId = `bg-${id}`;
     const areaGradientId = `area-${id}`;
+    const areaFromOpacity = subtleGradient ? 0.35 : 1;
+    const areaToOpacity = subtleGradient ? 0.0125 : 0.05;
 
     // Early returns after all hooks
     if (containerWidth < 10) {
@@ -229,8 +232,9 @@ const TimeSeriesChart = withTooltip(
           <LinearGradient
             id={areaGradientId}
             from={colors.accentColor}
+            fromOpacity={areaFromOpacity}
             to={colors.accentColor}
-            toOpacity={0.05}
+            toOpacity={areaToOpacity}
           />
 
           <GridRows

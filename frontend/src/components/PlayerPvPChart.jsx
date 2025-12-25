@@ -114,6 +114,7 @@ const PlayerPvPChart = ({ region, playerName }) => {
         yAccessor={(d) => d.killFame}
         xFormatter={formatDate}
         yFormatter={(value) => formatCompactNumber(value)}
+        subtleGradient
       />
       <div className="flex items-center justify-between text-xs uppercase text-gray-400 tracking-wide">
         <span>PvP Death Fame</span>
@@ -129,6 +130,7 @@ const PlayerPvPChart = ({ region, playerName }) => {
         yAccessor={(d) => d.deathFame}
         xFormatter={formatDate}
         yFormatter={(value) => formatCompactNumber(value)}
+        subtleGradient
       />
     </div>
   );
