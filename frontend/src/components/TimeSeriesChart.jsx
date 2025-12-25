@@ -36,9 +36,10 @@ const formatTooltipValue = (value) => {
     return `${value}`;
   }
 
+  const isInteger = Number.isInteger(numericValue);
   const formatter = new Intl.NumberFormat(undefined, {
-    minimumFractionDigits: Number.isInteger(numericValue) ? 0 : 2,
-    maximumFractionDigits: 2,
+    minimumFractionDigits: isInteger ? 0 : 2,
+    maximumFractionDigits: isInteger ? 0 : 4,
   });
 
   return formatter.format(numericValue);
@@ -92,14 +93,17 @@ const TimeSeriesChart = withTooltip(
     const { width: containerWidth, height: containerHeight } = dimensions;
 
     // Always call hooks before any conditional returns
+
     // Scales (safely handle empty/missing data)
     const xScale = useMemo(() => {
       if (!data || data.length === 0) return null;
+      const minTs = Math.min(...data.map((d) => xAccessor(d).getTime()));
+      const maxTs = Math.max(...data.map((d) => xAccessor(d).getTime()));
     return scaleTime({
       range: [margins.left, containerWidth - margins.right],
       domain: [
-        new Date(Math.min(...data.map(xAccessor))),
-        new Date(Math.max(...data.map(xAccessor))),
+        new Date(minTs),
+        new Date(maxTs),
       ],
     });
     }, [containerWidth, margins.left, margins.right, data, xAccessor]);
@@ -156,6 +160,7 @@ const TimeSeriesChart = withTooltip(
     const areaGradientId = `area-${id}`;
     const areaFromOpacity = subtleGradient ? 0.35 : 1;
     const areaToOpacity = subtleGradient ? 0.0125 : 0.05;
+    const primaryAccentColor = colors.accentColor;
 
     // Early returns after all hooks
     if (containerWidth < 10) {
@@ -231,9 +236,9 @@ const TimeSeriesChart = withTooltip(
           />
           <LinearGradient
             id={areaGradientId}
-            from={colors.accentColor}
+            from={primaryAccentColor}
             fromOpacity={areaFromOpacity}
-            to={colors.accentColor}
+            to={primaryAccentColor}
             toOpacity={areaToOpacity}
           />
 
@@ -262,7 +267,7 @@ const TimeSeriesChart = withTooltip(
             y={(d) => yScale(yAccessor(d)) ?? 0}
             yScale={yScale}
             strokeWidth={2}
-            stroke={colors.accentColor}
+            stroke={primaryAccentColor}
             fill={`url(#${areaGradientId})`}
             curve={curveMonotoneX}
           />
