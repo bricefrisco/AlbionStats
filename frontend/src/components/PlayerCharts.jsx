@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { Tabs } from '@base-ui/react/tabs';
 import PlayerPvPChart from './PlayerPvPChart';
+import PlayerPvEChart from './PlayerPvEChart';
 
 const tabKeys = ['pvp', 'pve', 'gathering', 'crafting'];
 const baseTabClass =
@@ -45,7 +46,9 @@ const PlayerCharts = ({ region, playerName }) => {
         className="relative flex min-h-[8rem] items-center justify-center bg-transparent p-4 text-sm text-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-500 focus-visible:outline-offset-[-2px]"
         value="pve"
       >
-        {activeTab === 'pve' && 'PvE charts will go here.'}
+        {activeTab === 'pve' && (
+          <PlayerPvEChart region={region} playerName={playerName} />
+        )}
       </Tabs.Panel>
       <Tabs.Panel
         className="relative flex min-h-[8rem] items-center justify-center bg-transparent p-4 text-sm text-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-500 focus-visible:outline-offset-[-2px]"

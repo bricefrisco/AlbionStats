@@ -157,7 +157,6 @@ const PlayerPvPChart = ({ region, playerName }) => {
               gridColor: '#374151',
               textColor: '#9CA3AF',
             }}
-            subtleGradient
           />
         </div>
         <div className="space-y-2">
@@ -183,7 +182,6 @@ const PlayerPvPChart = ({ region, playerName }) => {
               gridColor: '#374151',
               textColor: '#9CA3AF',
             }}
-            subtleGradient
           />
         </div>
       </div>
