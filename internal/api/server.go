@@ -35,6 +35,7 @@ func (s *Server) setupRoutes() {
 	v1.GET("/metrics/:metricId", s.metrics)
 	v1.GET("/players/:server/:name", s.player)
 	v1.GET("/players/:server/:name/pvp", s.playerPvp)
+	v1.GET("/players/:server/:name/pve", s.playerPve)
 }
 
 func (s *Server) Run(addr string) error {
