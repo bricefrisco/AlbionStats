@@ -98,7 +98,7 @@ func main() {
 
 		go func(poller *killboard_poller.KillboardPoller, regionName string) {
 			log.Printf("starting killboard poller for region: %s", regionName)
-			poller.Run(ctx)
+			poller.Run()
 		}(kbPoller, region)
 	}
 

@@ -1,7 +1,6 @@
 package killboard_poller
 
 import (
-	"context"
 	"log/slog"
 	"time"
 
@@ -39,27 +38,20 @@ func NewKillboardPoller(cfg Config) (*KillboardPoller, error) {
 	}, nil
 }
 
-func (p *KillboardPoller) Run(ctx context.Context) {
+func (p *KillboardPoller) Run() {
 	p.log.Info("killboard polling started", "interval", p.eventsInterval, "page_size", p.pageSize)
 
 	ticker := time.NewTicker(p.eventsInterval)
 	defer ticker.Stop()
 
-	// Run once immediately
-	p.runBatch(ctx)
+	p.runBatch() // Run once immediately
 
-	for {
-		select {
-		case <-ctx.Done():
-			p.log.Info("killboard polling stopped")
-			return
-		case <-ticker.C:
-			p.runBatch(ctx)
-		}
+	for range ticker.C {
+		p.runBatch()
 	}
 }
 
-func (p *KillboardPoller) runBatch(ctx context.Context) {
+func (p *KillboardPoller) runBatch() {
 	p.log.Info("fetch killboard events", "limit", p.pageSize, "offset", 0)
 	events, err := p.apiClient.FetchEvents(p.region, p.pageSize, 0)
 	if err != nil {
@@ -79,7 +71,7 @@ func (p *KillboardPoller) runBatch(ctx context.Context) {
 		return
 	}
 
-	if err := p.sqlite.UpsertPlayerPolls(ctx, playerMap); err != nil {
+	if err := p.sqlite.UpsertPlayerPolls(playerMap); err != nil {
 		p.log.Error("upsert player polls failed", "err", err, "players", len(playerMap))
 		return
 	}
