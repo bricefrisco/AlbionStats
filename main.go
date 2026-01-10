@@ -9,6 +9,7 @@ import (
 	"syscall"
 
 	"albionstats/internal/config"
+	"albionstats/internal/sqlite"
 	"albionstats/internal/tasks"
 )
 
@@ -20,7 +21,7 @@ func main() {
 		log.Fatalf("config: %v", err)
 	}
 
-	sqlite, err := database.NewSQLiteDatabase(cfg.DBDSN)
+	sqlite, err := sqlite.NewSQLiteDatabase(cfg.DBDSN)
 	if err != nil {
 		log.Fatalf("sqlite database: %v", err)
 	}
