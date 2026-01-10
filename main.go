@@ -70,27 +70,26 @@ func main() {
 	// }()
 
 	// Start player pollers for all regions
-	// regions := []string{"americas", "europe", "asia"}
-	// for _, region := range regions {
-	// 	playerPoller, err := tasks.NewPlayerPoller(db, appLogger, tasks.PlayerPollerConfig{
-	// 		Region:      region,
-	// 		PageSize:    cfg.PlayerBatch,
-	// 		RatePerSec:  cfg.PlayerRate,
-	// 		UserAgent:   cfg.UserAgent,
-	// 		HTTPTimeout: cfg.HTTPTimeout,
-	// 	})
-	// 	if err != nil {
-	// 		log.Fatalf("player poller init (%s): %v", region, err)
-	// 	}
-
-	// 	go func(poller *tasks.PlayerPoller, regionName string) {
-	// 		log.Printf("starting player poller for region: %s", regionName)
-	// 		poller.Run(ctx)
-	// 	}(playerPoller, region)
-	// }
-
-	// // Start killboard pollers for all regions
 	regions := []string{"americas", "europe", "asia"}
+	for _, region := range regions {
+		playerPoller, err := tasks.NewPlayerPoller(db, appLogger, tasks.PlayerPollerConfig{
+			Region:      region,
+			PageSize:    cfg.PlayerBatch,
+			RatePerSec:  cfg.PlayerRate,
+			UserAgent:   cfg.UserAgent,
+			HTTPTimeout: cfg.HTTPTimeout,
+		})
+		if err != nil {
+			log.Fatalf("player poller init (%s): %v", region, err)
+		}
+
+		go func(poller *tasks.PlayerPoller, regionName string) {
+			log.Printf("starting player poller for region: %s", regionName)
+			poller.Run(ctx)
+		}(playerPoller, region)
+	}
+
+	// Start killboard pollers for all regions
 	for _, region := range regions {
 		kbPoller, err := tasks.NewKillboardPoller(db, appLogger, tasks.KillboardConfig{
 			PageSize:       cfg.PageSize,
