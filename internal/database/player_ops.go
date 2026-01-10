@@ -20,7 +20,12 @@ func UpsertKillboardPlayerPolls(ctx context.Context, db *gorm.DB, polls map[stri
 	}
 
 	assignments := map[string]interface{}{
-		"next_poll_at":            gorm.Expr("MIN(datetime(player_polls.last_poll_at, '+6 hours'), player_polls.next_poll_at)"),
+		"next_poll_at": gorm.Expr(
+			"MIN(" +
+				"COALESCE(datetime(player_polls.last_poll_at, '+6 hours'), player_polls.next_poll_at)," +
+				"player_polls.next_poll_at" +
+				")",
+		),
 		"killboard_last_activity": gorm.Expr("excluded.killboard_last_activity"),
 	}
 
