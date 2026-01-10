@@ -1,8 +1,7 @@
-package tasks
+package killboard_poller
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"time"
 
@@ -10,39 +9,40 @@ import (
 	"albionstats/internal/sqlite"
 )
 
-type KillboardConfig struct {
+type Config struct {
+	APIClient      *api.Client
+	SQLite         *sqlite.SQLite
+	Logger         *slog.Logger
+	Region         string
 	PageSize       int
 	MaxPages       int
 	EventsInterval time.Duration
-	Region         string
-	UserAgent      string
-	HTTPTimeout    time.Duration
 }
 
 type KillboardPoller struct {
-	apiClient *api.Client
-	sqlite    *sqlite.SQLite
-	cfg       KillboardConfig
-	log       *slog.Logger
+	apiClient      *api.Client
+	sqlite         *sqlite.SQLite
+	log            *slog.Logger
+	eventsInterval time.Duration
+	pageSize       int
+	region         string
 }
 
-func NewKillboardPoller(sqlite *sqlite.SQLite, logger *slog.Logger, cfg KillboardConfig) (*KillboardPoller, error) {
-	if logger == nil {
-		return nil, fmt.Errorf("logger is required")
-	}
-	apiClient := api.NewClient(cfg.Region, cfg.UserAgent, cfg.HTTPTimeout)
+func NewKillboardPoller(cfg Config) (*KillboardPoller, error) {
 	return &KillboardPoller{
-		apiClient: apiClient,
-		sqlite:    sqlite,
-		cfg:       cfg,
-		log:       logger.With("component", "killboard_poller", "region", cfg.Region),
+		apiClient:      cfg.APIClient,
+		sqlite:         cfg.SQLite,
+		log:            cfg.Logger.With("component", "killboard_poller", "region", cfg.Region),
+		eventsInterval: cfg.EventsInterval,
+		pageSize:       cfg.PageSize,
+		region:         cfg.Region,
 	}, nil
 }
 
 func (p *KillboardPoller) Run(ctx context.Context) {
-	p.log.Info("killboard polling started", "interval", p.cfg.EventsInterval, "page_size", p.cfg.PageSize)
+	p.log.Info("killboard polling started", "interval", p.eventsInterval, "page_size", p.pageSize)
 
-	ticker := time.NewTicker(p.cfg.EventsInterval)
+	ticker := time.NewTicker(p.eventsInterval)
 	defer ticker.Stop()
 
 	// Run once immediately
@@ -60,21 +60,20 @@ func (p *KillboardPoller) Run(ctx context.Context) {
 }
 
 func (p *KillboardPoller) runBatch(ctx context.Context) {
-	start := time.Now()
-	p.log.Info("fetch events", "limit", p.cfg.PageSize, "offset", 0)
-	playerMap := make(map[string]sqlite.PlayerPoll)
-	events, err := p.apiClient.FetchEvents(ctx, p.cfg.PageSize, 0)
+	p.log.Info("fetch killboard events", "limit", p.pageSize, "offset", 0)
+	events, err := p.apiClient.FetchEvents(p.region, p.pageSize, 0)
 	if err != nil {
-		p.log.Warn("fetch events failed", "err", err)
+		p.log.Warn("fetch killboard events failed", "err", err)
 		return
 	}
+
 	if len(events) == 0 {
 		p.log.Warn("no events returned")
 		return
 	}
 
+	playerMap := make(map[string]sqlite.PlayerPoll)
 	p.collectPlayers(events, playerMap)
-	p.log.Info("events processed", "events", len(events), "players_collected", len(playerMap))
 
 	if len(playerMap) == 0 {
 		return
@@ -84,7 +83,7 @@ func (p *KillboardPoller) runBatch(ctx context.Context) {
 		p.log.Error("upsert player polls failed", "err", err, "players", len(playerMap))
 		return
 	}
-	p.log.Info("upserted player polls", "count", len(playerMap), "duration_ms", time.Since(start).Milliseconds())
+	p.log.Info("upserted player polls", "count", len(playerMap))
 }
 
 func (p *KillboardPoller) collectPlayers(events []api.Event, acc map[string]sqlite.PlayerPoll) {
@@ -99,7 +98,7 @@ func (p *KillboardPoller) collectPlayers(events []api.Event, acc map[string]sqli
 				return
 			}
 			playerPoll := sqlite.PlayerPoll{
-				Region:                p.cfg.Region,
+				Region:                p.region,
 				PlayerID:              participant.ID,
 				NextPollAt:            now,
 				KillboardLastActivity: &ev.TimeStamp,

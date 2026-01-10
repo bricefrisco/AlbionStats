@@ -9,7 +9,6 @@ import (
 	"time"
 )
 
-// Config holds application configuration loaded from a config file.
 type Config struct {
 	DBDSN          string
 	APIBase        string
@@ -25,21 +24,16 @@ type Config struct {
 }
 
 const (
-	defaultAPIBase        = "https://gameinfo.albiononline.com/api/gameinfo"
-	defaultRegion         = "americas"
 	defaultPageSize       = 50
 	defaultMaxPages       = 1
 	defaultEventsInterval = 10 * time.Second
-	defaultHTTPTimeout    = 10 * time.Second
 	defaultPlayerRate     = 6
 	defaultPlayerBatch    = 100
-	defaultUserAgent      = "AlbionStats-KillboardPoller/1.1"
 	defaultAPIPort        = "8080"
-	defaultDBDSN          = "albionstats.db"
+	defaultDBDSN          = "file:albionstats.db?_journal_mode=WAL&_synchronous=NORMAL&_busy_timeout=5000"
 	defaultConfigPath     = ".env"
 )
 
-// Load reads configuration from a simple KEY=VALUE file (default .env).
 func Load() (Config, error) {
 	path := strings.TrimSpace(os.Getenv("ALBION_CONFIG_FILE"))
 	if path == "" {
@@ -53,15 +47,11 @@ func Load() (Config, error) {
 
 	cfg := Config{
 		DBDSN:          valueWithDefault(values, "ALBION_DB_DSN", defaultDBDSN),
-		APIBase:        valueWithDefault(values, "ALBION_API_BASE", defaultAPIBase),
-		Region:         strings.ToLower(valueWithDefault(values, "ALBION_REGION", defaultRegion)),
 		PageSize:       intFrom(values, "ALBION_EVENTS_PAGE_SIZE", defaultPageSize),
 		MaxPages:       intFrom(values, "ALBION_EVENTS_MAX_PAGES", defaultMaxPages),
 		EventsInterval: durationFrom(values, "ALBION_EVENTS_INTERVAL", defaultEventsInterval),
-		HTTPTimeout:    durationFrom(values, "ALBION_HTTP_TIMEOUT", defaultHTTPTimeout),
 		PlayerRate:     intFrom(values, "ALBION_PLAYER_RATE", defaultPlayerRate),
 		PlayerBatch:    intFrom(values, "ALBION_PLAYER_BATCH", defaultPlayerBatch),
-		UserAgent:      valueWithDefault(values, "ALBION_USER_AGENT", defaultUserAgent),
 		APIPort:        valueWithDefault(values, "API_PORT", defaultAPIPort),
 	}
 

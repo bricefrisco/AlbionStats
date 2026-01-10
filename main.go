@@ -8,9 +8,10 @@ import (
 	"os/signal"
 	"syscall"
 
+	"albionstats/internal/api"
 	"albionstats/internal/config"
 	"albionstats/internal/sqlite"
-	"albionstats/internal/tasks"
+	"albionstats/internal/tasks/killboard_poller"
 )
 
 func main() {
@@ -20,6 +21,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("config: %v", err)
 	}
+
+	apiClient := api.NewClient(cfg.Region)
 
 	sqlite, err := sqlite.NewSQLiteDatabase(cfg.DBDSN)
 	if err != nil {
@@ -80,19 +83,20 @@ func main() {
 
 	// Start killboard pollers for all regions
 	for _, region := range regions {
-		kbPoller, err := tasks.NewKillboardPoller(sqlite, appLogger, tasks.KillboardConfig{
+		kbPoller, err := killboard_poller.NewKillboardPoller(killboard_poller.Config{
 			PageSize:       cfg.PageSize,
 			MaxPages:       cfg.MaxPages,
 			EventsInterval: cfg.EventsInterval,
 			Region:         region,
-			HTTPTimeout:    cfg.HTTPTimeout,
-			UserAgent:      cfg.UserAgent,
+			APIClient:      apiClient,
+			SQLite:         sqlite,
+			Logger:         appLogger,
 		})
 		if err != nil {
 			log.Fatalf("killboard poller init (%s): %v", region, err)
 		}
 
-		go func(poller *tasks.KillboardPoller, regionName string) {
+		go func(poller *killboard_poller.KillboardPoller, regionName string) {
 			log.Printf("starting killboard poller for region: %s", regionName)
 			poller.Run(ctx)
 		}(kbPoller, region)

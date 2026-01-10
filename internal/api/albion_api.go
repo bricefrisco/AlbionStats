@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
@@ -14,57 +13,55 @@ import (
 	"gorm.io/gorm"
 )
 
-// Client handles all Albion API interactions
 type Client struct {
 	httpClient *http.Client
-	baseURL    string
 	userAgent  string
 }
 
-// regionToBaseURL maps a region to the appropriate Albion API base URL
-func regionToBaseURL(region string) string {
+func regionToBaseURL(region string) (string, error) {
 	switch region {
 	case "americas":
-		return "https://gameinfo.albiononline.com"
+		return "https://gameinfo.albiononline.com", nil
 	case "europe":
-		return "https://gameinfo-ams.albiononline.com"
+		return "https://gameinfo-ams.albiononline.com", nil
 	case "asia":
-		return "https://gameinfo-sgp.albiononline.com"
+		return "https://gameinfo-sgp.albiononline.com", nil
 	default:
-		// Default to americas if region is not recognized
-		return "https://gameinfo.albiononline.com"
+		return "", fmt.Errorf("invalid region: %s", region)
 	}
 }
 
-// NewClient creates a new Albion API client for the specified region
-func NewClient(region, userAgent string, timeout time.Duration) *Client {
-	baseURL := regionToBaseURL(region)
+func NewClient(region string) *Client {
 	return &Client{
-		httpClient: &http.Client{Timeout: timeout},
-		baseURL:    baseURL,
-		userAgent:  userAgent,
+		httpClient: &http.Client{
+			Timeout: 15 * time.Second,
+		},
+		userAgent: "AlbionStats-KillboardPoller/1.0",
 	}
 }
 
-// FetchPlayer retrieves player data from the Albion API
-func (c *Client) FetchPlayer(ctx context.Context, playerID string) (*PlayerResponse, error) {
-	u, err := url.Parse(fmt.Sprintf("%s/api/gameinfo/players/%s", c.baseURL, playerID))
+func (c *Client) FetchPlayer(region string, playerID string) (*PlayerResponse, error) {
+	baseUrl, err := regionToBaseURL(region)
 	if err != nil {
 		return nil, err
 	}
+
+	u, err := url.Parse(fmt.Sprintf("%s/api/gameinfo/players/%s", baseUrl, playerID))
+	if err != nil {
+		return nil, err
+	}
+
 	q := u.Query()
 	q.Set("guid", generateRandomGUID())
 	q.Set("t", fmt.Sprintf("%d", time.Now().UnixNano()))
 	u.RawQuery = q.Encode()
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
 	if err != nil {
 		return nil, err
 	}
-	if c.userAgent != "" {
-		req.Header.Set("User-Agent", c.userAgent)
-	}
 
+	req.Header.Set("User-Agent", c.userAgent)
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
@@ -86,26 +83,29 @@ func (c *Client) FetchPlayer(ctx context.Context, playerID string) (*PlayerRespo
 	return &pr, nil
 }
 
-// FetchEvents retrieves killboard events from the Albion API
-func (c *Client) FetchEvents(ctx context.Context, limit, offset int) ([]Event, error) {
-	u, err := url.Parse(c.baseURL + "/api/gameinfo/events")
+func (c *Client) FetchEvents(region string, limit int, offset int) ([]Event, error) {
+	baseUrl, err := regionToBaseURL(region)
 	if err != nil {
 		return nil, err
 	}
+
+	u, err := url.Parse(baseUrl + "/api/gameinfo/events")
+	if err != nil {
+		return nil, err
+	}
+
 	q := u.Query()
 	q.Set("limit", fmt.Sprintf("%d", limit))
 	q.Set("offset", fmt.Sprintf("%d", offset))
 	q.Set("guid", generateRandomGUID())
 	u.RawQuery = q.Encode()
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
 	if err != nil {
 		return nil, err
 	}
-	if c.userAgent != "" {
-		req.Header.Set("User-Agent", c.userAgent)
-	}
 
+	req.Header.Set("User-Agent", c.userAgent)
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
@@ -124,35 +124,14 @@ func (c *Client) FetchEvents(ctx context.Context, limit, offset int) ([]Event, e
 	return events, nil
 }
 
-// generateRandomGUID generates a random GUID for API requests
 func generateRandomGUID() string {
 	buf := make([]byte, 16)
 	if _, err := rand.Read(buf); err != nil {
-		// Fallback to timestamp-based value if entropy fails
 		return fmt.Sprintf("%d", time.Now().UnixNano())
 	}
 	return hex.EncodeToString(buf)
 }
 
-// NullableString converts an empty string to nil pointer
-func NullableString(val string) *string {
-	if val == "" {
-		return nil
-	}
-	return &val
-}
-
-// NullableInt64 converts an int64 to a pointer
-func NullableInt64(val int64) *int64 {
-	return &val
-}
-
-// NullableFloat64 converts a float64 to a pointer
-func NullableFloat64(val float64) *float64 {
-	return &val
-}
-
-// PlayerResponse represents the response from the Albion player API
 type PlayerResponse struct {
 	Name               string        `json:"Name"`
 	Id                 string        `json:"Id"`
@@ -171,7 +150,6 @@ type PlayerResponse struct {
 	LifetimeStatistics LifetimeStats `json:"LifetimeStatistics"`
 }
 
-// CraftingStats represents crafting statistics
 type CraftingStats struct {
 	Total    int64 `json:"Total"`
 	Royal    int64 `json:"Royal"`
@@ -179,7 +157,6 @@ type CraftingStats struct {
 	Avalon   int64 `json:"Avalon"`
 }
 
-// LifetimeStats represents lifetime player statistics
 type LifetimeStats struct {
 	PvE       PveStats       `json:"PvE"`
 	Gathering GatheringStats `json:"Gathering"`
@@ -188,7 +165,6 @@ type LifetimeStats struct {
 	Corrupted int64          `json:"CorruptedDungeon,omitempty"`
 }
 
-// PveStats represents PvE statistics
 type PveStats struct {
 	Total            int64 `json:"Total"`
 	Royal            int64 `json:"Royal"`
@@ -199,7 +175,6 @@ type PveStats struct {
 	Mists            int64 `json:"Mists"`
 }
 
-// GatheringStats represents gathering statistics
 type GatheringStats struct {
 	Fiber GatheringSplit `json:"Fiber"`
 	Hide  GatheringSplit `json:"Hide"`
@@ -209,7 +184,6 @@ type GatheringStats struct {
 	All   GatheringSplit `json:"All"`
 }
 
-// GatheringSplit represents gathering statistics split by region
 type GatheringSplit struct {
 	Total    int64 `json:"Total"`
 	Royal    int64 `json:"Royal"`
@@ -217,7 +191,6 @@ type GatheringSplit struct {
 	Avalon   int64 `json:"Avalon"`
 }
 
-// Event represents a killboard event
 type Event struct {
 	EventID      int64         `json:"EventId"`
 	TimeStamp    time.Time     `json:"TimeStamp"`
@@ -227,7 +200,6 @@ type Event struct {
 	GroupMembers []Participant `json:"GroupMembers"`
 }
 
-// Participant represents a participant in a killboard event
 type Participant struct {
 	ID           string `json:"Id"`
 	Name         string `json:"Name"`
