@@ -2,7 +2,6 @@ package config
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -34,8 +33,9 @@ const (
 	defaultHTTPTimeout    = 10 * time.Second
 	defaultPlayerRate     = 6
 	defaultPlayerBatch    = 100
-	defaultUserAgent      = "AlbionStats-KillboardPoller/1.0"
+	defaultUserAgent      = "AlbionStats-KillboardPoller/1.1"
 	defaultAPIPort        = "8080"
+	defaultDBDSN          = "albionstats.db"
 	defaultConfigPath     = ".env"
 )
 
@@ -52,7 +52,7 @@ func Load() (Config, error) {
 	}
 
 	cfg := Config{
-		DBDSN:          strings.TrimSpace(values["ALBION_DB_DSN"]),
+		DBDSN:          valueWithDefault(values, "ALBION_DB_DSN", defaultDBDSN),
 		APIBase:        valueWithDefault(values, "ALBION_API_BASE", defaultAPIBase),
 		Region:         strings.ToLower(valueWithDefault(values, "ALBION_REGION", defaultRegion)),
 		PageSize:       intFrom(values, "ALBION_EVENTS_PAGE_SIZE", defaultPageSize),
@@ -63,10 +63,6 @@ func Load() (Config, error) {
 		PlayerBatch:    intFrom(values, "ALBION_PLAYER_BATCH", defaultPlayerBatch),
 		UserAgent:      valueWithDefault(values, "ALBION_USER_AGENT", defaultUserAgent),
 		APIPort:        valueWithDefault(values, "API_PORT", defaultAPIPort),
-	}
-
-	if cfg.DBDSN == "" {
-		return Config{}, errors.New("ALBION_DB_DSN is required")
 	}
 
 	if cfg.PageSize <= 0 {

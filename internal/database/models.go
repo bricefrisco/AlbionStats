@@ -4,7 +4,7 @@ import "time"
 
 // PlayerStatsLatest maps to player_stats_latest table.
 type PlayerStatsLatest struct {
-	Region   string    `gorm:"column:region;primaryKey;type:region_enum"`
+	Region   string    `gorm:"column:region;primaryKey"`
 	PlayerID string    `gorm:"column:player_id;primaryKey"`
 	TS       time.Time `gorm:"column:ts;not null"`
 
@@ -84,7 +84,7 @@ func (PlayerStatsLatest) TableName() string {
 
 // PlayerStatsSnapshot maps to player_stats_snapshots table.
 type PlayerStatsSnapshot struct {
-	Region   string    `gorm:"column:region;primaryKey;type:region_enum"`
+	Region   string    `gorm:"column:region;primaryKey"`
 	PlayerID string    `gorm:"column:player_id;primaryKey"`
 	TS       time.Time `gorm:"column:ts;primaryKey"`
 

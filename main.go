@@ -2,19 +2,17 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
-	"albionstats/internal/api"
 	"albionstats/internal/config"
+	"albionstats/internal/database"
 	"albionstats/internal/tasks"
 
-	"gorm.io/driver/postgres"
+	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
@@ -26,12 +24,20 @@ func main() {
 		log.Fatalf("config: %v", err)
 	}
 
-	db, err := gorm.Open(postgres.Open(cfg.DBDSN), &gorm.Config{})
+	db, err := gorm.Open(sqlite.Open(cfg.DBDSN), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("db connect: %v", err)
 	}
 
-	appLogger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+	if err := db.AutoMigrate(
+		&database.PlayerStatsLatest{},
+		&database.PlayerStatsSnapshot{},
+		&database.PlayerPoll{},
+	); err != nil {
+		log.Fatalf("db migrate: %v", err)
+	}
+
+	appLogger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
 		AddSource: true,
 	}))
 
@@ -39,51 +45,52 @@ func main() {
 	defer cancel()
 
 	// Start API server
-	apiServer := api.New(db, api.Config{
-		Port: cfg.APIPort,
-	})
+	// apiServer := api.New(db, api.Config{
+	// 	Port: cfg.APIPort,
+	// })
 
-	go func() {
-		addr := fmt.Sprintf(":%s", cfg.APIPort)
-		log.Printf("starting API server on %s", addr)
-		if err := apiServer.Run(addr); err != nil {
-			log.Printf("API server error: %v", err)
-		}
-	}()
+	// go func() {
+	// 	addr := fmt.Sprintf(":%s", cfg.APIPort)
+	// 	log.Printf("starting API server on %s", addr)
+	// 	if err := apiServer.Run(addr); err != nil {
+	// 		log.Printf("API server error: %v", err)
+	// 	}
+	// }()
 
 	// Start metrics collector
-	metricsCollector, err := tasks.NewCollector(db, appLogger, tasks.CollectorConfig{
-		Interval: 5 * time.Minute,
-	})
-	if err != nil {
-		log.Fatalf("metrics collector init: %v", err)
-	}
+	// metricsCollector, err := tasks.NewCollector(db, appLogger, tasks.CollectorConfig{
+	// 	Interval: 5 * time.Minute,
+	// })
+	// if err != nil {
+	// 	log.Fatalf("metrics collector init: %v", err)
+	// }
 
-	go func() {
-		metricsCollector.Run(ctx)
-	}()
+	// go func() {
+	// 	metricsCollector.Run(ctx)
+	// }()
 
 	// Start player pollers for all regions
+	// regions := []string{"americas", "europe", "asia"}
+	// for _, region := range regions {
+	// 	playerPoller, err := tasks.NewPlayerPoller(db, appLogger, tasks.PlayerPollerConfig{
+	// 		Region:      region,
+	// 		PageSize:    cfg.PlayerBatch,
+	// 		RatePerSec:  cfg.PlayerRate,
+	// 		UserAgent:   cfg.UserAgent,
+	// 		HTTPTimeout: cfg.HTTPTimeout,
+	// 	})
+	// 	if err != nil {
+	// 		log.Fatalf("player poller init (%s): %v", region, err)
+	// 	}
+
+	// 	go func(poller *tasks.PlayerPoller, regionName string) {
+	// 		log.Printf("starting player poller for region: %s", regionName)
+	// 		poller.Run(ctx)
+	// 	}(playerPoller, region)
+	// }
+
+	// // Start killboard pollers for all regions
 	regions := []string{"americas", "europe", "asia"}
-	for _, region := range regions {
-		playerPoller, err := tasks.NewPlayerPoller(db, appLogger, tasks.PlayerPollerConfig{
-			Region:      region,
-			PageSize:    cfg.PlayerBatch,
-			RatePerSec:  cfg.PlayerRate,
-			UserAgent:   cfg.UserAgent,
-			HTTPTimeout: cfg.HTTPTimeout,
-		})
-		if err != nil {
-			log.Fatalf("player poller init (%s): %v", region, err)
-		}
-
-		go func(poller *tasks.PlayerPoller, regionName string) {
-			log.Printf("starting player poller for region: %s", regionName)
-			poller.Run(ctx)
-		}(playerPoller, region)
-	}
-
-	// Start killboard pollers for all regions
 	for _, region := range regions {
 		kbPoller, err := tasks.NewKillboardPoller(db, appLogger, tasks.KillboardConfig{
 			PageSize:       cfg.PageSize,
