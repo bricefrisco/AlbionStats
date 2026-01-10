@@ -9,7 +9,6 @@ import (
 	"syscall"
 
 	"albionstats/internal/config"
-	"albionstats/internal/database"
 	"albionstats/internal/tasks"
 )
 
