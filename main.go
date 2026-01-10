@@ -11,9 +11,6 @@ import (
 	"albionstats/internal/config"
 	"albionstats/internal/database"
 	"albionstats/internal/tasks"
-
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 )
 
 func main() {
@@ -24,17 +21,9 @@ func main() {
 		log.Fatalf("config: %v", err)
 	}
 
-	db, err := gorm.Open(sqlite.Open(cfg.DBDSN), &gorm.Config{})
+	sqlite, err := database.NewSQLiteDatabase(cfg.DBDSN)
 	if err != nil {
-		log.Fatalf("db connect: %v", err)
-	}
-
-	if err := db.AutoMigrate(
-		&database.PlayerStatsLatest{},
-		&database.PlayerStatsSnapshot{},
-		&database.PlayerPoll{},
-	); err != nil {
-		log.Fatalf("db migrate: %v", err)
+		log.Fatalf("sqlite database: %v", err)
 	}
 
 	appLogger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
@@ -71,27 +60,27 @@ func main() {
 
 	// Start player pollers for all regions
 	regions := []string{"americas", "europe", "asia"}
-	for _, region := range regions {
-		playerPoller, err := tasks.NewPlayerPoller(db, appLogger, tasks.PlayerPollerConfig{
-			Region:      region,
-			PageSize:    cfg.PlayerBatch,
-			RatePerSec:  cfg.PlayerRate,
-			UserAgent:   cfg.UserAgent,
-			HTTPTimeout: cfg.HTTPTimeout,
-		})
-		if err != nil {
-			log.Fatalf("player poller init (%s): %v", region, err)
-		}
+	// for _, region := range regions {
+	// 	playerPoller, err := tasks.NewPlayerPoller(db, appLogger, tasks.PlayerPollerConfig{
+	// 		Region:      region,
+	// 		PageSize:    cfg.PlayerBatch,
+	// 		RatePerSec:  cfg.PlayerRate,
+	// 		UserAgent:   cfg.UserAgent,
+	// 		HTTPTimeout: cfg.HTTPTimeout,
+	// 	})
+	// 	if err != nil {
+	// 		log.Fatalf("player poller init (%s): %v", region, err)
+	// 	}
 
-		go func(poller *tasks.PlayerPoller, regionName string) {
-			log.Printf("starting player poller for region: %s", regionName)
-			poller.Run(ctx)
-		}(playerPoller, region)
-	}
+	// 	go func(poller *tasks.PlayerPoller, regionName string) {
+	// 		log.Printf("starting player poller for region: %s", regionName)
+	// 		poller.Run(ctx)
+	// 	}(playerPoller, region)
+	// }
 
 	// Start killboard pollers for all regions
 	for _, region := range regions {
-		kbPoller, err := tasks.NewKillboardPoller(db, appLogger, tasks.KillboardConfig{
+		kbPoller, err := tasks.NewKillboardPoller(sqlite, appLogger, tasks.KillboardConfig{
 			PageSize:       cfg.PageSize,
 			MaxPages:       cfg.MaxPages,
 			EventsInterval: cfg.EventsInterval,

@@ -7,10 +7,7 @@ import (
 	"time"
 
 	"albionstats/internal/api"
-	"albionstats/internal/database"
-
-	_ "github.com/mattn/go-sqlite3"
-	"gorm.io/gorm"
+	"albionstats/internal/sqlite"
 )
 
 type KillboardConfig struct {
@@ -24,25 +21,24 @@ type KillboardConfig struct {
 
 type KillboardPoller struct {
 	apiClient *api.Client
-	db        *gorm.DB
+	sqlite    *sqlite.SQLite
 	cfg       KillboardConfig
 	log       *slog.Logger
 }
 
-func NewKillboardPoller(db *gorm.DB, logger *slog.Logger, cfg KillboardConfig) (*KillboardPoller, error) {
+func NewKillboardPoller(sqlite *sqlite.SQLite, logger *slog.Logger, cfg KillboardConfig) (*KillboardPoller, error) {
 	if logger == nil {
 		return nil, fmt.Errorf("logger is required")
 	}
 	apiClient := api.NewClient(cfg.Region, cfg.UserAgent, cfg.HTTPTimeout)
 	return &KillboardPoller{
 		apiClient: apiClient,
-		db:        db,
+		sqlite:    sqlite,
 		cfg:       cfg,
 		log:       logger.With("component", "killboard_poller", "region", cfg.Region),
 	}, nil
 }
 
-// Run fetches events pages and upserts discovered players into the database periodically.
 func (p *KillboardPoller) Run(ctx context.Context) {
 	p.log.Info("killboard polling started", "interval", p.cfg.EventsInterval, "page_size", p.cfg.PageSize)
 
@@ -66,7 +62,7 @@ func (p *KillboardPoller) Run(ctx context.Context) {
 func (p *KillboardPoller) runBatch(ctx context.Context) {
 	start := time.Now()
 	p.log.Info("fetch events", "limit", p.cfg.PageSize, "offset", 0)
-	playerMap := make(map[string]database.PlayerPoll)
+	playerMap := make(map[string]sqlite.PlayerPoll)
 	events, err := p.apiClient.FetchEvents(ctx, p.cfg.PageSize, 0)
 	if err != nil {
 		p.log.Warn("fetch events failed", "err", err)
@@ -84,14 +80,14 @@ func (p *KillboardPoller) runBatch(ctx context.Context) {
 		return
 	}
 
-	if err := database.UpsertKillboardPlayerPolls(ctx, p.db, playerMap); err != nil {
+	if err := p.sqlite.UpsertPlayerPolls(ctx, playerMap); err != nil {
 		p.log.Error("upsert player polls failed", "err", err, "players", len(playerMap))
 		return
 	}
 	p.log.Info("upserted player polls", "count", len(playerMap), "duration_ms", time.Since(start).Milliseconds())
 }
 
-func (p *KillboardPoller) collectPlayers(events []api.Event, acc map[string]database.PlayerPoll) {
+func (p *KillboardPoller) collectPlayers(events []api.Event, acc map[string]sqlite.PlayerPoll) {
 	now := time.Now().UTC()
 	for _, ev := range events {
 		add := func(participant api.Participant) {
@@ -102,7 +98,7 @@ func (p *KillboardPoller) collectPlayers(events []api.Event, acc map[string]data
 			if _, exists := acc[key]; exists {
 				return
 			}
-			playerPoll := database.PlayerPoll{
+			playerPoll := sqlite.PlayerPoll{
 				Region:                p.cfg.Region,
 				PlayerID:              participant.ID,
 				NextPollAt:            now,
