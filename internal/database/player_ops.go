@@ -20,7 +20,7 @@ func UpsertKillboardPlayerPolls(ctx context.Context, db *gorm.DB, polls map[stri
 	}
 
 	assignments := map[string]interface{}{
-		"next_poll_at":            gorm.Expr("LEAST(player_polls.last_poll_at + INTERVAL '6 hours', player_polls.next_poll_at)"),
+		"next_poll_at":            gorm.Expr("MIN(datetime(player_polls.last_poll_at, '+6 hours'), player_polls.next_poll_at)"),
 		"killboard_last_activity": gorm.Expr("excluded.killboard_last_activity"),
 	}
 
@@ -28,18 +28,6 @@ func UpsertKillboardPlayerPolls(ctx context.Context, db *gorm.DB, polls map[stri
 		Columns:   []clause.Column{{Name: "region"}, {Name: "player_id"}},
 		DoUpdates: clause.Assignments(assignments),
 	}).Create(&batch).Error
-}
-
-func UpsertLastEncounteredPlayerPolls(ctx context.Context, db *gorm.DB, poll PlayerPoll) error {
-	assignments := map[string]interface{}{
-		"next_poll_at":     gorm.Expr("LEAST(player_polls.last_poll_at + INTERVAL '6 hours', player_polls.next_poll_at)"),
-		"last_encountered": gorm.Expr("excluded.last_encountered"),
-	}
-
-	return db.WithContext(ctx).Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: "region"}, {Name: "player_id"}},
-		DoUpdates: clause.Assignments(assignments),
-	}).Create(&poll).Error
 }
 
 // BulkUpsertPlayerStatsLatest performs a bulk upsert of player stats latest records.
