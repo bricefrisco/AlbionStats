@@ -3,12 +3,26 @@ package sqlite
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
-func (s *SQLite) UpsertPlayerPolls(ctx context.Context, polls map[string]PlayerPoll) error {
+func (s *SQLite) FetchPlayersToPoll(ctx context.Context, region string, batchSize int) ([]PlayerPoll, error) {
+	var players []PlayerPoll
+	now := time.Now().UTC()
+	if err := s.db.WithContext(ctx).
+		Where("region = ? AND next_poll_at <= ?", region, now).
+		Order("next_poll_at ASC").
+		Limit(batchSize).
+		Find(&players).Error; err != nil {
+		return nil, fmt.Errorf("query players: %w", err)
+	}
+	return players, nil
+}
+
+func (s *SQLite) UpsertPlayerPolls(polls map[string]PlayerPoll) error {
 	if len(polls) == 0 {
 		return nil
 	}
@@ -28,7 +42,7 @@ func (s *SQLite) UpsertPlayerPolls(ctx context.Context, polls map[string]PlayerP
 		"killboard_last_activity": gorm.Expr("excluded.killboard_last_activity"),
 	}
 
-	return s.db.WithContext(ctx).Clauses(clause.OnConflict{
+	return s.db.Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "region"}, {Name: "player_id"}},
 		DoUpdates: clause.Assignments(assignmentsOnConflict),
 	}).Create(&batch).Error
