@@ -32,12 +32,12 @@ func NewServer(cfg Config) *Server {
 
 func (s *Server) setupRoutes() {
 	v1 := s.router.Group("/api")
-	// v1.GET("/search/:server/:query", s.search)
 	// v1.GET("/metrics/:metricId", s.metrics)
 	// v1.GET("/players/:server/:name", s.player)
 	// v1.GET("/players/:server/:name/pvp", s.playerPvp)
 	// v1.GET("/players/:server/:name/pve", s.playerPve)
 	v1.GET("/admin", s.admin)
+	v1.GET("/search/:server/:query", s.search)
 
 	// Serve static files from the Svelte build directory
 	s.router.Static("/_app", "/usr/local/share/albionstats_web/_app")
