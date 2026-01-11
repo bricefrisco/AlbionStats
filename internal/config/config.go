@@ -12,7 +12,6 @@ import (
 type Config struct {
 	DBDSN          string
 	APIBase        string
-	Region         string
 	PageSize       int
 	MaxPages       int
 	EventsInterval time.Duration
