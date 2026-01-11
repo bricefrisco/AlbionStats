@@ -24,7 +24,7 @@ func main() {
 		log.Fatalf("config: %v", err)
 	}
 
-	apiClient := api.NewClient(cfg.Region)
+	apiClient := api.NewClient()
 
 	postgres, err := postgres.NewPostgresDatabase(cfg.DBDSN)
 	if err != nil {

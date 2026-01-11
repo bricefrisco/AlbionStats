@@ -220,11 +220,6 @@ func (p *PlayerPoller) processResults(results []processResult) {
 		return
 	}
 
-	if err := PushToVictoriaMetrics(stats, p.log); err != nil {
-		p.log.Error("push to victoria metrics failed", "err", err)
-		return
-	}
-
 	p.log.Info("processed results", "num_deletes", len(deletes), "num_polls", len(polls), "num_stats", len(stats))
 }
 

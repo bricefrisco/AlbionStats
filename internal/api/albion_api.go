@@ -31,7 +31,7 @@ func regionToBaseURL(region string) (string, error) {
 	}
 }
 
-func NewClient(region string) *Client {
+func NewClient() *Client {
 	return &Client{
 		httpClient: &http.Client{
 			Timeout: 15 * time.Second,
