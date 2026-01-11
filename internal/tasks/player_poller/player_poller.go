@@ -87,7 +87,7 @@ func (p *PlayerPoller) processPlayer(player sqlite.PlayerPoll) processResult {
 	resp, err := p.api.FetchPlayer(p.region, player.PlayerID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return processResult{shouldDeletePoll: true}
+			return processResult{shouldDeletePoll: true, poll: player}
 		}
 
 		p.log.Warn("player poll failed", "player_id", player.PlayerID, "err", err.Error())
@@ -104,7 +104,7 @@ func (p *PlayerPoller) processPlayer(player sqlite.PlayerPoll) processResult {
 	}
 
 	if resp.LifetimeStatistics.Timestamp == nil {
-		return processResult{shouldDeletePoll: true}
+		return processResult{shouldDeletePoll: true, poll: player}
 	}
 
 	nextPollAt, err := scheduleNextPoll(player.LastEncountered, player.KillboardLastActivity, player.OtherLastActivity, now)
