@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"albionstats/internal/api"
@@ -33,6 +34,20 @@ func main() {
 
 	appLogger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
 		AddSource: true,
+		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
+			if a.Key == slog.TimeKey {
+				return slog.Attr{} // Remove timestamp since syslog provides it
+			}
+			if a.Key == slog.SourceKey {
+				source := a.Value.Any().(*slog.Source)
+				// Extract just the filename from the full path
+				if lastSlash := strings.LastIndex(source.File, "/"); lastSlash >= 0 {
+					source.File = source.File[lastSlash+1:]
+				}
+				return a
+			}
+			return a
+		},
 	}))
 
 	ctx, cancel := signalContext(context.Background())
