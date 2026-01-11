@@ -33,6 +33,7 @@ type PlayerPoller struct {
 type processResult struct {
 	poll             postgres.PlayerPoll
 	stats            postgres.PlayerStatsLatest
+	snapshot         postgres.PlayerStatsSnapshot
 	shouldDeletePoll bool
 	error            bool
 }
@@ -190,13 +191,70 @@ func (p *PlayerPoller) processPlayer(player postgres.PlayerPoll) processResult {
 		CrystalLeagueFame:     resp.CrystalLeague,
 	}
 
-	return processResult{poll: poll, stats: stats}
+	snapshot := postgres.PlayerStatsSnapshot{
+		Region:                player.Region,
+		PlayerID:              player.PlayerID,
+		TS:                    now,
+		LastEncountered:       player.LastEncountered,
+		KillboardLastActivity: player.KillboardLastActivity,
+		OtherLastActivity:     resp.LifetimeStatistics.Timestamp,
+		Name:                  resp.Name,
+		GuildID:               util.NullableString(resp.GuildId),
+		GuildName:             util.NullableString(resp.GuildName),
+		AllianceID:            util.NullableString(resp.AllianceId),
+		AllianceName:          util.NullableString(resp.AllianceName),
+		AllianceTag:           util.NullableString(resp.AllianceTag),
+		KillFame:              resp.KillFame,
+		DeathFame:             resp.DeathFame,
+		FameRatio:             resp.FameRatio,
+		PveTotal:              resp.LifetimeStatistics.PvE.Total,
+		PveRoyal:              resp.LifetimeStatistics.PvE.Royal,
+		PveOutlands:           resp.LifetimeStatistics.PvE.Outlands,
+		PveAvalon:             resp.LifetimeStatistics.PvE.Avalon,
+		PveHellgate:           resp.LifetimeStatistics.PvE.Hellgate,
+		PveCorrupted:          resp.LifetimeStatistics.PvE.CorruptedDungeon,
+		PveMists:              resp.LifetimeStatistics.PvE.Mists,
+		GatherFiberTotal:      resp.LifetimeStatistics.Gathering.Fiber.Total,
+		GatherFiberRoyal:      resp.LifetimeStatistics.Gathering.Fiber.Royal,
+		GatherFiberOutlands:   resp.LifetimeStatistics.Gathering.Fiber.Outlands,
+		GatherFiberAvalon:     resp.LifetimeStatistics.Gathering.Fiber.Avalon,
+		GatherHideTotal:       resp.LifetimeStatistics.Gathering.Hide.Total,
+		GatherHideRoyal:       resp.LifetimeStatistics.Gathering.Hide.Royal,
+		GatherHideOutlands:    resp.LifetimeStatistics.Gathering.Hide.Outlands,
+		GatherHideAvalon:      resp.LifetimeStatistics.Gathering.Hide.Avalon,
+		GatherOreTotal:        resp.LifetimeStatistics.Gathering.Ore.Total,
+		GatherOreRoyal:        resp.LifetimeStatistics.Gathering.Ore.Royal,
+		GatherOreOutlands:     resp.LifetimeStatistics.Gathering.Ore.Outlands,
+		GatherOreAvalon:       resp.LifetimeStatistics.Gathering.Ore.Avalon,
+		GatherRockTotal:       resp.LifetimeStatistics.Gathering.Rock.Total,
+		GatherRockRoyal:       resp.LifetimeStatistics.Gathering.Rock.Royal,
+		GatherRockOutlands:    resp.LifetimeStatistics.Gathering.Rock.Outlands,
+		GatherRockAvalon:      resp.LifetimeStatistics.Gathering.Rock.Avalon,
+		GatherWoodTotal:       resp.LifetimeStatistics.Gathering.Wood.Total,
+		GatherWoodRoyal:       resp.LifetimeStatistics.Gathering.Wood.Royal,
+		GatherWoodOutlands:    resp.LifetimeStatistics.Gathering.Wood.Outlands,
+		GatherWoodAvalon:      resp.LifetimeStatistics.Gathering.Wood.Avalon,
+		GatherAllTotal:        resp.LifetimeStatistics.Gathering.All.Total,
+		GatherAllRoyal:        resp.LifetimeStatistics.Gathering.All.Royal,
+		GatherAllOutlands:     resp.LifetimeStatistics.Gathering.All.Outlands,
+		GatherAllAvalon:       resp.LifetimeStatistics.Gathering.All.Avalon,
+		CraftingTotal:         resp.LifetimeStatistics.Crafting.Total,
+		CraftingRoyal:         resp.LifetimeStatistics.Crafting.Royal,
+		CraftingOutlands:      resp.LifetimeStatistics.Crafting.Outlands,
+		CraftingAvalon:        resp.LifetimeStatistics.Crafting.Avalon,
+		FishingFame:           resp.FishingFame,
+		FarmingFame:           resp.FarmingFame,
+		CrystalLeagueFame:     resp.CrystalLeague,
+	}
+
+	return processResult{poll: poll, stats: stats, snapshot: snapshot}
 }
 
 func (p *PlayerPoller) processResults(results []processResult) {
 	deletes := make([]postgres.PlayerPoll, 0)
 	polls := make([]postgres.PlayerPoll, 0)
 	stats := make([]postgres.PlayerStatsLatest, 0)
+	snapshots := make([]postgres.PlayerStatsSnapshot, 0)
 	for _, result := range results {
 		if result.shouldDeletePoll {
 			deletes = append(deletes, result.poll)
@@ -205,6 +263,7 @@ func (p *PlayerPoller) processResults(results []processResult) {
 		} else {
 			polls = append(polls, result.poll)
 			stats = append(stats, result.stats)
+			snapshots = append(snapshots, result.snapshot)
 		}
 	}
 
@@ -220,6 +279,11 @@ func (p *PlayerPoller) processResults(results []processResult) {
 
 	if err := p.postgres.UpsertPlayerStatsLatest(stats); err != nil {
 		p.log.Error("upsert player stats failed", "err", err)
+		return
+	}
+
+	if err := p.postgres.InsertPlayerStatsSnapshots(snapshots); err != nil {
+		p.log.Error("upsert player stats snapshot failed", "err", err)
 		return
 	}
 
