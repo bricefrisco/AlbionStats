@@ -12,6 +12,7 @@ import (
 	"albionstats/internal/config"
 	"albionstats/internal/sqlite"
 	"albionstats/internal/tasks/killboard_poller"
+	"albionstats/internal/tasks/player_poller"
 )
 
 func main() {
@@ -63,23 +64,24 @@ func main() {
 
 	// Start player pollers for all regions
 	regions := []string{"americas", "europe", "asia"}
-	// for _, region := range regions {
-	// 	playerPoller, err := tasks.NewPlayerPoller(db, appLogger, tasks.PlayerPollerConfig{
-	// 		Region:      region,
-	// 		PageSize:    cfg.PlayerBatch,
-	// 		RatePerSec:  cfg.PlayerRate,
-	// 		UserAgent:   cfg.UserAgent,
-	// 		HTTPTimeout: cfg.HTTPTimeout,
-	// 	})
-	// 	if err != nil {
-	// 		log.Fatalf("player poller init (%s): %v", region, err)
-	// 	}
+	for _, region := range regions {
+		playerPoller, err := player_poller.NewPlayerPoller(player_poller.Config{
+			APIClient:  apiClient,
+			SQLite:     sqlite,
+			Logger:     appLogger,
+			Region:     region,
+			BatchSize:  cfg.PlayerBatch,
+			RatePerSec: cfg.PlayerRate,
+		})
+		if err != nil {
+			log.Fatalf("player poller init (%s): %v", region, err)
+		}
 
-	// 	go func(poller *tasks.PlayerPoller, regionName string) {
-	// 		log.Printf("starting player poller for region: %s", regionName)
-	// 		poller.Run(ctx)
-	// 	}(playerPoller, region)
-	// }
+		go func(poller *player_poller.PlayerPoller, regionName string) {
+			log.Printf("starting player poller for region: %s", regionName)
+			poller.Run()
+		}(playerPoller, region)
+	}
 
 	// Start killboard pollers for all regions
 	for _, region := range regions {

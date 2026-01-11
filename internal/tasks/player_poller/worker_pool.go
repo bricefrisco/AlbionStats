@@ -5,14 +5,10 @@ import (
 	"time"
 )
 
-type Job[R any] interface {
-	Run() R
-}
-
 type WorkerPool[R any] struct {
 	workers int
 	limiter <-chan time.Time
-	jobs    []Job[R]
+	jobs    []func() R
 }
 
 func NewWorkerPool[R any](ratePerSec int) *WorkerPool[R] {
@@ -30,16 +26,16 @@ func NewWorkerPool[R any](ratePerSec int) *WorkerPool[R] {
 	return &WorkerPool[R]{
 		workers: workers,
 		limiter: limiter,
-		jobs:    make([]Job[R], 0),
+		jobs:    make([]func() R, 0),
 	}
 }
 
-func (p *WorkerPool[R]) Add(job Job[R]) {
+func (p *WorkerPool[R]) Add(job func() R) {
 	p.jobs = append(p.jobs, job)
 }
 
 func (p *WorkerPool[R]) ExecuteJobs() []R {
-	jobCh := make(chan Job[R])
+	jobCh := make(chan func() R)
 	results := make(chan R, len(p.jobs))
 
 	var wg sync.WaitGroup
@@ -52,7 +48,7 @@ func (p *WorkerPool[R]) ExecuteJobs() []R {
 				if p.limiter != nil {
 					<-p.limiter
 				}
-				results <- job.Run()
+				results <- job()
 			}
 		}()
 	}
