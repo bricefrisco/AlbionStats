@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"strings"
 
 	"gorm.io/gorm/clause"
 )
@@ -26,4 +27,15 @@ func (s *Postgres) UpsertPlayerStatsLatest(stats []PlayerStatsLatest) error {
 		Columns:   []clause.Column{{Name: "region"}, {Name: "player_id"}},
 		UpdateAll: true,
 	}).Create(&stats).Error
+}
+
+func (s *Postgres) GetPlayerByName(ctx context.Context, region Region, name string) (*PlayerStatsLatest, error) {
+	var player PlayerStatsLatest
+	err := s.db.WithContext(ctx).
+		Where("region = ? AND LOWER(name) = ?", region, strings.ToLower(name)).
+		First(&player).Error
+	if err != nil {
+		return nil, err
+	}
+	return &player, nil
 }

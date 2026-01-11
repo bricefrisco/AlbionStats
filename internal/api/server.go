@@ -33,7 +33,7 @@ func NewServer(cfg Config) *Server {
 func (s *Server) setupRoutes() {
 	v1 := s.router.Group("/api")
 	v1.GET("/metrics/:metricId", s.metrics)
-	// v1.GET("/players/:server/:name", s.player)
+	v1.GET("/players/:server/:name", s.player)
 	// v1.GET("/players/:server/:name/pvp", s.playerPvp)
 	// v1.GET("/players/:server/:name/pve", s.playerPve)
 	v1.GET("/admin", s.admin)
