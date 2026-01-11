@@ -34,6 +34,7 @@ type processResult struct {
 	poll             postgres.PlayerPoll
 	stats            postgres.PlayerStatsLatest
 	shouldDeletePoll bool
+	error            bool
 }
 
 func NewPlayerPoller(cfg Config) (*PlayerPoller, error) {
@@ -100,7 +101,7 @@ func (p *PlayerPoller) processPlayer(player postgres.PlayerPoll) processResult {
 			LastEncountered:       player.LastEncountered,
 			KillboardLastActivity: player.KillboardLastActivity,
 			OtherLastActivity:     player.OtherLastActivity,
-		}}
+		}, error: true}
 	}
 
 	if resp.LifetimeStatistics.Timestamp == nil {
@@ -109,7 +110,7 @@ func (p *PlayerPoller) processPlayer(player postgres.PlayerPoll) processResult {
 
 	nextPollAt, err := scheduleNextPoll(player.LastEncountered, player.KillboardLastActivity, player.OtherLastActivity, now)
 	if err != nil {
-		p.log.Warn("player poll failed", "player_id", player.PlayerID, "err", err.Error())
+		p.log.Warn("schedule poll failed", "player_id", player.PlayerID, "err", err.Error())
 		return processResult{poll: postgres.PlayerPoll{
 			Region:                player.Region,
 			PlayerID:              player.PlayerID,
@@ -119,7 +120,7 @@ func (p *PlayerPoller) processPlayer(player postgres.PlayerPoll) processResult {
 			LastEncountered:       player.LastEncountered,
 			KillboardLastActivity: player.KillboardLastActivity,
 			OtherLastActivity:     player.OtherLastActivity,
-		}}
+		}, error: true}
 	}
 
 	poll := postgres.PlayerPoll{
@@ -199,6 +200,8 @@ func (p *PlayerPoller) processResults(results []processResult) {
 	for _, result := range results {
 		if result.shouldDeletePoll {
 			deletes = append(deletes, result.poll)
+		} else if result.error {
+			polls = append(polls, result.poll)
 		} else {
 			polls = append(polls, result.poll)
 			stats = append(stats, result.stats)
