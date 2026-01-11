@@ -6,11 +6,3 @@ func NullableString(val string) *string {
 	}
 	return &val
 }
-
-func NullableInt64(val int64) *int64 {
-	return &val
-}
-
-func NullableFloat64(val float64) *float64 {
-	return &val
-}

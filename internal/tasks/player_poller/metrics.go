@@ -28,12 +28,15 @@ func PushToVictoriaMetrics(stats []sqlite.PlayerStats, logger *slog.Logger) erro
 		batch = append(batch, metrics...)
 	}
 
-	body, err := json.Marshal(batch)
-	if err != nil {
-		return fmt.Errorf("marshal batch: %w", err)
+	var buf bytes.Buffer
+	enc := json.NewEncoder(&buf)
+	for _, m := range batch {
+		if err := enc.Encode(m); err != nil {
+			return fmt.Errorf("encode metric: %w", err)
+		}
 	}
 
-	req, err := http.NewRequest(http.MethodPost, "http://localhost:8428/api/v1/import", bytes.NewReader(body))
+	req, err := http.NewRequest(http.MethodPost, "http://localhost:8428/api/v1/import", &buf)
 	if err != nil {
 		return fmt.Errorf("new request: %w", err)
 	}
