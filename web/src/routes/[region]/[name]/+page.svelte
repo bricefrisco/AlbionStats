@@ -1,6 +1,7 @@
 <script>
 	import { page } from '$app/stores';
 	import Page from '../../../components/Page.svelte';
+	import PageHeader from '../../../components/PageHeader.svelte';
 
 	// Get parameters from URL
 	$: region = $page.params.region;
@@ -23,22 +24,6 @@
 			<p class="text-gray-700 dark:text-gray-300">Please provide a valid player name</p>
 		</div>
 	{:else}
-		<div class="text-center">
-			<h1 class="mb-4 text-3xl font-bold text-gray-900 dark:text-white">
-				{decodedName}
-			</h1>
-			<p class="text-lg text-gray-600 capitalize dark:text-gray-400">
-				{region} Server
-			</p>
-			<div class="mt-8 rounded-lg bg-gray-50 p-6 dark:bg-neutral-800">
-				<p class="text-gray-700 dark:text-gray-300">
-					This is the player page for <strong>{decodedName}</strong> on the
-					<strong>{region}</strong> server.
-				</p>
-				<p class="mt-4 text-sm text-gray-500 dark:text-gray-400">
-					Player details and charts will be added here.
-				</p>
-			</div>
-		</div>
+		<PageHeader title={`${decodedName}`} />
 	{/if}
 </Page>

@@ -53,9 +53,9 @@
 		When a player shows up on the killboards, we automatically start tracking their statistics.
 		<br /><br />
 		The main motivation for this project is to be able to look players up <i>quickly</i> and
-		<i>easily</i>. Other projects like this exist and are good, but they are often slow or have a
-		clunky UI. This site aims to be fast and easy to use. All of the code for this project is open
-		source and available on
+		<i>easily</i>. Other projects like this exist and work, but they are often slow or have a clunky
+		UI. This site aims to be fast and easy to use. All of the code for this project is open source
+		and available on
 		<a
 			href="https://github.com/bricefrisco/AlbionStats"
 			target="_blank"
