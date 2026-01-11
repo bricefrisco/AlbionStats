@@ -1,64 +1,66 @@
 package api
 
-// import (
-// 	"github.com/gin-gonic/gin"
-// 	"gorm.io/gorm"
-// )
+import (
+	"albionstats/internal/sqlite"
 
-// type Server struct {
-// 	db     *gorm.DB
-// 	router *gin.Engine
-// }
+	"github.com/gin-gonic/gin"
+)
 
-// type Config struct {
-// 	Port string
-// }
+type Server struct {
+	sqlite *sqlite.SQLite
+	router *gin.Engine
+}
 
-// func New(db *gorm.DB, cfg Config) *Server {
-// 	gin.SetMode(gin.ReleaseMode) // production mode
+type Config struct {
+	SQLite *sqlite.SQLite
+}
 
-// 	router := gin.Default()
-// 	router.Use(corsMiddleware())
+func NewServer(cfg Config) *Server {
+	gin.SetMode(gin.ReleaseMode)
 
-// 	server := &Server{
-// 		db:     db,
-// 		router: router,
-// 	}
+	router := gin.Default()
+	router.Use(corsMiddleware())
 
-// 	server.setupRoutes()
-// 	return server
-// }
+	server := &Server{
+		sqlite: cfg.SQLite,
+		router: router,
+	}
 
-// func (s *Server) setupRoutes() {
-// 	v1 := s.router.Group("/albionstats/v1")
-// 	v1.GET("/search/:server/:query", s.search)
-// 	v1.GET("/metrics/:metricId", s.metrics)
-// 	v1.GET("/players/:server/:name", s.player)
-// 	v1.GET("/players/:server/:name/pvp", s.playerPvp)
-// 	v1.GET("/players/:server/:name/pve", s.playerPve)
-// }
+	server.setupRoutes()
+	return server
+}
 
-// func (s *Server) Run(addr string) error {
-// 	return s.router.Run(addr)
-// }
+func (s *Server) setupRoutes() {
+	v1 := s.router.Group("/albionstats/v1")
+	// v1.GET("/search/:server/:query", s.search)
+	// v1.GET("/metrics/:metricId", s.metrics)
+	// v1.GET("/players/:server/:name", s.player)
+	// v1.GET("/players/:server/:name/pvp", s.playerPvp)
+	// v1.GET("/players/:server/:name/pve", s.playerPve)
+	v1.GET("/admin", s.admin)
+}
 
-// func (s *Server) Router() *gin.Engine {
-// 	return s.router
-// }
+func (s *Server) Run(addr string) error {
+	return s.router.Run(addr)
+}
 
-// // CORS middleware
-// func corsMiddleware() gin.HandlerFunc {
-// 	return func(c *gin.Context) {
-// 		c.Header("Access-Control-Allow-Origin", "*")
-// 		c.Header("Access-Control-Allow-Credentials", "true")
-// 		c.Header("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
-// 		c.Header("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE")
+func (s *Server) Router() *gin.Engine {
+	return s.router
+}
 
-// 		if c.Request.Method == "OPTIONS" {
-// 			c.AbortWithStatus(204)
-// 			return
-// 		}
+// CORS middleware
+func corsMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Header("Access-Control-Allow-Origin", "*")
+		c.Header("Access-Control-Allow-Credentials", "true")
+		c.Header("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
+		c.Header("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE")
 
-// 		c.Next()
-// 	}
-// }
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
+
+		c.Next()
+	}
+}

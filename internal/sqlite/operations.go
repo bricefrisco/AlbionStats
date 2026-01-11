@@ -98,46 +98,23 @@ func (s *SQLite) UpsertPlayerStats(stats []PlayerStats) error {
 	}).Create(&stats).Error
 }
 
-// func ApplyPlayerPollerDatabaseChanges(ctx context.Context, db *gorm.DB, deletePolls []PlayerPoll, updatePolls []PlayerPoll, stats []PlayerStats, failures []PlayerPoll) error {
-// 	if len(deletePolls) > 0 {
-// 		regionBuckets := make(map[string][]string)
-// 		for _, d := range deletePolls {
-// 			regionBuckets[d.Region] = append(regionBuckets[d.Region], d.PlayerID)
-// 		}
-// 		for region, ids := range regionBuckets {
-// 			if err := db.WithContext(ctx).Delete(&PlayerPoll{}, "region = ? AND player_id IN ?", region, ids).Error; err != nil {
-// 				return fmt.Errorf("delete polls: %w", err)
-// 			}
-// 		}
-// 	}
+func (s *SQLite) GetPlayersReadyToPollCount() (int64, error) {
+	var count int64
+	now := time.Now().UTC()
+	if err := s.db.Model(&PlayerPoll{}).
+		Where("next_poll_at <= ?", now).
+		Count(&count).Error; err != nil {
+		return 0, fmt.Errorf("count players ready to poll: %w", err)
+	}
+	return count, nil
+}
 
-// 	// Upsert successful polls
-// 	if len(updatePolls) > 0 {
-// 		if err := BulkUpsertPlayerPolls(ctx, db, updatePolls); err != nil {
-// 			return fmt.Errorf("upsert polls: %w", err)
-// 		}
-// 	}
-
-// 	// Upsert stats latest
-// 	if len(stats) > 0 {
-// 		if err := BulkUpsertPlayerStats(ctx, db, statsLatest); err != nil {
-// 			return fmt.Errorf("upsert stats latest: %w", err)
-// 		}
-// 	}
-
-// 	// Insert snapshots
-// 	if len(snapshots) > 0 {
-// 		if err := BulkInsertPlayerStatsSnapshots(ctx, db, snapshots); err != nil {
-// 			return fmt.Errorf("insert snapshots: %w", err)
-// 		}
-// 	}
-
-// 	// Upsert failures
-// 	if len(failurePolls) > 0 {
-// 		if err := BulkUpsertPlayerPolls(ctx, db, failurePolls); err != nil {
-// 			return fmt.Errorf("upsert failure polls: %w", err)
-// 		}
-// 	}
-
-// 	return nil
-// }
+func (s *SQLite) GetPlayersWithErrorsCount() (int64, error) {
+	var count int64
+	if err := s.db.Model(&PlayerPoll{}).
+		Where("error_count >= ?", 1).
+		Count(&count).Error; err != nil {
+		return 0, fmt.Errorf("count players with errors: %w", err)
+	}
+	return count, nil
+}

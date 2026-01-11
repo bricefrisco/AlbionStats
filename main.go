@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"log/slog"
 	"os"
@@ -37,18 +38,17 @@ func main() {
 	ctx, cancel := signalContext(context.Background())
 	defer cancel()
 
-	// Start API server
-	// apiServer := api.New(db, api.Config{
-	// 	Port: cfg.APIPort,
-	// })
+	server := api.NewServer(api.Config{
+		SQLite: sqlite,
+	})
 
-	// go func() {
-	// 	addr := fmt.Sprintf(":%s", cfg.APIPort)
-	// 	log.Printf("starting API server on %s", addr)
-	// 	if err := apiServer.Run(addr); err != nil {
-	// 		log.Printf("API server error: %v", err)
-	// 	}
-	// }()
+	go func() {
+		addr := fmt.Sprintf(":%s", cfg.APIPort)
+		log.Printf("starting API server on %s", addr)
+		if err := server.Run(addr); err != nil {
+			log.Fatalf("API server error: %v", err)
+		}
+	}()
 
 	// Start metrics collector
 	// metricsCollector, err := tasks.NewCollector(db, appLogger, tasks.CollectorConfig{
