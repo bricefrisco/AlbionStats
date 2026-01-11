@@ -82,7 +82,7 @@ func (s *Postgres) GetMetrics(ctx context.Context, metricId, granularity string)
 		if err := rows.Scan(&timestamp, &value); err != nil {
 			return nil, nil, err
 		}
-		timestamps = append(timestamps, timestamp.Unix())
+		timestamps = append(timestamps, timestamp.UnixMilli())
 		values = append(values, int64(value))
 	}
 
