@@ -15,7 +15,7 @@ func (s *Server) metrics(c *gin.Context) {
 
 	granularity := c.DefaultQuery("granularity", "1w")
 
-	results, err := s.postgres.GetMetrics(c.Request.Context(), metricId, granularity)
+	timestamps, values, err := s.postgres.GetMetrics(c.Request.Context(), metricId, granularity)
 	if err != nil {
 		// Check if it's an invalid granularity error
 		if err.Error() == "invalid granularity: "+granularity {
@@ -27,6 +27,7 @@ func (s *Server) metrics(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"data": results,
+		"timestamps": timestamps,
+		"values":     values,
 	})
 }

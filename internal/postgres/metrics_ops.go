@@ -6,11 +6,6 @@ import (
 	"time"
 )
 
-type MetricPoint struct {
-	Timestamp time.Time `json:"timestamp"`
-	Value     int64     `json:"value"`
-}
-
 func (s *Postgres) InsertMetrics(ctx context.Context) error {
 	return s.db.WithContext(ctx).Exec(`
 		INSERT INTO metrics (metric, ts, value)
@@ -20,7 +15,7 @@ func (s *Postgres) InsertMetrics(ctx context.Context) error {
 	`).Error
 }
 
-func (s *Postgres) GetMetrics(ctx context.Context, metricId, granularity string) ([]MetricPoint, error) {
+func (s *Postgres) GetMetrics(ctx context.Context, metricId, granularity string) ([]int64, []int64, error) {
 	var query string
 	var args []interface{}
 
@@ -70,31 +65,30 @@ func (s *Postgres) GetMetrics(ctx context.Context, metricId, granularity string)
 			ORDER BY 1`
 		args = []interface{}{metricId}
 	default:
-		return nil, fmt.Errorf("invalid granularity: %s", granularity)
+		return nil, nil, fmt.Errorf("invalid granularity: %s", granularity)
 	}
 
 	rows, err := s.db.WithContext(ctx).Raw(query, args...).Rows()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer rows.Close()
 
-	var results []MetricPoint
+	var timestamps []int64
+	var values []int64
 	for rows.Next() {
 		var timestamp time.Time
 		var value float64
 		if err := rows.Scan(&timestamp, &value); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
-		results = append(results, MetricPoint{
-			Timestamp: timestamp,
-			Value:     int64(value),
-		})
+		timestamps = append(timestamps, timestamp.Unix())
+		values = append(values, int64(value))
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return results, nil
+	return timestamps, values, nil
 }
