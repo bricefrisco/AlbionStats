@@ -1,6 +1,5 @@
 <script>
 	import { page } from '$app/stores';
-	import { onMount } from 'svelte';
 	import Page from '../../../components/Page.svelte';
 	import PageHeader from '../../../components/PageHeader.svelte';
 	import SubHeader from '../../../components/SubHeader.svelte';
@@ -15,6 +14,14 @@
 
 	// Validate region
 	$: validRegion = ['americas', 'europe', 'asia'].includes(region);
+
+	// Fetch player data when route parameters change
+	$: if (validRegion && decodedName) {
+		playerData = null;
+		loading = true;
+		error = null;
+		fetchPlayerData();
+	}
 
 	// Player data
 	let playerData = null;
@@ -45,13 +52,7 @@
 		}
 	}
 
-	onMount(() => {
-		if (validRegion && decodedName) {
-			fetchPlayerData();
-		} else {
-			loading = false;
-		}
-	});
+	// Initial load is handled by the reactive statement above
 
 	// Format numbers with commas
 	function formatNumber(num) {
