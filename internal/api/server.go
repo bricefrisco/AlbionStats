@@ -38,6 +38,15 @@ func (s *Server) setupRoutes() {
 	// v1.GET("/players/:server/:name/pvp", s.playerPvp)
 	// v1.GET("/players/:server/:name/pve", s.playerPve)
 	v1.GET("/admin", s.admin)
+
+	// Serve static files from the Svelte build directory
+	s.router.Static("/_app", "/usr/local/share/albionstats_web/_app")
+	s.router.StaticFile("/robots.txt", "/usr/local/share/albionstats_web/robots.txt")
+
+	// Catch-all handler for SPA routing - serves 200.html for any unmatched route
+	s.router.NoRoute(func(c *gin.Context) {
+		c.File("/usr/local/share/albionstats_web/200.html")
+	})
 }
 
 func (s *Server) Run(addr string) error {

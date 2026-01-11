@@ -16,7 +16,17 @@ jobs:
         with:
           go-version: '1.24.5'
 
-      - name: Build
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Build Svelte App
+        run: |
+          cd web
+          npm ci
+          npm run build
+
+      - name: Build Go App
         run: |
           go mod tidy
           GOOS=linux GOARCH=amd64 go build -o albionstats .
@@ -43,17 +53,17 @@ jobs:
           chmod +x cloudflared
           sudo mv cloudflared /usr/local/bin/
           
-      - name: Deploy file to Raspberry Pi
+      - name: Deploy files to Raspberry Pi
         run: |
           scp albionstats pi:/usr/local/bin/albionstats_temp
+          scp -r web/build pi:/usr/local/share/albionstats_web_temp
 
-      - name: Stop Service
+      - name: Atomic deployment
         run: |
           ssh pi "sudo systemctl stop albionstats"
-
-      - name: Replace binary
-        run: |
+          ssh pi "sudo rm -rf /usr/local/share/albionstats_web && sudo mv /usr/local/share/albionstats_web_temp /usr/local/share/albionstats_web"
           ssh pi "sudo mv /usr/local/bin/albionstats_temp /usr/local/bin/albionstats && sudo chmod +x /usr/local/bin/albionstats"
+          ssh pi "sudo systemctl start albionstats"
 
       - name: Start Service
         run: |
