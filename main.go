@@ -9,11 +9,13 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+	"time"
 
 	"albionstats/internal/api"
 	"albionstats/internal/config"
 	"albionstats/internal/postgres"
 	"albionstats/internal/tasks/killboard_poller"
+	"albionstats/internal/tasks/metrics_collector"
 	"albionstats/internal/tasks/player_poller"
 )
 
@@ -66,16 +68,16 @@ func main() {
 	}()
 
 	// Start metrics collector
-	// metricsCollector, err := tasks.NewCollector(db, appLogger, tasks.CollectorConfig{
-	// 	Interval: 5 * time.Minute,
-	// })
-	// if err != nil {
-	// 	log.Fatalf("metrics collector init: %v", err)
-	// }
+	metricsCollector, err := metrics_collector.NewCollector(postgres, appLogger, metrics_collector.Config{
+		Interval: 5 * time.Minute,
+	})
+	if err != nil {
+		log.Fatalf("metrics collector init: %v", err)
+	}
 
-	// go func() {
-	// 	metricsCollector.Run(ctx)
-	// }()
+	go func() {
+		metricsCollector.Run(ctx)
+	}()
 
 	// Start player pollers for all regions
 	regions := []string{"americas", "europe", "asia"}
