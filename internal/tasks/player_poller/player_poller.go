@@ -148,7 +148,7 @@ func (p *PlayerPoller) processPlayer(player sqlite.PlayerPoll) processResult {
 		AllianceTag:           util.NullableString(resp.AllianceTag),
 		KillFame:              resp.KillFame,
 		DeathFame:             resp.DeathFame,
-		FameRatio:             util.NullableFloat64(resp.FameRatio),
+		FameRatio:             resp.FameRatio,
 		PveTotal:              resp.LifetimeStatistics.PvE.Total,
 		PveRoyal:              resp.LifetimeStatistics.PvE.Royal,
 		PveOutlands:           resp.LifetimeStatistics.PvE.Outlands,
@@ -217,6 +217,11 @@ func (p *PlayerPoller) processResults(results []processResult) {
 
 	if err := p.sqlite.UpsertPlayerStats(stats); err != nil {
 		p.log.Error("upsert player stats failed", "err", err)
+		return
+	}
+
+	if err := PushToVictoriaMetrics(stats, p.log); err != nil {
+		p.log.Error("push to victoria metrics failed", "err", err)
 		return
 	}
 

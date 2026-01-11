@@ -36,9 +36,9 @@ type PlayerStats struct {
 	AllianceTag  *string `gorm:"column:alliance_tag"`
 
 	// Fame counters
-	KillFame  int64    `gorm:"column:kill_fame;not null"`
-	DeathFame int64    `gorm:"column:death_fame;not null"`
-	FameRatio *float64 `gorm:"column:fame_ratio"`
+	KillFame  int64   `gorm:"column:kill_fame;not null"`
+	DeathFame int64   `gorm:"column:death_fame;not null"`
+	FameRatio float64 `gorm:"column:fame_ratio"`
 
 	// PvE Fame
 	PveTotal     int64 `gorm:"column:pve_total;not null"`
