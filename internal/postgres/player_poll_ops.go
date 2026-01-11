@@ -87,33 +87,6 @@ func (s *Postgres) DeletePlayerPolls(polls []PlayerPoll) error {
 	})
 }
 
-func (s *Postgres) UpsertPlayerStatsLatest(stats []PlayerStatsLatest) error {
-	if len(stats) == 0 {
-		return nil
-	}
-
-	return s.db.Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: "region"}, {Name: "player_id"}},
-		UpdateAll: true,
-	}).Create(&stats).Error
-}
-
-func (s *Postgres) InsertPlayerStatsSnapshots(stats []PlayerStatsSnapshot) error {
-	if len(stats) == 0 {
-		return nil
-	}
-
-	return s.db.Create(&stats).Error
-}
-
-func (s *Postgres) InsertMetrics(metrics []Metrics) error {
-	if len(metrics) == 0 {
-		return nil
-	}
-
-	return s.db.Create(&metrics).Error
-}
-
 func (s *Postgres) GetPlayersReadyToPollCount() (int64, error) {
 	var count int64
 	now := time.Now().UTC()
