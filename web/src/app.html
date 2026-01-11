@@ -5,6 +5,10 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<script>
 			(function () {
+				if (!localStorage.getItem('darkMode')) {
+					localStorage.setItem('darkMode', 'true');
+				}
+				
 				const isDarkMode = localStorage.getItem('darkMode') === 'true';
 				document.documentElement.classList.toggle('dark', isDarkMode);
 			})();
