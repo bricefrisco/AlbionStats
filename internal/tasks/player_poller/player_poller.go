@@ -220,6 +220,8 @@ func (p *PlayerPoller) processResults(results []processResult) {
 		p.log.Error("upsert player stats failed", "err", err)
 		return
 	}
+
+	p.log.Info("processed results", "num_deletes", len(deletes), "num_polls", len(polls), "num_stats", len(stats))
 }
 
 func scheduleNextPoll(lastEncountered, killboardLastActivity, otherLastActivity *time.Time, now time.Time) (time.Time, error) {
