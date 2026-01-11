@@ -37,7 +37,6 @@ func (s *Server) setupRoutes() {
 	// v1.GET("/players/:server/:name", s.player)
 	// v1.GET("/players/:server/:name/pvp", s.playerPvp)
 	// v1.GET("/players/:server/:name/pve", s.playerPve)
-	v1.GET("/vm", s.vmQueryProxy)
 	v1.GET("/admin", s.admin)
 }
 
