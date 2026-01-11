@@ -9,7 +9,7 @@ import (
 func createIndexes(db *gorm.DB) error {
 	indexes := []string{
 		`CREATE INDEX IF NOT EXISTS idx_player_polls_error_count ON player_polls (error_count)`,
-		`CREATE INDEX IF NOT EXISTS ON player_polls (next_poll_at DESC)`,
+		`CREATE INDEX IF NOT EXISTS idx_player_polls_next_poll_at ON player_polls (next_poll_at DESC)`,
 		`CREATE INDEX IF NOT EXISTS idx_player_polls_region_next_poll ON player_polls (region, next_poll_at)`,
 		`CREATE INDEX IF NOT EXISTS idx_player_stats_player_name_lower ON player_stats (region, lower(name))`,
 	}
