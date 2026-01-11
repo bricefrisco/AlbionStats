@@ -11,7 +11,12 @@
 <header class="border-b border-gray-200 dark:border-neutral-800">
 	<div class="mx-auto max-w-5xl py-4">
 		<div class="mb-4 flex items-center justify-between">
-			<h1 class="text-lg font-medium">Albion Stats</h1>
+			<a
+				href="/"
+				class="text-lg font-medium text-gray-900 hover:text-gray-700 dark:text-white dark:hover:text-gray-300"
+			>
+				Albion Stats
+			</a>
 			<div class="flex items-center gap-3">
 				<button
 					on:click={toggleDarkMode}
