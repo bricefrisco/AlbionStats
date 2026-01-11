@@ -15,7 +15,7 @@
 				href="/"
 				class="text-lg font-medium text-gray-900 hover:text-gray-700 dark:text-white dark:hover:text-gray-300"
 			>
-				Albion Stats
+				AlbionStats
 			</a>
 			<div class="flex items-center gap-3">
 				<button

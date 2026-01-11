@@ -3,11 +3,8 @@
 </script>
 
 <Page>
-	<h1 class="mb-4 text-2xl font-bold text-gray-900 dark:text-white">Welcome to SvelteKit</h1>
+	<h1 class="mb-4 text-2xl font-bold text-gray-900 dark:text-white">Welcome to AlbionStats</h1>
 	<p class="mb-4 text-gray-700 dark:text-gray-300">
-		Visit <a
-			href="https://svelte.dev/docs/kit"
-			class="text-blue-600 hover:underline dark:text-blue-400">svelte.dev/docs/kit</a
-		> to read the documentation
+		We track Albion Online player statistics over time.
 	</p>
 </Page>
