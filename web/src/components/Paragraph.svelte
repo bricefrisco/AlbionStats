@@ -1,0 +1,8 @@
+<script>
+	// Props
+	export let classes = '';
+</script>
+
+<p class="mb-4 max-w-3xl text-gray-700 dark:text-gray-300 {classes}">
+	<slot />
+</p>
