@@ -66,7 +66,7 @@ func (p *PlayerPoller) runBatch() {
 	}
 
 	if len(players) == 0 {
-		p.log.Debug("no players to poll")
+		p.log.Info("no players to poll")
 		time.Sleep(time.Second)
 	}
 
@@ -88,6 +88,7 @@ func (p *PlayerPoller) processPlayer(player sqlite.PlayerPoll) processResult {
 	resp, err := p.api.FetchPlayer(p.region, player.PlayerID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
+			p.log.Info("player missing from API; marking for delete", "player_id", player.PlayerID)
 			return processResult{shouldDeletePoll: true}
 		}
 
@@ -105,6 +106,7 @@ func (p *PlayerPoller) processPlayer(player sqlite.PlayerPoll) processResult {
 	}
 
 	if resp.LifetimeStatistics.Timestamp == nil {
+		p.log.Info("player missing lifetime timestamp; marking for delete", "player_id", player.PlayerID)
 		return processResult{shouldDeletePoll: true}
 	}
 
@@ -190,6 +192,7 @@ func (p *PlayerPoller) processPlayer(player sqlite.PlayerPoll) processResult {
 		CrystalLeagueFame:     resp.CrystalLeague,
 	}
 
+	p.log.Info("player refreshed", "player_id", player.PlayerID, "next_poll_at", nextPollAt)
 	return processResult{poll: poll, stats: stats}
 }
 
