@@ -1,4 +1,4 @@
-package sqlite
+package postgres
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-func (s *SQLite) FetchPlayersToPoll(region string, batchSize int) ([]PlayerPoll, error) {
+func (s *Postgres) FetchPlayersToPoll(region string, batchSize int) ([]PlayerPoll, error) {
 	var players []PlayerPoll
 	now := time.Now().UTC()
 	if err := s.db.Where("region = ? AND next_poll_at <= ?", region, now).
@@ -20,7 +20,7 @@ func (s *SQLite) FetchPlayersToPoll(region string, batchSize int) ([]PlayerPoll,
 	return players, nil
 }
 
-func (s *SQLite) UpsertPlayerPolls(polls map[string]PlayerPoll) error {
+func (s *Postgres) UpsertPlayerPolls(polls map[string]PlayerPoll) error {
 	if len(polls) == 0 {
 		return nil
 	}
@@ -32,8 +32,8 @@ func (s *SQLite) UpsertPlayerPolls(polls map[string]PlayerPoll) error {
 
 	assignmentsOnConflict := map[string]interface{}{
 		"next_poll_at": gorm.Expr(
-			"MIN(" +
-				"COALESCE(datetime(player_polls.last_poll_at, '+6 hours'), player_polls.next_poll_at)," +
+			"LEAST(" +
+				"COALESCE(player_polls.last_poll_at + INTERVAL '6 hours', player_polls.next_poll_at)," +
 				"player_polls.next_poll_at" +
 				")",
 		),
@@ -46,7 +46,7 @@ func (s *SQLite) UpsertPlayerPolls(polls map[string]PlayerPoll) error {
 	}).Create(&batch).Error
 }
 
-func (s *SQLite) UpdatePlayerPolls(polls []PlayerPoll) error {
+func (s *Postgres) UpdatePlayerPolls(polls []PlayerPoll) error {
 	if len(polls) == 0 {
 		return nil
 	}
@@ -70,7 +70,7 @@ func (s *SQLite) UpdatePlayerPolls(polls []PlayerPoll) error {
 	})
 }
 
-func (s *SQLite) DeletePlayerPolls(polls []PlayerPoll) error {
+func (s *Postgres) DeletePlayerPolls(polls []PlayerPoll) error {
 	if len(polls) == 0 {
 		return nil
 	}
@@ -87,7 +87,7 @@ func (s *SQLite) DeletePlayerPolls(polls []PlayerPoll) error {
 	})
 }
 
-func (s *SQLite) UpsertPlayerStats(stats []PlayerStats) error {
+func (s *Postgres) UpsertPlayerStatsLatest(stats []PlayerStatsLatest) error {
 	if len(stats) == 0 {
 		return nil
 	}
@@ -98,7 +98,23 @@ func (s *SQLite) UpsertPlayerStats(stats []PlayerStats) error {
 	}).Create(&stats).Error
 }
 
-func (s *SQLite) GetPlayersReadyToPollCount() (int64, error) {
+func (s *Postgres) InsertPlayerStatsSnapshots(stats []PlayerStatsSnapshot) error {
+	if len(stats) == 0 {
+		return nil
+	}
+
+	return s.db.Create(&stats).Error
+}
+
+func (s *Postgres) InsertMetrics(metrics []Metrics) error {
+	if len(metrics) == 0 {
+		return nil
+	}
+
+	return s.db.Create(&metrics).Error
+}
+
+func (s *Postgres) GetPlayersReadyToPollCount() (int64, error) {
 	var count int64
 	now := time.Now().UTC()
 	if err := s.db.Model(&PlayerPoll{}).
@@ -109,7 +125,7 @@ func (s *SQLite) GetPlayersReadyToPollCount() (int64, error) {
 	return count, nil
 }
 
-func (s *SQLite) GetPlayersWithErrorsCount() (int64, error) {
+func (s *Postgres) GetPlayersWithErrorsCount() (int64, error) {
 	var count int64
 	if err := s.db.Model(&PlayerPoll{}).
 		Where("error_count >= ?", 1).

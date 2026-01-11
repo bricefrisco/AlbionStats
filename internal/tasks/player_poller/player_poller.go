@@ -2,7 +2,7 @@ package player_poller
 
 import (
 	"albionstats/internal/api"
-	"albionstats/internal/sqlite"
+	"albionstats/internal/postgres"
 	"albionstats/internal/util"
 	"errors"
 	"fmt"
@@ -14,7 +14,7 @@ import (
 
 type Config struct {
 	APIClient  *api.Client
-	SQLite     *sqlite.SQLite
+	Postgres   *postgres.Postgres
 	Logger     *slog.Logger
 	Region     string
 	BatchSize  int
@@ -23,7 +23,7 @@ type Config struct {
 
 type PlayerPoller struct {
 	api        *api.Client
-	sqlite     *sqlite.SQLite
+	postgres   *postgres.Postgres
 	log        *slog.Logger
 	region     string
 	batchSize  int
@@ -31,15 +31,15 @@ type PlayerPoller struct {
 }
 
 type processResult struct {
-	poll             sqlite.PlayerPoll
-	stats            sqlite.PlayerStats
+	poll             postgres.PlayerPoll
+	stats            postgres.PlayerStatsLatest
 	shouldDeletePoll bool
 }
 
 func NewPlayerPoller(cfg Config) (*PlayerPoller, error) {
 	return &PlayerPoller{
 		api:        cfg.APIClient,
-		sqlite:     cfg.SQLite,
+		postgres:   cfg.Postgres,
 		log:        cfg.Logger.With("component", "player_poller", "region", cfg.Region),
 		region:     cfg.Region,
 		batchSize:  cfg.BatchSize,
@@ -59,7 +59,7 @@ func (p *PlayerPoller) Run() {
 }
 
 func (p *PlayerPoller) runBatch() {
-	players, err := p.sqlite.FetchPlayersToPoll(p.region, p.batchSize)
+	players, err := p.postgres.FetchPlayersToPoll(p.region, p.batchSize)
 	if err != nil {
 		p.log.Error("fetch players to poll failed", "err", err)
 		return
@@ -81,7 +81,7 @@ func (p *PlayerPoller) runBatch() {
 	p.processResults(results)
 }
 
-func (p *PlayerPoller) processPlayer(player sqlite.PlayerPoll) processResult {
+func (p *PlayerPoller) processPlayer(player postgres.PlayerPoll) processResult {
 	now := time.Now().UTC()
 
 	resp, err := p.api.FetchPlayer(p.region, player.PlayerID)
@@ -91,11 +91,11 @@ func (p *PlayerPoller) processPlayer(player sqlite.PlayerPoll) processResult {
 		}
 
 		p.log.Warn("player poll failed", "player_id", player.PlayerID, "err", err.Error())
-		return processResult{poll: sqlite.PlayerPoll{
+		return processResult{poll: postgres.PlayerPoll{
 			Region:                player.Region,
 			PlayerID:              player.PlayerID,
 			LastPollAt:            player.LastPollAt,
-			NextPollAt:            time.Now().UTC().Add(failureBackoff(player.ErrorCount + 1)),
+			NextPollAt:            time.Now().UTC().Add(failureBackoff(int(player.ErrorCount) + 1)),
 			ErrorCount:            player.ErrorCount + 1,
 			LastEncountered:       player.LastEncountered,
 			KillboardLastActivity: player.KillboardLastActivity,
@@ -110,11 +110,11 @@ func (p *PlayerPoller) processPlayer(player sqlite.PlayerPoll) processResult {
 	nextPollAt, err := scheduleNextPoll(player.LastEncountered, player.KillboardLastActivity, player.OtherLastActivity, now)
 	if err != nil {
 		p.log.Warn("player poll failed", "player_id", player.PlayerID, "err", err.Error())
-		return processResult{poll: sqlite.PlayerPoll{
+		return processResult{poll: postgres.PlayerPoll{
 			Region:                player.Region,
 			PlayerID:              player.PlayerID,
 			LastPollAt:            player.LastPollAt,
-			NextPollAt:            time.Now().UTC().Add(failureBackoff(player.ErrorCount + 1)),
+			NextPollAt:            time.Now().UTC().Add(failureBackoff(int(player.ErrorCount) + 1)),
 			ErrorCount:            player.ErrorCount + 1,
 			LastEncountered:       player.LastEncountered,
 			KillboardLastActivity: player.KillboardLastActivity,
@@ -122,7 +122,7 @@ func (p *PlayerPoller) processPlayer(player sqlite.PlayerPoll) processResult {
 		}}
 	}
 
-	poll := sqlite.PlayerPoll{
+	poll := postgres.PlayerPoll{
 		Region:                player.Region,
 		PlayerID:              player.PlayerID,
 		LastPollAt:            &now,
@@ -133,7 +133,7 @@ func (p *PlayerPoller) processPlayer(player sqlite.PlayerPoll) processResult {
 		KillboardLastActivity: player.KillboardLastActivity,
 	}
 
-	stats := sqlite.PlayerStats{
+	stats := postgres.PlayerStatsLatest{
 		Region:                player.Region,
 		PlayerID:              player.PlayerID,
 		TS:                    now,
@@ -193,9 +193,9 @@ func (p *PlayerPoller) processPlayer(player sqlite.PlayerPoll) processResult {
 }
 
 func (p *PlayerPoller) processResults(results []processResult) {
-	deletes := make([]sqlite.PlayerPoll, 0)
-	polls := make([]sqlite.PlayerPoll, 0)
-	stats := make([]sqlite.PlayerStats, 0)
+	deletes := make([]postgres.PlayerPoll, 0)
+	polls := make([]postgres.PlayerPoll, 0)
+	stats := make([]postgres.PlayerStatsLatest, 0)
 	for _, result := range results {
 		if result.shouldDeletePoll {
 			deletes = append(deletes, result.poll)
@@ -205,17 +205,17 @@ func (p *PlayerPoller) processResults(results []processResult) {
 		}
 	}
 
-	if err := p.sqlite.DeletePlayerPolls(deletes); err != nil {
+	if err := p.postgres.DeletePlayerPolls(deletes); err != nil {
 		p.log.Error("delete player polls failed", "err", err)
 		return
 	}
 
-	if err := p.sqlite.UpdatePlayerPolls(polls); err != nil {
+	if err := p.postgres.UpdatePlayerPolls(polls); err != nil {
 		p.log.Error("update player polls failed", "err", err)
 		return
 	}
 
-	if err := p.sqlite.UpsertPlayerStats(stats); err != nil {
+	if err := p.postgres.UpsertPlayerStatsLatest(stats); err != nil {
 		p.log.Error("upsert player stats failed", "err", err)
 		return
 	}

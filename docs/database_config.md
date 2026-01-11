@@ -5,10 +5,10 @@ Database was set up using [instructions from timescale db](https://www.tigerdata
 ```cmd
 sudo apt install gnupg postgresql-common apt-transport-https lsb-release wget
 sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh
-echo "deb https://packagecloud.io/timescale/timescaledb/debian/ $(lsb_release -c -s) main" | sudo tee /etc/apt/sources.list.d/timescaledb.list
+echo "deb https://packagecloud.io/timescale/timescaledb/ubuntu/ $(lsb_release -c -s) main" | sudo tee /etc/apt/sources.list.d/timescaledb.list
 wget --quiet -O - https://packagecloud.io/timescale/timescaledb/gpgkey | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/timescaledb.gpg
 sudo apt update
-sudo apt install timescaledb-2-postgresql-17 postgresql-client-17
+sudo apt install timescaledb-2-postgresql-18 postgresql-client-18
 sudo timescaledb-tune
 ```
 
@@ -70,7 +70,9 @@ CREATE TABLE player_polls (
     )
 );
 
-CREATE INDEX player_polls_poll_idx ON player_polls(region, next_poll_at DESC);
+CREATE INDEX player_polls_poll_idx ON player_polls(next_poll_at DESC);
+CREATE INDEX player_polls_region_poll_idx ON player_polls(region, next_poll_at DESC);
+CREATE INDEX player_polls_error_idx ON player_polls(error_count DESC);
 
 -----------------------
 -- player_stats_latest
@@ -152,8 +154,7 @@ CREATE TABLE player_stats_latest (
     PRIMARY KEY (region, player_id)
 );
 
-CREATE INDEX idx_player_name_lower
-ON player_stats_latest (region, lower(name));
+CREATE INDEX idx_player_name_lower ON player_stats_latest (region, lower(name));
 
 -----------------------
 -- player_stats_snapshots

@@ -30,7 +30,7 @@ const (
 	defaultPlayerRate     = 6
 	defaultPlayerBatch    = 100
 	defaultAPIPort        = "8080"
-	defaultDBDSN          = "file:albionstats.db?_journal_mode=WAL&_synchronous=NORMAL&_busy_timeout=5000"
+	defaultDBDSN          = "postgres://postgres:postgres@localhost/postgres?sslmode=disable"
 	defaultConfigPath     = ".env"
 )
 

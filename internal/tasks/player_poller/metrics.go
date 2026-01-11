@@ -1,7 +1,7 @@
 package player_poller
 
 import (
-	"albionstats/internal/sqlite"
+	"albionstats/internal/postgres"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -17,7 +17,7 @@ type VMMetric struct {
 	Timestamps []int64           `json:"timestamps"`
 }
 
-func PushToVictoriaMetrics(stats []sqlite.PlayerStats, logger *slog.Logger) error {
+func PushToVictoriaMetrics(stats []postgres.PlayerStatsLatest, logger *slog.Logger) error {
 	if len(stats) == 0 {
 		return nil
 	}
@@ -58,9 +58,9 @@ func PushToVictoriaMetrics(stats []sqlite.PlayerStats, logger *slog.Logger) erro
 	return nil
 }
 
-func playerStatsToMetrics(stats sqlite.PlayerStats) []VMMetric {
+func playerStatsToMetrics(stats postgres.PlayerStatsLatest) []VMMetric {
 	labels := map[string]string{
-		"region":    stats.Region,
+		"region":    string(stats.Region),
 		"player_id": stats.PlayerID,
 	}
 

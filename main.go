@@ -11,7 +11,7 @@ import (
 
 	"albionstats/internal/api"
 	"albionstats/internal/config"
-	"albionstats/internal/sqlite"
+	"albionstats/internal/postgres"
 	"albionstats/internal/tasks/killboard_poller"
 	"albionstats/internal/tasks/player_poller"
 )
@@ -26,9 +26,9 @@ func main() {
 
 	apiClient := api.NewClient(cfg.Region)
 
-	sqlite, err := sqlite.NewSQLiteDatabase(cfg.DBDSN)
+	postgres, err := postgres.NewPostgresDatabase(cfg.DBDSN)
 	if err != nil {
-		log.Fatalf("sqlite database: %v", err)
+		log.Fatalf("postgres database: %v", err)
 	}
 
 	appLogger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
@@ -39,7 +39,7 @@ func main() {
 	defer cancel()
 
 	server := api.NewServer(api.Config{
-		SQLite: sqlite,
+		Postgres: postgres,
 	})
 
 	go func() {
@@ -67,7 +67,7 @@ func main() {
 	for _, region := range regions {
 		playerPoller, err := player_poller.NewPlayerPoller(player_poller.Config{
 			APIClient:  apiClient,
-			SQLite:     sqlite,
+			Postgres:   postgres,
 			Logger:     appLogger,
 			Region:     region,
 			BatchSize:  cfg.PlayerBatch,
@@ -91,7 +91,7 @@ func main() {
 			EventsInterval: cfg.EventsInterval,
 			Region:         region,
 			APIClient:      apiClient,
-			SQLite:         sqlite,
+			Postgres:       postgres,
 			Logger:         appLogger,
 		})
 		if err != nil {

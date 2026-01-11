@@ -17,14 +17,14 @@ func (s *Server) admin(c *gin.Context) {
 	var err error
 
 	// Count players ready to poll (next_poll_at <= NOW())
-	stats.PlayersReadyToPoll, err = s.sqlite.GetPlayersReadyToPollCount()
+	stats.PlayersReadyToPoll, err = s.postgres.GetPlayersReadyToPollCount()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to count players ready to poll"})
 		return
 	}
 
 	// Count players with errors (error_count >= 1)
-	stats.PlayersWithErrors, err = s.sqlite.GetPlayersWithErrorsCount()
+	stats.PlayersWithErrors, err = s.postgres.GetPlayersWithErrorsCount()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to count players with errors"})
 		return

@@ -5,12 +5,12 @@ import (
 	"time"
 
 	"albionstats/internal/api"
-	"albionstats/internal/sqlite"
+	"albionstats/internal/postgres"
 )
 
 type Config struct {
 	APIClient      *api.Client
-	SQLite         *sqlite.SQLite
+	Postgres       *postgres.Postgres
 	Logger         *slog.Logger
 	Region         string
 	PageSize       int
@@ -20,7 +20,7 @@ type Config struct {
 
 type KillboardPoller struct {
 	apiClient      *api.Client
-	sqlite         *sqlite.SQLite
+	postgres       *postgres.Postgres
 	log            *slog.Logger
 	eventsInterval time.Duration
 	pageSize       int
@@ -30,7 +30,7 @@ type KillboardPoller struct {
 func NewKillboardPoller(cfg Config) (*KillboardPoller, error) {
 	return &KillboardPoller{
 		apiClient:      cfg.APIClient,
-		sqlite:         cfg.SQLite,
+		postgres:       cfg.Postgres,
 		log:            cfg.Logger.With("component", "killboard_poller", "region", cfg.Region),
 		eventsInterval: cfg.EventsInterval,
 		pageSize:       cfg.PageSize,
@@ -64,21 +64,21 @@ func (p *KillboardPoller) runBatch() {
 		return
 	}
 
-	playerMap := make(map[string]sqlite.PlayerPoll)
+	playerMap := make(map[string]postgres.PlayerPoll)
 	p.collectPlayers(events, playerMap)
 
 	if len(playerMap) == 0 {
 		return
 	}
 
-	if err := p.sqlite.UpsertPlayerPolls(playerMap); err != nil {
+	if err := p.postgres.UpsertPlayerPolls(playerMap); err != nil {
 		p.log.Error("upsert player polls failed", "err", err, "players", len(playerMap))
 		return
 	}
 	p.log.Info("upserted player polls", "count", len(playerMap))
 }
 
-func (p *KillboardPoller) collectPlayers(events []api.Event, acc map[string]sqlite.PlayerPoll) {
+func (p *KillboardPoller) collectPlayers(events []api.Event, acc map[string]postgres.PlayerPoll) {
 	now := time.Now().UTC()
 	for _, ev := range events {
 		add := func(participant api.Participant) {
@@ -89,8 +89,8 @@ func (p *KillboardPoller) collectPlayers(events []api.Event, acc map[string]sqli
 			if _, exists := acc[key]; exists {
 				return
 			}
-			playerPoll := sqlite.PlayerPoll{
-				Region:                p.region,
+			playerPoll := postgres.PlayerPoll{
+				Region:                postgres.Region(p.region),
 				PlayerID:              participant.ID,
 				NextPollAt:            now,
 				KillboardLastActivity: &ev.TimeStamp,

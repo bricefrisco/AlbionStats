@@ -1,18 +1,18 @@
 package api
 
 import (
-	"albionstats/internal/sqlite"
+	"albionstats/internal/postgres"
 
 	"github.com/gin-gonic/gin"
 )
 
 type Server struct {
-	sqlite *sqlite.SQLite
-	router *gin.Engine
+	postgres *postgres.Postgres
+	router   *gin.Engine
 }
 
 type Config struct {
-	SQLite *sqlite.SQLite
+	Postgres *postgres.Postgres
 }
 
 func NewServer(cfg Config) *Server {
@@ -22,8 +22,8 @@ func NewServer(cfg Config) *Server {
 	router.Use(corsMiddleware())
 
 	server := &Server{
-		sqlite: cfg.SQLite,
-		router: router,
+		postgres: cfg.Postgres,
+		router:   router,
 	}
 
 	server.setupRoutes()
