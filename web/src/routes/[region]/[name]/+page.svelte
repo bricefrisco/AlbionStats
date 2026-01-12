@@ -5,6 +5,7 @@
 	import SubHeader from '../../../components/SubHeader.svelte';
 	import Paragraph from '../../../components/Paragraph.svelte';
 	import PlayerStats from '../../../components/PlayerStats.svelte';
+	import Tabs from '../../../components/Tabs.svelte';
 
 	// Get parameters from URL
 	$: region = $page.params.region;
@@ -26,6 +27,17 @@
 	let playerData = null;
 	let loading = true;
 	let error = null;
+
+	// Active tab state
+	let activeTab = 'pvp';
+
+	// Tab configuration
+	const tabs = [
+		{ id: 'pvp', label: 'PvP' },
+		{ id: 'pve', label: 'PvE' },
+		{ id: 'gathering', label: 'Gathering' },
+		{ id: 'crafting', label: 'Crafting' }
+	];
 
 	async function fetchPlayerData() {
 		try {
@@ -82,6 +94,44 @@
 			{/if}
 
 			<PlayerStats {playerData} />
+
+			<SubHeader title="Player Charts" classes="mt-4" />
+
+			<!-- Tab Navigation -->
+			<div class="mt-2 mb-6">
+				<Tabs {tabs} {activeTab} on:tabChange={(e) => (activeTab = e.detail.tabId)} />
+			</div>
+
+			<!-- Tab Content -->
+			<div class="mt-4">
+				{#if activeTab === 'pvp'}
+					<div class="py-12 text-center text-gray-500 dark:text-gray-400">
+						<div class="mb-2 text-lg font-medium">PvP Statistics</div>
+						<div class="text-sm">Kill fame, death fame, and combat statistics coming soon...</div>
+					</div>
+				{:else if activeTab === 'pve'}
+					<div class="py-12 text-center text-gray-500 dark:text-gray-400">
+						<div class="mb-2 text-lg font-medium">PvE Statistics</div>
+						<div class="text-sm">
+							Monster kills, dungeon clears, and PvE achievements coming soon...
+						</div>
+					</div>
+				{:else if activeTab === 'gathering'}
+					<div class="py-12 text-center text-gray-500 dark:text-gray-400">
+						<div class="mb-2 text-lg font-medium">Gathering Statistics</div>
+						<div class="text-sm">
+							Resource collection, gathering efficiency, and mining stats coming soon...
+						</div>
+					</div>
+				{:else if activeTab === 'crafting'}
+					<div class="py-12 text-center text-gray-500 dark:text-gray-400">
+						<div class="mb-2 text-lg font-medium">Crafting Statistics</div>
+						<div class="text-sm">
+							Item production, crafting levels, and artisan achievements coming soon...
+						</div>
+					</div>
+				{/if}
+			</div>
 		{/if}
 	</div>
 </Page>
