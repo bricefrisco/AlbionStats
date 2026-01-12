@@ -6,6 +6,7 @@
 	import Paragraph from '../../../components/Paragraph.svelte';
 	import PlayerStats from '../../../components/PlayerStats.svelte';
 	import Tabs from '../../../components/Tabs.svelte';
+	import PlayerPvpCharts from '../../../components/charts/PlayerPvpCharts.svelte';
 
 	// Get parameters from URL
 	$: region = $page.params.region;
@@ -105,10 +106,13 @@
 			<!-- Tab Content -->
 			<div class="mt-4">
 				{#if activeTab === 'pvp'}
-					<div class="py-12 text-center text-gray-500 dark:text-gray-400">
-						<div class="mb-2 text-lg font-medium">PvP Statistics</div>
-						<div class="text-sm">Kill fame, death fame, and combat statistics coming soon...</div>
-					</div>
+					{#if playerData}
+						<PlayerPvpCharts {region} playerId={playerData.PlayerID} />
+					{:else}
+						<div class="py-12 text-center text-gray-500 dark:text-gray-400">
+							<div class="mb-2 text-lg font-medium">Loading PvP Data...</div>
+						</div>
+					{/if}
 				{:else if activeTab === 'pve'}
 					<div class="py-12 text-center text-gray-500 dark:text-gray-400">
 						<div class="mb-2 text-lg font-medium">PvE Statistics</div>

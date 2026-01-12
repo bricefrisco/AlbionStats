@@ -7,6 +7,7 @@
 	export let timestamps = [];
 	export let values = [];
 	export let label = 'Metric';
+	export let height = 'h-80';
 
 	let canvas;
 	let chart;
@@ -15,6 +16,7 @@
 	let isDark =
 		typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
 	$: textColor = isDark ? 'rgb(209, 213, 219)' : 'rgb(55, 65, 81)'; // gray-300 : gray-700
+	$: gridColor = isDark ? 'rgb(17, 24, 39)' : 'rgb(229, 231, 235)'; // gray-900 : gray-200
 
 	function updateTheme() {
 		const newIsDark =
@@ -57,6 +59,9 @@
 				},
 				ticks: {
 					color: textColor
+				},
+				grid: {
+					color: gridColor
 				}
 			},
 			x: {
@@ -69,6 +74,9 @@
 				},
 				ticks: {
 					color: textColor
+				},
+				grid: {
+					color: gridColor
 				}
 			}
 		}
@@ -109,6 +117,10 @@
 			chart.options.scales.y.ticks.color = textColor;
 			chart.options.scales.x.ticks.color = textColor;
 		}
+		if (gridColor) {
+			chart.options.scales.y.grid.color = gridColor;
+			chart.options.scales.x.grid.color = gridColor;
+		}
 		if (data && data.labels && data.labels.length > 0) {
 			chart.data = data;
 		}
@@ -116,7 +128,7 @@
 	}
 </script>
 
-<div class="h-80">
+<div class={height}>
 	<canvas bind:this={canvas}></canvas>
 </div>
 
