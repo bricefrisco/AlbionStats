@@ -39,6 +39,11 @@ type PlayerGatheringStats struct {
 	Avalon     []int64 `json:"avalon"`
 }
 
+type PlayerCraftingStats struct {
+	Timestamps []int64 `json:"timestamps"`
+	Total      []int64 `json:"total"`
+}
+
 func (s *Postgres) GetPlayerPvpStats(region Region, playerID string) (*PlayerPvpStats, error) {
 	rows, err := s.db.
 		Raw("SELECT ts, kill_fame, death_fame, fame_ratio FROM player_stats_snapshots WHERE region = ? AND player_id = ? ORDER BY ts", region, playerID).
@@ -151,6 +156,37 @@ func (s *Postgres) GetPlayerGatheringStats(region Region, playerID string) (*Pla
 		stats.Royal = append(stats.Royal, royal)
 		stats.Outlands = append(stats.Outlands, outlands)
 		stats.Avalon = append(stats.Avalon, avalon)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return &stats, nil
+}
+
+func (s *Postgres) GetPlayerCraftingStats(region Region, playerID string) (*PlayerCraftingStats, error) {
+	rows, err := s.db.
+		Raw("SELECT ts, crafting_total FROM player_stats_snapshots WHERE region = ? AND player_id = ? ORDER BY ts", region, playerID).
+		Rows()
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var (
+		stats PlayerCraftingStats
+		ts    time.Time
+		total int64
+	)
+
+	for rows.Next() {
+		if err := rows.Scan(&ts, &total); err != nil {
+			return nil, err
+		}
+
+		stats.Timestamps = append(stats.Timestamps, ts.UnixMilli())
+		stats.Total = append(stats.Total, total)
 	}
 
 	if err := rows.Err(); err != nil {

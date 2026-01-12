@@ -9,6 +9,7 @@
 	import PlayerPvPCharts from '../../../components/charts/PlayerPvPCharts.svelte';
 	import PlayerPvECharts from '../../../components/charts/PlayerPvECharts.svelte';
 	import PlayerGatheringCharts from '../../../components/charts/PlayerGatheringCharts.svelte';
+	import PlayerCraftingCharts from '../../../components/charts/PlayerCraftingCharts.svelte';
 
 	// Get parameters from URL
 	$: region = $page.params.region;
@@ -132,12 +133,13 @@
 						</div>
 					{/if}
 				{:else if activeTab === 'crafting'}
-					<div class="py-12 text-center text-gray-500 dark:text-gray-400">
-						<div class="mb-2 text-lg font-medium">Crafting Statistics</div>
-						<div class="text-sm">
-							Item production, crafting levels, and artisan achievements coming soon...
+					{#if playerData}
+						<PlayerCraftingCharts {region} playerId={playerData.PlayerID} />
+					{:else}
+						<div class="py-12 text-center text-gray-500 dark:text-gray-400">
+							<div class="mb-2 text-lg font-medium">Loading Crafting Data...</div>
 						</div>
-					</div>
+					{/if}
 				{/if}
 			</div>
 		{/if}
