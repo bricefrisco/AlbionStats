@@ -47,6 +47,7 @@ func (s *Server) setupRoutes() {
 	v1.GET("/metrics/:metricId", s.metrics)
 	v1.GET("/metrics/pvp/:server/:playerId", s.playerPvp)
 	v1.GET("/metrics/pve/:server/:playerId", s.playerPve)
+	v1.GET("/metrics/gathering/:server/:playerId", s.playerGathering)
 	v1.GET("/players/:server/:name", s.player)
 	v1.GET("/search/:server/:query", s.search)
 }
