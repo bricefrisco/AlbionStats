@@ -6,7 +6,8 @@
 	import Paragraph from '../../../components/Paragraph.svelte';
 	import PlayerStats from '../../../components/PlayerStats.svelte';
 	import Tabs from '../../../components/Tabs.svelte';
-	import PlayerPvpCharts from '../../../components/charts/PlayerPvpCharts.svelte';
+	import PlayerPvPCharts from '../../../components/charts/PlayerPvPCharts.svelte';
+	import PlayerPvECharts from '../../../components/charts/PlayerPvECharts.svelte';
 
 	// Get parameters from URL
 	$: region = $page.params.region;
@@ -107,19 +108,20 @@
 			<div class="mt-4">
 				{#if activeTab === 'pvp'}
 					{#if playerData}
-						<PlayerPvpCharts {region} playerId={playerData.PlayerID} />
+						<PlayerPvPCharts {region} playerId={playerData.PlayerID} />
 					{:else}
 						<div class="py-12 text-center text-gray-500 dark:text-gray-400">
 							<div class="mb-2 text-lg font-medium">Loading PvP Data...</div>
 						</div>
 					{/if}
 				{:else if activeTab === 'pve'}
-					<div class="py-12 text-center text-gray-500 dark:text-gray-400">
-						<div class="mb-2 text-lg font-medium">PvE Statistics</div>
-						<div class="text-sm">
-							Monster kills, dungeon clears, and PvE achievements coming soon...
+					{#if playerData}
+						<PlayerPvECharts {region} playerId={playerData.PlayerID} />
+					{:else}
+						<div class="py-12 text-center text-gray-500 dark:text-gray-400">
+							<div class="mb-2 text-lg font-medium">Loading PvE Data...</div>
 						</div>
-					</div>
+					{/if}
 				{:else if activeTab === 'gathering'}
 					<div class="py-12 text-center text-gray-500 dark:text-gray-400">
 						<div class="mb-2 text-lg font-medium">Gathering Statistics</div>
