@@ -9,7 +9,7 @@
 </script>
 
 <header class="border-b border-gray-200 dark:border-neutral-800">
-	<div class="mx-auto max-w-5xl py-4">
+	<div class="mx-auto max-w-5xl px-4 py-4 xl:px-0">
 		<div class="mb-4 flex items-center justify-between">
 			<a
 				href="/"

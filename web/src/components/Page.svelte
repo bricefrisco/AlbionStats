@@ -12,7 +12,7 @@
 
 <div class="min-h-screen bg-white text-gray-900 dark:bg-neutral-950 dark:text-neutral-100">
 	<Header {isDarkMode} {toggleDarkMode} />
-	<div class="mx-auto max-w-5xl py-8">
+	<div class="mx-auto max-w-5xl px-4 py-8 xl:px-0">
 		<slot />
 	</div>
 </div>
