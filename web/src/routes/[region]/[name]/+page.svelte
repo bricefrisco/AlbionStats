@@ -8,6 +8,7 @@
 	import Tabs from '../../../components/Tabs.svelte';
 	import PlayerPvPCharts from '../../../components/charts/PlayerPvPCharts.svelte';
 	import PlayerPvECharts from '../../../components/charts/PlayerPvECharts.svelte';
+	import PlayerGatheringCharts from '../../../components/charts/PlayerGatheringCharts.svelte';
 
 	// Get parameters from URL
 	$: region = $page.params.region;
@@ -123,12 +124,13 @@
 						</div>
 					{/if}
 				{:else if activeTab === 'gathering'}
-					<div class="py-12 text-center text-gray-500 dark:text-gray-400">
-						<div class="mb-2 text-lg font-medium">Gathering Statistics</div>
-						<div class="text-sm">
-							Resource collection, gathering efficiency, and mining stats coming soon...
+					{#if playerData}
+						<PlayerGatheringCharts {region} playerId={playerData.PlayerID} />
+					{:else}
+						<div class="py-12 text-center text-gray-500 dark:text-gray-400">
+							<div class="mb-2 text-lg font-medium">Loading Gathering Data...</div>
 						</div>
-					</div>
+					{/if}
 				{:else if activeTab === 'crafting'}
 					<div class="py-12 text-center text-gray-500 dark:text-gray-400">
 						<div class="mb-2 text-lg font-medium">Crafting Statistics</div>
