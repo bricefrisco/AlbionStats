@@ -7,6 +7,7 @@
 		isDarkMode = !isDarkMode;
 		localStorage.setItem('darkMode', isDarkMode.toString());
 		document.documentElement.classList.toggle('dark', isDarkMode);
+		document.documentElement.style.colorScheme = isDarkMode ? 'dark' : 'light';
 	}
 </script>
 
