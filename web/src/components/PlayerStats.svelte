@@ -26,44 +26,66 @@
 				return killboardDate > otherDate ? killboardDate : otherDate;
 			})()
 		: null;
+
+	const pvpStats = [
+		{
+			label: 'Kill Fame',
+			value: formatNumber(playerData.KillFame),
+			label2: 'Total',
+			value2: formatNumber(playerData.PveTotal)
+		},
+		{
+			label: 'Death Fame',
+			value: formatNumber(playerData.DeathFame),
+			label2: 'Royal',
+			value2: formatNumber(playerData.PveRoyal)
+		},
+		{
+			label: 'Fame Ratio',
+			value: playerData.FameRatio?.toFixed(2) || '0.00',
+			label2: 'Outlands',
+			value2: formatNumber(playerData.PveOutlands)
+		},
+		{ label: '-', value: '-', label2: 'Avalon', value2: formatNumber(playerData.PveAvalon) }
+	];
+
+	const gatheringStats = [
+		{
+			label: 'Total',
+			value: formatNumber(playerData.GatherAllTotal),
+			label2: 'Total',
+			value2: formatNumber(playerData.CraftingTotal)
+		},
+		{ label: 'Royal', value: formatNumber(playerData.GatherAllRoyal), label2: '-', value2: '-' },
+		{
+			label: 'Outlands',
+			value: formatNumber(playerData.GatherAllOutlands),
+			label2: '-',
+			value2: '-'
+		}
+	];
 </script>
 
 <div class="mt-4">
 	<table class="w-full text-sm">
 		<tbody class="divide-y divide-gray-200/50 dark:divide-gray-700/50">
+			<!-- PvP/PvE Section -->
 			<tr class="bg-gray-50/20 dark:bg-gray-800/20">
 				<td class="w-1/4 px-4 py-3 text-left font-semibold text-gray-900 dark:text-white">PvP</td>
 				<td class="w-1/4 px-4 py-3 text-right font-semibold text-gray-900 dark:text-white"></td>
 				<td class="w-1/4 px-4 py-3 text-left font-semibold text-gray-900 dark:text-white">PvE</td>
 				<td class="w-1/4 px-4 py-3 text-right font-semibold text-gray-900 dark:text-white"></td>
 			</tr>
-			<tr>
-				<td class="py-2 pr-4 pl-4 text-gray-600 dark:text-gray-400">Kill Fame</td>
-				<td class="py-2 pr-4 text-right font-medium">{formatNumber(playerData.KillFame)}</td>
-				<td class="py-2 pr-4 pl-4 text-gray-600 dark:text-gray-400">Total</td>
-				<td class="py-2 pr-4 text-right font-medium">{formatNumber(playerData.PveTotal)}</td>
-			</tr>
-			<tr>
-				<td class="py-2 pr-4 pl-4 text-gray-600 dark:text-gray-400">Death Fame</td>
-				<td class="py-2 pr-4 text-right font-medium">{formatNumber(playerData.DeathFame)}</td>
-				<td class="py-2 pr-4 pl-4 text-gray-600 dark:text-gray-400">Royal</td>
-				<td class="py-2 pr-4 text-right font-medium">{formatNumber(playerData.PveRoyal)}</td>
-			</tr>
-			<tr>
-				<td class="py-2 pr-4 pl-4 text-gray-600 dark:text-gray-400">Fame Ratio</td>
-				<td class="py-2 pr-4 text-right font-medium"
-					>{playerData.FameRatio?.toFixed(2) || '0.00'}</td
-				>
-				<td class="py-2 pr-4 pl-4 text-gray-600 dark:text-gray-400">Outlands</td>
-				<td class="py-2 pr-4 text-right font-medium">{formatNumber(playerData.PveOutlands)}</td>
-			</tr>
-			<tr>
-				<td class="py-2 pr-4 pl-4 text-gray-600 dark:text-gray-400">-</td>
-				<td class="py-2 pr-4 text-right font-medium">-</td>
-				<td class="py-2 pr-4 pl-4 text-gray-600 dark:text-gray-400">Avalon</td>
-				<td class="py-2 pr-4 text-right font-medium">{formatNumber(playerData.PveAvalon)}</td>
-			</tr>
+			{#each pvpStats as stat}
+				<tr>
+					<td class="py-2 pr-4 pl-4 text-gray-600 dark:text-gray-400">{stat.label}</td>
+					<td class="py-2 pr-4 text-right font-medium">{stat.value}</td>
+					<td class="py-2 pr-4 pl-4 text-gray-600 dark:text-gray-400">{stat.label2}</td>
+					<td class="py-2 pr-4 text-right font-medium">{stat.value2}</td>
+				</tr>
+			{/each}
 
+			<!-- Gathering/Crafting Section -->
 			<tr class="bg-gray-50/20 dark:bg-gray-800/20">
 				<td class="w-1/4 px-4 py-3 text-left font-semibold text-gray-900 dark:text-white"
 					>Gathering</td
@@ -74,27 +96,16 @@
 				>
 				<td class="w-1/4 px-4 py-3 text-right font-semibold text-gray-900 dark:text-white"></td>
 			</tr>
-			<tr>
-				<td class="py-2 pr-4 pl-4 text-gray-600 dark:text-gray-400">Total</td>
-				<td class="py-2 pr-4 text-right font-medium">{formatNumber(playerData.GatherAllTotal)}</td>
-				<td class="py-2 pr-4 pl-4 text-gray-600 dark:text-gray-400">Total</td>
-				<td class="py-2 pr-4 text-right font-medium">{formatNumber(playerData.CraftingTotal)}</td>
-			</tr>
-			<tr>
-				<td class="py-2 pr-4 pl-4 text-gray-600 dark:text-gray-400">Royal</td>
-				<td class="py-2 pr-4 text-right font-medium">{formatNumber(playerData.GatherAllRoyal)}</td>
-				<td class="py-2 pr-4 pl-4 text-gray-600 dark:text-gray-400">-</td>
-				<td class="py-2 pr-4 text-right font-medium">-</td>
-			</tr>
-			<tr>
-				<td class="py-2 pr-4 pl-4 text-gray-600 dark:text-gray-400">Outlands</td>
-				<td class="py-2 pr-4 text-right font-medium"
-					>{formatNumber(playerData.GatherAllOutlands)}</td
-				>
-				<td class="py-2 pr-4 pl-4 text-gray-600 dark:text-gray-400">-</td>
-				<td class="py-2 pr-4 text-right font-medium">-</td>
-			</tr>
+			{#each gatheringStats as stat}
+				<tr>
+					<td class="py-2 pr-4 pl-4 text-gray-600 dark:text-gray-400">{stat.label}</td>
+					<td class="py-2 pr-4 text-right font-medium">{stat.value}</td>
+					<td class="py-2 pr-4 pl-4 text-gray-600 dark:text-gray-400">{stat.label2}</td>
+					<td class="py-2 pr-4 text-right font-medium">{stat.value2}</td>
+				</tr>
+			{/each}
 
+			<!-- Activity Section -->
 			<tr class="bg-gray-50/20 dark:bg-gray-800/20">
 				<td colspan="4" class="px-4 py-3 font-semibold text-gray-900 dark:text-white">Activity</td>
 			</tr>
