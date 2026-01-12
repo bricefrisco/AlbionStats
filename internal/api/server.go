@@ -3,6 +3,7 @@ package api
 import (
 	"albionstats/internal/postgres"
 
+	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
 )
 
@@ -31,6 +32,16 @@ func NewServer(cfg Config) *Server {
 }
 
 func (s *Server) setupRoutes() {
+	s.router.Use(gzip.Gzip(gzip.DefaultCompression))
+
+	// Static front-end files
+	s.router.Static("/_app", "/usr/local/share/albionstats_web/_app")
+	s.router.StaticFile("/robots.txt", "/usr/local/share/albionstats_web/robots.txt")
+	s.router.NoRoute(func(c *gin.Context) {
+		c.File("/usr/local/share/albionstats_web/200.html")
+	})
+
+	// API routes
 	v1 := s.router.Group("/api")
 	v1.GET("/metrics/admin", s.admin)
 	v1.GET("/metrics/:metricId", s.metrics)
@@ -38,15 +49,6 @@ func (s *Server) setupRoutes() {
 	v1.GET("/metrics/pve/:server/:playerId", s.playerPve)
 	v1.GET("/players/:server/:name", s.player)
 	v1.GET("/search/:server/:query", s.search)
-
-	// Serve static files from the Svelte build directory
-	s.router.Static("/_app", "/usr/local/share/albionstats_web/_app")
-	s.router.StaticFile("/robots.txt", "/usr/local/share/albionstats_web/robots.txt")
-
-	// Catch-all handler for SPA routing - serves 200.html for any unmatched route
-	s.router.NoRoute(func(c *gin.Context) {
-		c.File("/usr/local/share/albionstats_web/200.html")
-	})
 }
 
 func (s *Server) Run(addr string) error {
