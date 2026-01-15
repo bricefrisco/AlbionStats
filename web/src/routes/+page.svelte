@@ -1,7 +1,7 @@
 <script>
 	import Page from '../components/Page.svelte';
 	import PageHeader from '../components/PageHeader.svelte';
-	import Paragraph from '../components/Paragraph.svelte';
+	import Typography from '../components/Typography.svelte';
 	import PlayersTracked from '../components/charts/PlayersTracked.svelte';
 	import TotalDataPoints from '../components/charts/TotalDataPoints.svelte';
 	import SubHeader from '../components/SubHeader.svelte';
@@ -9,8 +9,8 @@
 
 <Page>
 	<PageHeader title="Welcome to AlbionStats" />
-	<Paragraph
-		>We track Albion Online player statistics over time, including:
+	<Typography>
+		<p>We track Albion Online player statistics over time, including:</p>
 		<div class="mt-3 grid grid-cols-2 gap-2 text-sm md:grid-cols-3">
 			<div class="flex items-center">
 				<span class="mr-2 h-1.5 w-1.5 rounded-full bg-gray-400"></span>
@@ -39,7 +39,7 @@
 		</div>
 
 		<div class="mt-3 font-medium">To get started, search for a player above.</div>
-	</Paragraph>
+	</Typography>
 
 	<div class="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-2">
 		<PlayersTracked />
@@ -47,7 +47,7 @@
 	</div>
 
 	<SubHeader title="About" classes="mt-8" />
-	<Paragraph classes="leading-relaxed mt-2">
+	<Typography classes="leading-relaxed mt-2">
 		We've been tracking players since January 11th, 2026.
 		<br />
 		When a player shows up on the killboards, we automatically start tracking their statistics.
@@ -63,5 +63,5 @@
 			class="text-blue-600 underline transition-colors duration-200 hover:text-blue-800 hover:no-underline dark:text-blue-400 dark:hover:text-blue-300"
 			>GitHub</a
 		>.
-	</Paragraph>
+	</Typography>
 </Page>

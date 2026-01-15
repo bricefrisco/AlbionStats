@@ -54,25 +54,20 @@
 			<ChartError {error} />
 		</div>
 	{:else if data}
-		<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-			<div>
-				<SubHeader title="Total Crafting Fame" classes="mb-4" />
-				{#if data.total && data.total.length > 0}
-					<Chart
-						timestamps={data.timestamps}
-						values={data.total}
-						label="Total Crafting Fame"
-						height="h-40"
-					/>
-				{:else}
-					<div class="flex h-40 items-center justify-center text-gray-500 dark:text-gray-400">
-						No total crafting fame data available
-					</div>
-				{/if}
-			</div>
-
-			<!-- Placeholder for even grid -->
-			<div></div>
+		<div>
+			<SubHeader title="Total Crafting Fame" classes="mb-4" />
+			{#if data.total && data.total.length > 0}
+				<Chart
+					timestamps={data.timestamps}
+					values={data.total}
+					label="Total Crafting Fame"
+					height="h-40"
+				/>
+			{:else}
+				<div class="flex h-40 items-center justify-center text-gray-500 dark:text-gray-400">
+					No total crafting fame data available
+				</div>
+			{/if}
 		</div>
 	{/if}
 </div>

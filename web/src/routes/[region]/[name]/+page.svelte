@@ -3,7 +3,7 @@
 	import Page from '../../../components/Page.svelte';
 	import PageHeader from '../../../components/PageHeader.svelte';
 	import SubHeader from '../../../components/SubHeader.svelte';
-	import Paragraph from '../../../components/Paragraph.svelte';
+	import Typography from '../../../components/Typography.svelte';
 	import PlayerStats from '../../../components/PlayerStats.svelte';
 	import Tabs from '../../../components/Tabs.svelte';
 	import PlayerPvPCharts from '../../../components/charts/PlayerPvPCharts.svelte';
@@ -72,21 +72,21 @@
 	<div>
 		{#if !validRegion}
 			<PageHeader title="Invalid Region" />
-			<Paragraph>Valid regions are: americas, europe, asia</Paragraph>
+			<Typography>Valid regions are: americas, europe, asia</Typography>
 		{:else if !decodedName}
 			<PageHeader title="Player Not Found" />
-			<Paragraph>Please provide a valid player name</Paragraph>
+			<Typography>Please provide a valid player name</Typography>
 		{:else if loading}
 			<PageHeader title="Loading..." />
 		{:else if error}
 			<PageHeader title="Error" />
-			<Paragraph>{error}</Paragraph>
+			<Typography>{error}</Typography>
 		{:else if playerData}
 			<PageHeader title={playerData.Name} />
 
 			<!-- Guild and Alliance Info -->
 			{#if playerData.GuildName || playerData.AllianceName}
-				<Paragraph classes="mb-2 text-sm text-gray-600 dark:text-gray-400 mt-[-15px] font-medium">
+				<Typography classes="mb-2 text-sm text-gray-600 dark:text-gray-400 mt-[-15px] font-medium">
 					{#if playerData.AllianceName && playerData.GuildName}
 						[{playerData.AllianceName}] {playerData.GuildName}
 					{:else if playerData.AllianceName}
@@ -94,7 +94,7 @@
 					{:else if playerData.GuildName}
 						{playerData.GuildName}
 					{/if}
-				</Paragraph>
+				</Typography>
 			{/if}
 
 			<PlayerStats {playerData} />
