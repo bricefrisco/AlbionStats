@@ -2,6 +2,8 @@ package api
 
 import (
 	"albionstats/internal/postgres"
+	"strconv"
+	"strings"
 
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
@@ -32,7 +34,33 @@ func NewServer(cfg Config) *Server {
 }
 
 func (s *Server) setupRoutes() {
-	s.router.Use(gzip.Gzip(gzip.DefaultCompression))
+	s.router.Use(gzip.Gzip(
+		gzip.DefaultCompression,
+		gzip.WithCustomShouldCompressFn(func(c *gin.Context) bool {
+			// only compress if client accepts gzip
+			if !strings.Contains(c.GetHeader("Accept-Encoding"), "gzip") {
+				return false
+			}
+	
+			// skip if already encoded
+			if c.Writer.Header().Get("Content-Encoding") != "" {
+				return false
+			}
+	
+			// IMPORTANT: Content-Length must be set by handler
+			cl := c.Writer.Header().Get("Content-Length")
+			if cl == "" {
+				return false // can't know size → don't gzip
+			}
+	
+			n, err := strconv.Atoi(cl)
+			if err != nil {
+				return false
+			}
+	
+			return n >= 2048
+		}),
+	))
 
 	// Static front-end files
 	s.router.Static("/_app", "/usr/local/share/albionstats_web/_app")
