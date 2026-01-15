@@ -54,8 +54,13 @@ func (c *Collector) collect(ctx context.Context) {
 	start := time.Now()
 	c.log.Info("metrics collection started")
 
-	if err := c.db.InsertMetrics(ctx); err != nil {
-		c.log.Error("metrics collection failed", "err", err, "duration_ms", time.Since(start).Milliseconds())
+	if err := c.db.InsertPlayersTotalAndSnapshotMetrics(ctx); err != nil {
+		c.log.Error("players and snapshots metrics collection failed", "err", err, "duration_ms", time.Since(start).Milliseconds())
+		return
+	}
+
+	if err := c.db.InsertActivePlayersMetrics(ctx); err != nil {
+		c.log.Error("active players metrics collection failed", "err", err, "duration_ms", time.Since(start).Milliseconds())
 		return
 	}
 

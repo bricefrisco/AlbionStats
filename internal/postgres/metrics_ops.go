@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 	"time"
+
+	"gorm.io/gorm"
 )
 
-func (s *Postgres) InsertMetrics(ctx context.Context) error {
+func (s *Postgres) InsertPlayersTotalAndSnapshotMetrics(ctx context.Context) error {
 	return s.db.WithContext(ctx).Exec(`
 		INSERT INTO metrics (metric, ts, value)
 		VALUES
@@ -15,13 +17,49 @@ func (s *Postgres) InsertMetrics(ctx context.Context) error {
 	`).Error
 }
 
+func (s *Postgres) InsertActivePlayersMetrics(ctx context.Context) error {
+	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// Insert regional active player counts
+		if err := tx.Exec(`
+			INSERT INTO metrics (metric, ts, value)
+			SELECT
+				'active_players_24h_' || region as metric,
+				now() as ts,
+				COUNT(DISTINCT player_id) AS value
+			FROM player_stats_snapshots
+			WHERE ts >= now() - interval '24 hours'
+				AND (
+					killboard_last_activity >= now() - interval '24 hours'
+					OR other_last_activity >= now() - interval '24 hours'
+				)
+			GROUP BY region
+		`).Error; err != nil {
+			return err
+		}
+
+		// Insert total active players count
+		return tx.Exec(`
+			INSERT INTO metrics (metric, ts, value)
+			VALUES
+				('active_players_24h', now(), (
+					SELECT COUNT(DISTINCT player_id)
+					FROM player_stats_snapshots
+					WHERE ts >= now() - interval '24 hours'
+						AND (
+							killboard_last_activity >= now() - interval '24 hours'
+							OR other_last_activity >= now() - interval '24 hours'
+						)
+				))
+		`).Error
+	})
+}
+
 func (s *Postgres) GetMetrics(ctx context.Context, metricId, granularity string) ([]int64, []int64, error) {
 	var query string
 	var args []interface{}
 
 	switch granularity {
 	case "1w":
-		// Aggregate to hourly buckets for 1 week
 		query = `
 			SELECT
 				time_bucket('1 hour', ts) AS timestamp,
@@ -32,7 +70,6 @@ func (s *Postgres) GetMetrics(ctx context.Context, metricId, granularity string)
 			ORDER BY 1`
 		args = []interface{}{metricId}
 	case "1m":
-		// Aggregate to daily buckets for 1 month
 		query = `
 			SELECT
 				time_bucket('1 day', ts) AS timestamp,
@@ -43,7 +80,6 @@ func (s *Postgres) GetMetrics(ctx context.Context, metricId, granularity string)
 			ORDER BY 1`
 		args = []interface{}{metricId}
 	case "1y":
-		// Aggregate to weekly buckets for 1 year
 		query = `
 			SELECT
 				time_bucket('1 week', ts) AS timestamp,
@@ -54,7 +90,6 @@ func (s *Postgres) GetMetrics(ctx context.Context, metricId, granularity string)
 			ORDER BY 1`
 		args = []interface{}{metricId}
 	case "all":
-		// Aggregate to monthly buckets for all time
 		query = `
 			SELECT
 				time_bucket('1 month', ts) AS timestamp,
