@@ -41,7 +41,7 @@
 
 		searchTimeout = setTimeout(async () => {
 			await performSearch();
-		}, 300);
+		}, 200);
 	}
 
 	async function performSearch() {
