@@ -62,7 +62,7 @@ func (s *Postgres) GetMetrics(ctx context.Context, metricId, granularity string)
 	case "1w":
 		query = `
 			SELECT
-				time_bucket('1 hour', ts) AS timestamp,
+				time_bucket('6 hours', ts) AS timestamp,
 				max(value) AS value
 			FROM metrics
 			WHERE metric = $1 AND ts >= NOW() - INTERVAL '1 week'
