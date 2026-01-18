@@ -37,20 +37,17 @@ func (s *Server) setupRoutes() {
 	s.router.Use(gzip.Gzip(
 		gzip.DefaultCompression,
 		gzip.WithCustomShouldCompressFn(func(c *gin.Context) bool {
-			// only compress if client accepts gzip
 			if !strings.Contains(c.GetHeader("Accept-Encoding"), "gzip") {
 				return false
 			}
 	
-			// skip if already encoded
 			if c.Writer.Header().Get("Content-Encoding") != "" {
 				return false
 			}
 	
-			// IMPORTANT: Content-Length must be set by handler
 			cl := c.Writer.Header().Get("Content-Length")
 			if cl == "" {
-				return false // can't know size → don't gzip
+				return false
 			}
 	
 			n, err := strconv.Atoi(cl)
