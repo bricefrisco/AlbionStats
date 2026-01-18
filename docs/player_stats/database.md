@@ -1,57 +1,14 @@
-# Database configuration
+# Database
 
-Database was set up using [instructions from timescale db](https://www.tigerdata.com/docs/self-hosted/latest/install/installation-linux)
-
-```cmd
-sudo apt install gnupg postgresql-common apt-transport-https lsb-release wget
-sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh
-echo "deb https://packagecloud.io/timescale/timescaledb/ubuntu/ $(lsb_release -c -s) main" | sudo tee /etc/apt/sources.list.d/timescaledb.list
-wget --quiet -O - https://packagecloud.io/timescale/timescaledb/gpgkey | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/timescaledb.gpg
-sudo apt update
-sudo apt install timescaledb-2-postgresql-18 postgresql-client-18
-sudo timescaledb-tune
-```
-
-(Accepted all default options)
-
-```cmd
-sudo systemctl restart postgresql
-sudo -u postgres psql
-\password postgres
-```
-
-Allowing local connections:
-
-```cmd
-sudo nano /etc/postgresql/17/main/postgresql.conf
-(Modify line) listen_addresses = 'localhost,192.168.1.192'
-```
-
-```cmd
-sudo nano /etc/postgresql/17/main/pg_hba.conf
-host    all    all    192.168.1.0/24    md5
-(Add line)
-sudo systemctl restart postgresql
-```
-
-```sql
-CREATE EXTENSION IF NOT EXISTS timescaledb;
-```
-
-```cmd
-\dx
-```
-
-## Data Access Patterns
-
-## Tables
+## Region Enum
 
 ```sql
 CREATE TYPE region_enum AS ENUM ( 'americas', 'europe', 'asia');
+```
 
------------------------
--- player_polls
------------------------
+## Player Polls
+
+```sql
 CREATE TABLE player_polls (
     region                          region_enum NOT NULL,
     player_id                       TEXT NOT NULL,
@@ -73,10 +30,11 @@ CREATE TABLE player_polls (
 CREATE INDEX player_polls_poll_idx ON player_polls(next_poll_at DESC);
 CREATE INDEX player_polls_region_poll_idx ON player_polls(region, next_poll_at DESC);
 CREATE INDEX player_polls_error_idx ON player_polls(error_count DESC);
+```
 
------------------------
--- player_stats_latest
------------------------
+## Player Stats (Latest)
+
+```sql
 CREATE TABLE player_stats_latest (
     region                  region_enum NOT NULL,
     player_id               TEXT NOT NULL,
@@ -155,10 +113,11 @@ CREATE TABLE player_stats_latest (
 );
 
 CREATE INDEX idx_player_name_lower ON player_stats_latest (region, lower(name));
+```
 
------------------------
--- player_stats_snapshots
------------------------
+## Player Stats (Snapshots)
+
+```sql
 CREATE TABLE player_stats_snapshots (
     region                  region_enum NOT NULL,
     player_id               TEXT NOT NULL,
@@ -246,10 +205,11 @@ SET (
 );
 
 SELECT add_compression_policy('player_stats_snapshots', INTERVAL '1 day');
+```
 
------------------------
--- metrics
------------------------
+## Metrics
+
+```sql
 CREATE TABLE metrics (
     metric TEXT NOT NULL,
     ts TIMESTAMPTZ NOT NULL,
@@ -267,5 +227,4 @@ SET (
 );
 
 SELECT add_compression_policy('metrics', INTERVAL '1 day');
-
 ```

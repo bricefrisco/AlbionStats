@@ -1,6 +1,6 @@
 # Albion API
 
-## /gameinfo/players
+## /api/gameinfo/players
 
 GET <https://gameinfo.albiononline.com/api/gameinfo/players/zDfcwYbKQiWGi1xslrhzZg>
 
