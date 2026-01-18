@@ -11,9 +11,9 @@ func (s *Postgres) SearchPlayers(ctx context.Context, region Region, prefix stri
 	var players []PlayerStatsLatest
 	err := s.db.WithContext(ctx).
 		Select("player_id", "name", "guild_name", "alliance_name").
-		Where("region = ? AND LOWER(name) LIKE LOWER(?)", region, prefix+"%").
+		Where("region = ? AND LOWER(name) LIKE ?", region, strings.ToLower(prefix)+"%").
 		Limit(limit).
-		Order("name ASC").
+		Order("lower(name) ASC").
 		Find(&players).Error
 	return players, err
 }
