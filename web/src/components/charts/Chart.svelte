@@ -3,20 +3,23 @@
 	import Chart from 'chart.js/auto';
 	import 'chartjs-adapter-date-fns';
 
-	// Props
-	export let timestamps = [];
-	export let values = [];
-	export let label = 'Metric';
-	export let height = 'h-80';
+	let {
+		timestamps = [],
+		values = [],
+		label = 'Metric',
+		height = 'h-80',
+		color = 'rgb(75, 192, 192)'
+	} = $props();
 
-	let canvas;
-	let chart;
+	let canvas = $state();
+	let chart = $state();
 
 	// Reactive theme detection with MutationObserver for dynamic updates
-	let isDark =
-		typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
-	$: textColor = isDark ? 'rgb(209, 213, 219)' : 'rgb(55, 65, 81)'; // gray-300 : gray-700
-	$: gridColor = isDark ? 'rgb(17, 24, 39)' : 'rgb(229, 231, 235)'; // gray-900 : gray-200
+	let isDark = $state(
+		typeof document !== 'undefined' && document.documentElement.classList.contains('dark')
+	);
+	const textColor = $derived(isDark ? 'rgb(209, 213, 219)' : 'rgb(55, 65, 81)'); // gray-300 : gray-700
+	const gridColor = $derived(isDark ? 'rgb(17, 24, 39)' : 'rgb(229, 231, 235)'); // gray-900 : gray-200
 
 	const compactDateFormatter =
 		typeof Intl !== 'undefined'
@@ -45,20 +48,20 @@
 	}
 
 	// Chart data reactive to props
-	$: data = {
+	const data = $derived({
 		labels: timestamps,
 		datasets: [
 			{
 				label,
 				data: values,
-				borderColor: 'rgb(75, 192, 192)',
+				borderColor: color,
 				backgroundColor: 'rgba(75, 192, 192, 0.2)',
 				tension: 0.4
 			}
 		]
-	};
+	});
 
-	$: options = {
+	const options = $derived({
 		responsive: true,
 		maintainAspectRatio: false,
 		plugins: {
@@ -107,7 +110,7 @@
 				}
 			}
 		}
-	};
+	});
 
 	onMount(() => {
 		if (canvas) {
@@ -139,7 +142,8 @@
 	});
 
 	// Update chart when data or theme changes
-	$: if (chart) {
+	$effect(() => {
+		if (!chart) return;
 		if (textColor) {
 			chart.options.scales.y.ticks.color = textColor;
 			chart.options.scales.x.ticks.color = textColor;
@@ -152,7 +156,7 @@
 			chart.data = data;
 		}
 		chart.update();
-	}
+	});
 </script>
 
 <div class={height}>
