@@ -217,7 +217,11 @@ func (p *BattlePoller) processPlayerStats(events []tasks.Event) []postgres.Battl
 	for _, event := range events {
 		if _, ok := playerIp[event.Killer.Name]; !ok {
 			playerIp[event.Killer.Name] = event.Victim.AverageItemPower
-			playerWeapon[event.Killer.Name] = event.Victim.Equipment["MainHand"].Type
+			if event.Victim.Equipment != nil {
+				if mainHand, exists := event.Killer.Equipment["MainHand"]; mainHand != nil && exists {
+					playerWeapon[event.Killer.Name] = mainHand.Type
+				}
+			}
 		}
 	}
 
@@ -227,7 +231,11 @@ func (p *BattlePoller) processPlayerStats(events []tasks.Event) []postgres.Battl
 
 		if _, ok := playerIp[event.Victim.Name]; !ok {
 			playerIp[event.Victim.Name] = event.Victim.AverageItemPower
-			playerWeapon[event.Victim.Name] = event.Victim.Equipment["MainHand"].Type
+			if event.Victim.Equipment != nil {
+				if mainHand, exists := event.Victim.Equipment["MainHand"]; mainHand != nil && exists {
+					playerWeapon[event.Victim.Name] = mainHand.Type
+				}
+			}
 		}
 	}
 
