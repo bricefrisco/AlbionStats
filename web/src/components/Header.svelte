@@ -11,12 +11,26 @@
 <header class="border-b border-gray-200 dark:border-neutral-800">
 	<div class="mx-auto max-w-5xl px-4 py-4 xl:px-0">
 		<div class="mb-4 flex items-center justify-between">
-			<a
-				href="/"
-				class="text-lg font-medium text-gray-900 hover:text-gray-700 dark:text-white dark:hover:text-gray-300"
-			>
-				AlbionStats
-			</a>
+			<nav class="flex items-center gap-4">
+				<a
+					href="/"
+					class="text-lg font-medium text-gray-900 hover:text-gray-700 dark:text-white dark:hover:text-gray-300 pr-4 border-r border-gray-300 dark:border-gray-600"
+				>
+					AlbionStats
+				</a>
+				<a
+					href="/battle-boards"
+					class="text-sm text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100"
+				>
+					Battle Boards
+				</a>
+				<a
+					href="/players"
+					class="text-sm text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100"
+				>
+					Players
+				</a>
+			</nav>
 			<div class="flex items-center gap-3">
 				<button
 					on:click={toggleDarkMode}
