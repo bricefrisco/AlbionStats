@@ -1,15 +1,15 @@
 <script>
 	import { page } from '$app/stores';
-	import Page from '../../../components/Page.svelte';
-	import PageHeader from '../../../components/PageHeader.svelte';
-	import SubHeader from '../../../components/SubHeader.svelte';
-	import Typography from '../../../components/Typography.svelte';
-	import PlayerStats from '../../../components/PlayerStats.svelte';
-	import Tabs from '../../../components/Tabs.svelte';
-	import PlayerPvPCharts from '../../../components/charts/PlayerPvPCharts.svelte';
-	import PlayerPvECharts from '../../../components/charts/PlayerPvECharts.svelte';
-	import PlayerGatheringCharts from '../../../components/charts/PlayerGatheringCharts.svelte';
-	import PlayerCraftingCharts from '../../../components/charts/PlayerCraftingCharts.svelte';
+	import Page from '$components/Page.svelte';
+	import PageHeader from '$components/PageHeader.svelte';
+	import SubHeader from '$components/SubHeader.svelte';
+	import Typography from '$components/Typography.svelte';
+	import PlayerStats from '$components/PlayerStats.svelte';
+	import Tabs from '$components/Tabs.svelte';
+	import PlayerPvPCharts from '$components/charts/PlayerPvPCharts.svelte';
+	import PlayerPvECharts from '$components/charts/PlayerPvECharts.svelte';
+	import PlayerGatheringCharts from '$components/charts/PlayerGatheringCharts.svelte';
+	import PlayerCraftingCharts from '$components/charts/PlayerCraftingCharts.svelte';
 
 	// Get parameters from URL
 	$: region = $page.params.region;

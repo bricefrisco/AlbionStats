@@ -128,7 +128,7 @@
 			{:else if players.length > 0}
 				{#each players as player}
 					<a
-						href="/{selectedRegion}/{encodeURIComponent(player.name)}"
+						href="/players/{selectedRegion}/{encodeURIComponent(player.name)}"
 						class="block border-b border-gray-100 px-3 py-2 text-sm text-gray-900 last:border-none hover:bg-gray-50 dark:border-neutral-800 dark:text-neutral-100 dark:hover:bg-neutral-800"
 						on:click={() => handleOptionClick(player)}
 					>

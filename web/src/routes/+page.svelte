@@ -1,10 +1,10 @@
 <script>
-	import Page from '../components/Page.svelte';
-	import PageHeader from '../components/PageHeader.svelte';
-	import Typography from '../components/Typography.svelte';
-	import PlayersTracked from '../components/charts/PlayersTracked.svelte';
-	import TotalDataPoints from '../components/charts/TotalDataPoints.svelte';
-	import SubHeader from '../components/SubHeader.svelte';
+	import Page from '$components/Page.svelte';
+	import PageHeader from '$components/PageHeader.svelte';
+	import Typography from '$components/Typography.svelte';
+	import PlayersTracked from '$components/charts/PlayersTracked.svelte';
+	import TotalDataPoints from '$components/charts/TotalDataPoints.svelte';
+	import SubHeader from '$components/SubHeader.svelte';
 </script>
 
 <Page>
