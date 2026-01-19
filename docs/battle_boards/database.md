@@ -20,9 +20,6 @@ CREATE TABLE battle_summary (
   PRIMARY KEY(region, battle_id)
 );
 
-CREATE INDEX idx_battle_summary_region_start_time_desc
-ON battle_summary (region, start_time DESC);
-
 CREATE INDEX idx_battle_summary_region_players_start_time_desc
 ON battle_summary (region, total_players, start_time DESC);
 ```
