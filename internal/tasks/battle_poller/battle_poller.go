@@ -109,7 +109,7 @@ func (p *BattlePoller) fetchBattleEvents(battleId int64) ([]tasks.Event, error) 
 	limit := 51
 
 	for {
-		events, err := p.apiClient.FetchBattleEvents(p.region, battleId, limit, offset)
+		events, err := p.apiClient.FetchBattleEvents(p.region, battleId, offset, limit)
 		if err != nil {
 			return nil, err
 		}
