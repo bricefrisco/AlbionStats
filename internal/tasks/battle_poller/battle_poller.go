@@ -274,16 +274,30 @@ func (p *BattlePoller) processPlayerStats(events []tasks.Event) []postgres.Battl
 func (p *BattlePoller) processBattleKills(events []tasks.Event) []postgres.BattleKills {
 	playerStats := make([]postgres.BattleKills, 0)
 	for _, event := range events {
+		killerWeapon := ""
+		if event.Killer.Equipment != nil {
+			if mainHand, exists := event.Killer.Equipment["MainHand"]; mainHand != nil && exists {
+				killerWeapon = mainHand.Type
+			}
+		}
+
+		victimWeapon := ""
+		if event.Victim.Equipment != nil {
+			if mainHand, exists := event.Victim.Equipment["MainHand"]; mainHand != nil && exists {
+				victimWeapon = mainHand.Type
+			}
+		}
+
 		playerStats = append(playerStats, postgres.BattleKills{
 			Region: postgres.Region(p.region),
 			BattleID: event.BattleID,
 			TS: event.TimeStamp,
 			KillerName: event.Killer.Name,
 			KillerIP: int32(event.Killer.AverageItemPower),
-			KillerWeapon: event.Killer.Equipment["MainHand"].Type,
+			KillerWeapon: killerWeapon,
 			VictimName: event.Victim.Name,
 			VictimIP: int32(event.Victim.AverageItemPower),
-			VictimWeapon: event.Victim.Equipment["MainHand"].Type,
+			VictimWeapon: victimWeapon,
 			Fame: event.TotalVictimKillFame,
 		})
 	}
