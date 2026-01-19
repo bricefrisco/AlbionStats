@@ -30,6 +30,6 @@ func (p *Postgres) GetBattleQueuesByRegion(region Region, limit int) ([]BattleQu
 	return queues, err
 }
 
-func (p *Postgres) DeleteBattleQueue(region Region, battleID int64) error {
-	return p.db.Where("region = ? AND battle_id = ?", region, battleID).Delete(&BattleQueue{}).Error
+func (p *Postgres) MarkBattleQueueProcessed(region Region, battleID int64) error {
+	return p.db.Model(&BattleQueue{}).Where("region = ? AND battle_id = ?", region, battleID).Update("processed", true).Error
 }

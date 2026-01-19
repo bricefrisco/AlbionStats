@@ -88,8 +88,8 @@ func (p *BattlePoller) runBatch() {
 			continue
 		}
 
-		if err := p.postgres.DeleteBattleQueue(postgres.Region(p.region), queue.BattleID); err != nil {
-			p.log.Error("delete battle queue failed", "err", err)
+		if err := p.postgres.MarkBattleQueueProcessed(postgres.Region(p.region), queue.BattleID); err != nil {
+			p.log.Error("mark battle queue processed failed", "err", err)
 			continue
 		}
 

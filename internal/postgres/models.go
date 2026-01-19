@@ -290,6 +290,7 @@ type BattleQueue struct {
 	BattleID    int64   `gorm:"column:battle_id;primaryKey"`
 	TS          time.Time `gorm:"column:ts;not null"`
 	ErrorCount  int16   `gorm:"column:error_count;default:0"`
+	Processed   bool    `gorm:"column:processed;default:false"`
 }
 
 func (BattleQueue) TableName() string {

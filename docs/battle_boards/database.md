@@ -97,12 +97,14 @@ CREATE TABLE battle_queue (
   battle_id      BIGINT,
   ts             TIMESTAMPTZ,
   error_count    SMALLINT NOT NULL DEFAULT 0,
+  processed      BOOLEAN NOT NULL DEFAULT FALSE,
 
   PRIMARY KEY (region, battle_id)
 );
 
-CREATE INDEX IF NOT EXISTS idx_battle_queue_ts_asc
-ON battle_queue (ts ASC);
+CREATE INDEX IF NOT EXISTS idx_battle_queue_unprocessed_ts
+ON battle_queue (ts)
+WHERE processed = FALSE;
 ```
 
 ## Battle Kills
