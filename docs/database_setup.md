@@ -41,3 +41,9 @@ CREATE EXTENSION IF NOT EXISTS timescaledb;
 ```cmd
 \dx
 ```
+
+## Region Enum
+
+```sql
+CREATE TYPE region_enum AS ENUM ( 'americas', 'europe', 'asia');
+```

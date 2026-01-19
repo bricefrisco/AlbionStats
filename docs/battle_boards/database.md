@@ -4,41 +4,42 @@
 
 ```sql
 CREATE TABLE battle_summary (
-  battle_id        BIGINT PRIMARY KEY,
+  region           region_enum,
+  battle_id        BIGINT,
   start_time       TIMESTAMPTZ NOT NULL,
   end_time         TIMESTAMPTZ,
-  cluster_name     TEXT,
 
   total_players    INT NOT NULL,
   total_kills      INT NOT NULL,
-  total_deaths     INT NOT NULL,
   total_fame       BIGINT NOT NULL,
 
   alliance_names     TEXT[],
   guild_names        TEXT[],
-  player_names       TEXT[]
+  player_names       TEXT[],
+
+  PRIMARY KEY(region, battle_id)
 );
 
-CREATE INDEX ON battle_summary (start_time DESC);
-CREATE INDEX ON battle_summary USING GIN ((lower(guild_names)));
-CREATE INDEX ON battle_summary USING GIN ((lower(alliance_names)));
-CREATE INDEX ON battle_summary USING GIN ((lower(player_names)));
+CREATE INDEX ON battle_summary (region, start_time DESC);
 ```
 
 ## Battle Alliance Stats
 
 ```sql
 CREATE TABLE battle_alliance_stats (
+  region         region_enum,
   battle_id      BIGINT,
   alliance_name  TEXT,
-
   player_count   INT,
   kills          INT,
   deaths         INT,
-  avg_ip         INT,
-  total_fame     BIGINT,
+  kill_fame      BIGINT,
 
-  PRIMARY KEY (battle_id, alliance_name)
+  -- Appended later, may be initially null:
+  death_fame     BIGINT,
+  ip             INT,
+
+  PRIMARY KEY (region, battle_id, alliance_name)
 );
 ```
 
@@ -46,16 +47,20 @@ CREATE TABLE battle_alliance_stats (
 
 ```sql
 CREATE TABLE battle_guild_stats (
+  region         region_enum,
   battle_id      BIGINT,
   guild_name     TEXT,
   alliance_name  TEXT,
   player_count   INT,
   kills          INT,
   deaths         INT,
-  avg_ip         INT,
-  total_fame     BIGINT,
+  kill_fame      BIGINT,
 
-  PRIMARY KEY (battle_id, guild_name)
+  -- Appended later, may be initially null:
+  death_fame     BIGINT,
+  ip             INT,
+
+  PRIMARY KEY (region, battle_id, guild_name)
 );
 ```
 
@@ -63,59 +68,51 @@ CREATE TABLE battle_guild_stats (
 
 ```sql
 CREATE TABLE battle_player_stats (
+  region         region_enum,
   battle_id      BIGINT,
   player_name    TEXT,
   guild_name     TEXT,
   alliance_name  TEXT,
-
-  weapon         TEXT,
-  ip             INT,
-
-  damage_done    BIGINT,
-  healing_done   BIGINT,
   kills          INT,
   deaths         INT,
-  total_fame     BIGINT,
+  kill_fame      BIGINT,
 
-  PRIMARY KEY (battle_id, player_name)
+  -- Appended later, may be initially null:
+  death_fame     BIGINT,
+  ip             INT,
+
+  PRIMARY KEY (region, battle_id, player_name)
+);
+```
+
+## Battle queue
+
+```sql
+CREATE TABLE battle_queue (
+  region         region_enum,
+  battle_id      BIGINT,
+  ts             TIMESTAMPTZ,
+  error_count    SMALLINT NOT NULL DEFAULT 0,
+
+  PRIMARY KEY (region, battle_id)
 );
 
-SELECT create_hypertable(
-  'battle_player_stats',
-  by_range('battle_id')
-);
-
-ALTER TABLE battle_player_stats SET (
-  timescaledb.compress,
-  timescaledb.compress_segmentby = 'battle_id'
-);
+CREATE INDEX ON battle_queue (ts ASC);
 ```
 
 ## Battle Kills
 
 ```sql
 CREATE TABLE battle_kills (
+  region         region_enum,
   battle_id      BIGINT,
   ts             TIMESTAMPTZ,
-
-  killer_id      TEXT,
   killer_name    TEXT,
   killer_ip      INT,
-
-  victim_id      TEXT,
   victim_name    TEXT,
   victim_ip      INT,
-
   fame           BIGINT
 );
 
-SELECT create_hypertable(
-  'battle_kills',
-  by_range('ts')
-);
-
-ALTER TABLE battle_kills SET (
-  timescaledb.compress,
-  timescaledb.compress_segmentby = 'battle_id'
-);
+CREATE INDEX ON battle_kills (region, battle_id, ts DESC);
 ```

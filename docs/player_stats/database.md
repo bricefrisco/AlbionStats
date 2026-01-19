@@ -1,11 +1,5 @@
 # Database
 
-## Region Enum
-
-```sql
-CREATE TYPE region_enum AS ENUM ( 'americas', 'europe', 'asia');
-```
-
 ## Player Polls
 
 ```sql
