@@ -115,6 +115,8 @@ function mapEntries(list = []) {
 											+{battle.AllianceEntries.length - 3} more
 										</span>
 									{/if}
+								{:else}
+									<span class="text-[11px] text-gray-500 dark:text-gray-400">-</span>
 								{/if}
 							</div>
 						</td>
@@ -134,6 +136,8 @@ function mapEntries(list = []) {
 											+{battle.GuildEntries.length - 3} more
 										</span>
 									{/if}
+								{:else}
+									<span class="text-[11px] text-gray-500 dark:text-gray-400">-</span>
 								{/if}
 							</div>
 						</td>
