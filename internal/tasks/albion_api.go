@@ -1,6 +1,7 @@
 package tasks
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
@@ -8,10 +9,28 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"sync"
 	"time"
 
+	"golang.org/x/time/rate"
 	"gorm.io/gorm"
 )
+
+var (
+	regionLimiters     map[string]*rate.Limiter
+	regionLimitersOnce sync.Once
+)
+
+func getRegionLimiter(region string) *rate.Limiter {
+	regionLimitersOnce.Do(func() {
+		regionLimiters = map[string]*rate.Limiter{
+			"americas": rate.NewLimiter(5, 5),
+			"europe":   rate.NewLimiter(5, 5),
+			"asia":     rate.NewLimiter(5, 5),
+		}
+	})
+	return regionLimiters[region]
+}
 
 type Client struct {
 	httpClient *http.Client
@@ -44,6 +63,12 @@ func (c *Client) FetchPlayer(region string, playerID string) (*PlayerResponse, e
 	baseUrl, err := regionToBaseURL(region)
 	if err != nil {
 		return nil, err
+	}
+
+	if limiter := getRegionLimiter(region); limiter != nil {
+		if err := limiter.Wait(context.Background()); err != nil {
+			return nil, err
+		}
 	}
 
 	u, err := url.Parse(fmt.Sprintf("%s/api/gameinfo/players/%s", baseUrl, playerID))
@@ -89,6 +114,12 @@ func (c *Client) FetchEvents(region string, limit int, offset int) ([]Event, err
 		return nil, err
 	}
 
+	if limiter := getRegionLimiter(region); limiter != nil {
+		if err := limiter.Wait(context.Background()); err != nil {
+			return nil, err
+		}
+	}
+
 	u, err := url.Parse(baseUrl + "/api/gameinfo/events")
 	if err != nil {
 		return nil, err
@@ -128,6 +159,12 @@ func (c *Client) FetchBattles(region string, offset, limit int) (BattlesResponse
 	baseUrl, err := regionToBaseURL(region)
 	if err != nil {
 		return nil, err
+	}
+
+	if limiter := getRegionLimiter(region); limiter != nil {
+		if err := limiter.Wait(context.Background()); err != nil {
+			return nil, err
+		}
 	}
 
 	u, err := url.Parse(fmt.Sprintf("%s/api/gameinfo/battles", baseUrl))
@@ -172,6 +209,12 @@ func (c *Client) FetchBattleEvents(region string, battleID int64, offset, limit 
 	baseUrl, err := regionToBaseURL(region)
 	if err != nil {
 		return nil, err
+	}
+
+	if limiter := getRegionLimiter(region); limiter != nil {
+		if err := limiter.Wait(context.Background()); err != nil {
+			return nil, err
+		}
 	}
 
 	u, err := url.Parse(fmt.Sprintf("%s/api/gameinfo/events/battle/%d", baseUrl, battleID))
