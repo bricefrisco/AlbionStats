@@ -155,7 +155,7 @@ func (p *BattleboardPoller) collectBattleSummaries(battles []tasks.Battle) ([]po
 			allianceSlice = append(allianceSlice, alliance)
 		}
 		sort.Slice(allianceSlice, func(i, j int) bool {
-			return allianceSlice[i].Kills > allianceSlice[j].Kills
+			return allianceNumParticipants[allianceSlice[i].Name] > allianceNumParticipants[allianceSlice[j].Name]
 		})
 		allianceNames := make([]string, 0, len(battle.Alliances))
 		for _, alliance := range allianceSlice {
@@ -168,7 +168,7 @@ func (p *BattleboardPoller) collectBattleSummaries(battles []tasks.Battle) ([]po
 			guildSlice = append(guildSlice, guild)
 		}
 		sort.Slice(guildSlice, func(i, j int) bool {
-			return guildSlice[i].Kills > guildSlice[j].Kills
+			return guildNumParticipants[guildSlice[i].Name] > guildNumParticipants[guildSlice[j].Name]
 		})
 		guildNames := make([]string, 0, len(battle.Guilds))
 		for _, guild := range guildSlice {
