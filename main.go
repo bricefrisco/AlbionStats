@@ -14,6 +14,8 @@ import (
 	"albionstats/internal/api"
 	"albionstats/internal/config"
 	"albionstats/internal/postgres"
+	"albionstats/internal/tasks"
+	"albionstats/internal/tasks/battleboard_poller"
 	"albionstats/internal/tasks/killboard_poller"
 	"albionstats/internal/tasks/metrics_collector"
 	"albionstats/internal/tasks/player_poller"
@@ -27,7 +29,7 @@ func main() {
 		log.Fatalf("config: %v", err)
 	}
 
-	apiClient := api.NewClient()
+	apiClient := tasks.NewClient()
 
 	postgres, err := postgres.NewPostgresDatabase(cfg.DBDSN)
 	if err != nil {
@@ -103,13 +105,13 @@ func main() {
 	// Start killboard pollers for all regions
 	for _, region := range regions {
 		kbPoller, err := killboard_poller.NewKillboardPoller(killboard_poller.Config{
-			PageSize:       cfg.PageSize,
-			MaxPages:       cfg.MaxPages,
-			EventsInterval: cfg.EventsInterval,
 			Region:         region,
 			APIClient:      apiClient,
 			Postgres:       postgres,
 			Logger:         appLogger,
+			PageSize:       cfg.KillboardPageSize,
+			MaxPages:       cfg.KillboardMaxPages,
+			EventsInterval: cfg.KillboardInterval,
 		})
 		if err != nil {
 			log.Fatalf("killboard poller init (%s): %v", region, err)
@@ -119,6 +121,24 @@ func main() {
 			log.Printf("starting killboard poller for region: %s", regionName)
 			poller.Run()
 		}(kbPoller, region)
+	}
+
+	// Start battleboard poller for all regions
+	for _, region := range regions {
+		battleboardPoller := battleboard_poller.NewBattleboardPoller(battleboard_poller.Config{
+			APIClient:      apiClient,
+			Postgres:       postgres,
+			Logger:         appLogger,
+			Region:         region,
+			PageSize:       cfg.PageSize,
+			MaxPages:       cfg.MaxPages,
+			EventsInterval: cfg.EventsInterval,
+		})
+
+		go func(poller *battleboard_poller.BattleboardPoller, regionName string) {
+			log.Printf("starting battleboard poller for region: %s", regionName)
+			poller.Run()
+		}(battleboardPoller, region)
 	}
 
 	// Wait for shutdown signal

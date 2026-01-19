@@ -4,12 +4,12 @@ import (
 	"log/slog"
 	"time"
 
-	"albionstats/internal/api"
 	"albionstats/internal/postgres"
+	"albionstats/internal/tasks"
 )
 
 type Config struct {
-	APIClient      *api.Client
+	APIClient      *tasks.Client
 	Postgres       *postgres.Postgres
 	Logger         *slog.Logger
 	Region         string
@@ -19,7 +19,7 @@ type Config struct {
 }
 
 type KillboardPoller struct {
-	apiClient      *api.Client
+	apiClient      *tasks.Client
 	postgres       *postgres.Postgres
 	log            *slog.Logger
 	eventsInterval time.Duration
@@ -78,10 +78,10 @@ func (p *KillboardPoller) runBatch() {
 	p.log.Info("upserted player polls", "count", len(playerMap))
 }
 
-func (p *KillboardPoller) collectPlayers(events []api.Event, acc map[string]postgres.PlayerPoll) {
+func (p *KillboardPoller) collectPlayers(events []tasks.Event, acc map[string]postgres.PlayerPoll) {
 	now := time.Now().UTC()
 	for _, ev := range events {
-		add := func(participant api.Participant) {
+		add := func(participant tasks.Participant) {
 			if participant.ID == "" {
 				return
 			}

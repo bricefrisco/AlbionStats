@@ -20,7 +20,8 @@ CREATE TABLE battle_summary (
   PRIMARY KEY(region, battle_id)
 );
 
-CREATE INDEX ON battle_summary (region, start_time DESC);
+CREATE INDEX IF NOT EXISTS idx_battle_summary_region_start_time_desc
+ON battle_summary (region, start_time DESC);
 ```
 
 ## Battle Alliance Stats
@@ -97,7 +98,8 @@ CREATE TABLE battle_queue (
   PRIMARY KEY (region, battle_id)
 );
 
-CREATE INDEX ON battle_queue (ts ASC);
+CREATE INDEX IF NOT EXISTS idx_battle_queue_ts_asc
+ON battle_queue (ts ASC);
 ```
 
 ## Battle Kills
@@ -114,5 +116,6 @@ CREATE TABLE battle_kills (
   fame           BIGINT
 );
 
-CREATE INDEX ON battle_kills (region, battle_id, ts DESC);
+CREATE INDEX IF NOT EXISTS idx_battle_kills_region_battle_ts_desc
+ON battle_kills (region, battle_id, ts DESC);
 ```

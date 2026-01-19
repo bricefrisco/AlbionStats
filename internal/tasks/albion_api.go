@@ -1,4 +1,4 @@
-package api
+package tasks
 
 import (
 	"crypto/rand"
@@ -124,6 +124,50 @@ func (c *Client) FetchEvents(region string, limit int, offset int) ([]Event, err
 	return events, nil
 }
 
+func (c *Client) FetchBattles(region string, offset, limit int) (BattlesResponse, error) {
+	baseUrl, err := regionToBaseURL(region)
+	if err != nil {
+		return nil, err
+	}
+
+	u, err := url.Parse(fmt.Sprintf("%s/api/gameinfo/battles", baseUrl))
+	if err != nil {
+		return nil, err
+	}
+
+	q := u.Query()
+	q.Set("offset", fmt.Sprintf("%d", offset))
+	q.Set("limit", fmt.Sprintf("%d", limit))
+	q.Set("sort", "recent")
+	q.Set("guid", generateRandomGUID())
+	q.Set("t", fmt.Sprintf("%d", time.Now().UnixNano()))
+	u.RawQuery = q.Encode()
+
+	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("User-Agent", c.userAgent)
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("API request failed with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	var battles BattlesResponse
+	if err := json.NewDecoder(resp.Body).Decode(&battles); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return battles, nil
+}
+
 func generateRandomGUID() string {
 	buf := make([]byte, 16)
 	if _, err := rand.Read(buf); err != nil {
@@ -209,3 +253,49 @@ type Participant struct {
 	AllianceName string `json:"AllianceName"`
 	AllianceTag  string `json:"AllianceTag"`
 }
+
+type BattlePlayer struct {
+	Name         string `json:"name"`
+	Kills        int32  `json:"kills"`
+	Deaths       int32  `json:"deaths"`
+	KillFame     int64  `json:"killFame"`
+	GuildName    *string `json:"guildName"`
+	GuildID      *string `json:"guildId"`
+	AllianceName *string `json:"allianceName"`
+	AllianceID   *string `json:"allianceId"`
+	ID           string `json:"id"`
+}
+
+type BattleGuild struct {
+	Name       string `json:"name"`
+	Kills      int32  `json:"kills"`
+	Deaths     int32  `json:"deaths"`
+	KillFame   int64  `json:"killFame"`
+	Alliance   *string `json:"alliance"`
+	AllianceID *string `json:"allianceId"`
+	ID         *string `json:"id"`
+}
+
+type BattleAlliance struct {
+	Name     string `json:"name"`
+	Kills    int32  `json:"kills"`
+	Deaths   int32  `json:"deaths"`
+	KillFame int64  `json:"killFame"`
+	ID       string `json:"id"`
+}
+
+type Battle struct {
+	ID          int64                      `json:"id"`
+	StartTime   time.Time                  `json:"startTime"`
+	EndTime     time.Time                  `json:"endTime,omitempty"`
+	Timeout     time.Time                  `json:"timeout,omitempty"`
+	TotalFame   int64                      `json:"totalFame"`
+	TotalKills  int32                      `json:"totalKills"`
+	ClusterName *string                    `json:"clusterName,omitempty"`
+	Players     map[string]BattlePlayer    `json:"players"`
+	Guilds      map[string]BattleGuild     `json:"guilds"`
+	Alliances   map[string]BattleAlliance  `json:"alliances"`
+	BattleTimeout int32                    `json:"battle_TIMEOUT"`
+}
+
+type BattlesResponse []Battle

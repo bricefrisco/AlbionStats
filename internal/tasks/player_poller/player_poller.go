@@ -1,8 +1,8 @@
 package player_poller
 
 import (
-	"albionstats/internal/api"
 	"albionstats/internal/postgres"
+	"albionstats/internal/tasks"
 	"albionstats/internal/util"
 	"errors"
 	"fmt"
@@ -13,7 +13,7 @@ import (
 )
 
 type Config struct {
-	APIClient  *api.Client
+	APIClient  *tasks.Client
 	Postgres   *postgres.Postgres
 	Logger     *slog.Logger
 	Region     string
@@ -22,7 +22,7 @@ type Config struct {
 }
 
 type PlayerPoller struct {
-	api        *api.Client
+	api        *tasks.Client
 	postgres   *postgres.Postgres
 	log        *slog.Logger
 	region     string
