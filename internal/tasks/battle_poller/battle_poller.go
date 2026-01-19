@@ -12,7 +12,6 @@ type Config struct {
 	Postgres        *postgres.Postgres
 	Logger          *slog.Logger
 	Region          string
-	BattlesInterval time.Duration
 }
 
 type BattlePoller struct {
@@ -20,7 +19,6 @@ type BattlePoller struct {
 	postgres *postgres.Postgres
 	log *slog.Logger
 	region string
-	interval time.Duration
 }
 
 func NewBattlePoller(cfg Config) (*BattlePoller) {
@@ -29,14 +27,13 @@ func NewBattlePoller(cfg Config) (*BattlePoller) {
 		postgres: cfg.Postgres,
 		log: cfg.Logger.With("component", "battle_poller", "region", cfg.Region),
 		region: cfg.Region,
-		interval: cfg.BattlesInterval,
 	}
 }
 
 func (p *BattlePoller) Run() {
-	p.log.Info("battle polling started", "interval", p.interval)
+	p.log.Info("battle polling started")
 
-	ticker := time.NewTicker(p.interval)
+	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
 	p.runBatch() // Run once immediately
@@ -55,6 +52,7 @@ func (p *BattlePoller) runBatch() {
 
 	if len(queues) == 0 {
 		p.log.Info("no battle queues found")
+		time.Sleep(time.Second)
 		return
 	}
 
@@ -236,8 +234,8 @@ func (p *BattlePoller) processPlayerStats(events []tasks.Event) []postgres.Battl
 	// and then participants
 	for _, event := range events {
 		for _, participant := range event.Participants {
-			playerDamage[participant.Name] += participant.DamageDone
-			playerHeal[participant.Name] += participant.SupportHealingDone
+			playerDamage[participant.Name] += int64(participant.DamageDone)
+			playerHeal[participant.Name] += int64(participant.SupportHealingDone)
 		}
 	}
 

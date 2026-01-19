@@ -149,7 +149,6 @@ func main() {
 			APIClient: apiClient,
 			Postgres: postgres,
 			Logger: appLogger,
-			BattlesInterval: cfg.BattleboardInterval,
 		})
 
 		go func(poller *battle_poller.BattlePoller, regionName string) {
