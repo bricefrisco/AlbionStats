@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"sort"
+	"strconv"
 	"time"
 )
 
@@ -137,6 +138,18 @@ func (p *BattleboardPoller) collectBattleSummaries(battles []tasks.Battle) ([]po
 	summary := make([]postgres.BattleSummary, 0, len(battles))
 
 	for _, battle := range battles {
+
+		guildNumParticipants := make(map[string]int32)
+		allianceNumParticipants := make(map[string]int32)
+		for _, player := range battle.Players {
+			if player.GuildName != nil && *player.GuildName != "" {
+				guildNumParticipants[*player.GuildName]++
+			}
+			if player.AllianceName != nil && *player.AllianceName != "" {
+				allianceNumParticipants[*player.AllianceName]++
+			}
+		}
+
 		allianceSlice := make([]tasks.BattleAlliance, 0, len(battle.Alliances))
 		for _, alliance := range battle.Alliances {
 			allianceSlice = append(allianceSlice, alliance)
@@ -146,7 +159,8 @@ func (p *BattleboardPoller) collectBattleSummaries(battles []tasks.Battle) ([]po
 		})
 		allianceNames := make([]string, 0, len(battle.Alliances))
 		for _, alliance := range allianceSlice {
-			allianceNames = append(allianceNames, alliance.Name)
+			name := alliance.Name + " (" + strconv.Itoa(int(allianceNumParticipants[alliance.Name])) + ")"
+			allianceNames = append(allianceNames, name)
 		}
 	
 		guildSlice := make([]tasks.BattleGuild, 0, len(battle.Guilds))
@@ -158,7 +172,8 @@ func (p *BattleboardPoller) collectBattleSummaries(battles []tasks.Battle) ([]po
 		})
 		guildNames := make([]string, 0, len(battle.Guilds))
 		for _, guild := range guildSlice {
-			guildNames = append(guildNames, guild.Name)
+			name := guild.Name + " (" + strconv.Itoa(int(guildNumParticipants[guild.Name])) + ")"
+			guildNames = append(guildNames, name)
 		}
 	
 		playerSlice := make([]tasks.BattlePlayer, 0, len(battle.Players))
@@ -181,6 +196,9 @@ func (p *BattleboardPoller) collectBattleSummaries(battles []tasks.Battle) ([]po
 			TotalPlayers: int32(len(battle.Players)),
 			TotalKills:   int32(battle.TotalKills),
 			TotalFame:    battle.TotalFame,
+			AllianceNames: allianceNames,
+			GuildNames: guildNames,
+			PlayerNames: playerNames,
 		})
 	}
 
