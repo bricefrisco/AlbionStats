@@ -19,3 +19,9 @@ func (p *Postgres) InsertBattleSummaries(summaries []BattleSummary) error {
 		return nil
 	})
 }
+
+func (p *Postgres) GetBattleSummariesByRegion(region string, limit, offset int) ([]BattleSummary, error) {
+	var summaries []BattleSummary
+	err := p.db.Where("region = ?", region).Order("start_time DESC").Limit(limit).Offset(offset).Find(&summaries).Error
+	return summaries, err
+}

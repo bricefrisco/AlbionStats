@@ -76,6 +76,7 @@ func (s *Server) setupRoutes() {
 	v1.GET("/metrics/crafting/:server/:playerId", s.playerCrafting)
 	v1.GET("/players/:server/:name", s.player)
 	v1.GET("/search/:server/:query", s.search)
+	v1.GET("/boards/:region", s.battleSummaries)
 }
 
 func (s *Server) Run(addr string) error {
