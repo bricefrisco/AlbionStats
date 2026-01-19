@@ -81,6 +81,9 @@ CREATE TABLE battle_player_stats (
   -- Appended later, may be initially null:
   death_fame     BIGINT,
   ip             INT,
+  weapon         TEXT,
+  damage         BIGINT,
+  heal           BIGINT,
 
   PRIMARY KEY (region, battle_id, player_name)
 );
@@ -111,8 +114,10 @@ CREATE TABLE battle_kills (
   ts             TIMESTAMPTZ,
   killer_name    TEXT,
   killer_ip      INT,
+  killer_weapon  TEXT,
   victim_name    TEXT,
   victim_ip      INT,
+  victim_weapon  TEXT,
   fame           BIGINT
 );
 

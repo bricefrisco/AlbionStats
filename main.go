@@ -15,6 +15,7 @@ import (
 	"albionstats/internal/config"
 	"albionstats/internal/postgres"
 	"albionstats/internal/tasks"
+	"albionstats/internal/tasks/battle_poller"
 	"albionstats/internal/tasks/battleboard_poller"
 	"albionstats/internal/tasks/killboard_poller"
 	"albionstats/internal/tasks/metrics_collector"
@@ -139,6 +140,22 @@ func main() {
 			log.Printf("starting battleboard poller for region: %s", regionName)
 			poller.Run()
 		}(battleboardPoller, region)
+	}
+
+	// Start battle poller for all regions
+	for _, region := range regions {
+		battlePoller := battle_poller.NewBattlePoller(battle_poller.Config{
+			Region: region,
+			APIClient: apiClient,
+			Postgres: postgres,
+			Logger: appLogger,
+			BattlesInterval: cfg.BattleboardInterval,
+		})
+
+		go func(poller *battle_poller.BattlePoller, regionName string) {
+			log.Printf("starting battle poller for region: %s", regionName)
+			poller.Run()
+		}(battlePoller, region)
 	}
 
 	// Wait for shutdown signal

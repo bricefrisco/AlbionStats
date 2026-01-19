@@ -259,6 +259,9 @@ type BattlePlayerStats struct {
 	KillFame     int64   `gorm:"column:kill_fame"`
 	DeathFame    *int64  `gorm:"column:death_fame"`
 	IP           *int32  `gorm:"column:ip"`
+	Weapon       *string `gorm:"column:weapon"`
+	Damage       *int64  `gorm:"column:damage"`
+	Heal         *int64  `gorm:"column:heal"`
 }
 
 func (BattlePlayerStats) TableName() string {
@@ -271,8 +274,10 @@ type BattleKills struct {
 	TS         time.Time `gorm:"column:ts"`
 	KillerName string   `gorm:"column:killer_name"`
 	KillerIP   int32    `gorm:"column:killer_ip"`
+	KillerWeapon string   `gorm:"column:killer_weapon"`
 	VictimName string   `gorm:"column:victim_name"`
 	VictimIP   int32    `gorm:"column:victim_ip"`
+	VictimWeapon string   `gorm:"column:victim_weapon"`
 	Fame       int64    `gorm:"column:fame"`
 }
 

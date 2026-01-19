@@ -19,3 +19,17 @@ func (p *Postgres) InsertBattleQueues(queues []BattleQueue) error {
 		return nil
 	})
 }
+
+func (p *Postgres) GetBattleQueuesByRegion(region Region, limit int) ([]BattleQueue, error) {
+	var queues []BattleQueue
+	err := p.db.
+		Where("region = ?", region).
+		Order("ts ASC").
+		Limit(limit).
+		Find(&queues).Error
+	return queues, err
+}
+
+func (p *Postgres) DeleteBattleQueue(region Region, battleID int64) error {
+	return p.db.Where("region = ? AND battle_id = ?", region, battleID).Delete(&BattleQueue{}).Error
+}
