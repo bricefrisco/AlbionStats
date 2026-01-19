@@ -10,28 +10,28 @@ import (
 )
 
 type Config struct {
-	DBDSN               string
-	APIBase             string
-	PageSize            int
-	MaxPages            int
-	EventsInterval      time.Duration
-	KillboardPageSize   int
-	KillboardMaxPages   int
-	KillboardInterval   time.Duration
-	HTTPTimeout         time.Duration
-	PlayerRate          int
-	PlayerBatch         int
-	UserAgent           string
-	APIPort             string
+	DBDSN                    string
+	APIBase                  string
+	EventsPageSize           int
+	EventsMaxPages           int
+	EventsInterval           time.Duration
+	BattleboardPageSize      int
+	BattleboardMaxPages      int
+	BattleboardInterval      time.Duration
+	HTTPTimeout              time.Duration
+	PlayerRate               int
+	PlayerBatch              int
+	UserAgent                string
+	APIPort                  string
 }
 
 const (
-	defaultPageSize            = 50
-	defaultMaxPages            = 1
+	defaultEventsPageSize      = 50
+	defaultEventsMaxPages      = 1
 	defaultEventsInterval      = 10 * time.Second
-	defaultKillboardPageSize   = 51
-	defaultKillboardMaxPages   = 1
-	defaultKillboardInterval   = 60 * time.Second
+	defaultBattleboardPageSize = 51
+	defaultBattleboardMaxPages = 1
+	defaultBattleboardInterval = 60 * time.Second
 	defaultPlayerRate          = 6
 	defaultPlayerBatch         = 100
 	defaultAPIPort             = "8080"
@@ -51,41 +51,41 @@ func Load() (Config, error) {
 	}
 
 	cfg := Config{
-		DBDSN:               valueWithDefault(values, "ALBION_DB_DSN", defaultDBDSN),
-		PageSize:            intFrom(values, "ALBION_EVENTS_PAGE_SIZE", defaultPageSize),
-		MaxPages:            intFrom(values, "ALBION_EVENTS_MAX_PAGES", defaultMaxPages),
-		EventsInterval:      durationFrom(values, "ALBION_EVENTS_INTERVAL", defaultEventsInterval),
-		KillboardPageSize:   intFrom(values, "ALBION_KILLBOARD_PAGE_SIZE", defaultKillboardPageSize),
-		KillboardMaxPages:   intFrom(values, "ALBION_KILLBOARD_MAX_PAGES", defaultKillboardMaxPages),
-		KillboardInterval:   durationFrom(values, "ALBION_KILLBOARD_INTERVAL", defaultKillboardInterval),
-		PlayerRate:          intFrom(values, "ALBION_PLAYER_RATE", defaultPlayerRate),
-		PlayerBatch:         intFrom(values, "ALBION_PLAYER_BATCH", defaultPlayerBatch),
-		APIPort:             valueWithDefault(values, "API_PORT", defaultAPIPort),
+		DBDSN:                    valueWithDefault(values, "ALBION_DB_DSN", defaultDBDSN),
+		EventsPageSize:           intFrom(values, "ALBION_EVENTS_PAGE_SIZE", defaultEventsPageSize),
+		EventsMaxPages:           intFrom(values, "ALBION_EVENTS_MAX_PAGES", defaultEventsMaxPages),
+		EventsInterval:           durationFrom(values, "ALBION_EVENTS_INTERVAL", defaultEventsInterval),
+		BattleboardPageSize:      intFrom(values, "ALBION_BATTLE_BOARD_PAGE_SIZE", defaultBattleboardPageSize),
+		BattleboardMaxPages:      intFrom(values, "ALBION_BATTLE_BOARD_MAX_PAGES", defaultBattleboardMaxPages),
+		BattleboardInterval:      durationFrom(values, "ALBION_BATTLE_BOARD_INTERVAL", defaultBattleboardInterval),
+		PlayerRate:               intFrom(values, "ALBION_PLAYER_RATE", defaultPlayerRate),
+		PlayerBatch:              intFrom(values, "ALBION_PLAYER_BATCH", defaultPlayerBatch),
+		APIPort:                  valueWithDefault(values, "API_PORT", defaultAPIPort),
 	}
 
-	if cfg.PageSize <= 0 {
-		return Config{}, fmt.Errorf("invalid ALBION_EVENTS_PAGE_SIZE: %d", cfg.PageSize)
+	if cfg.EventsPageSize <= 0 {
+		return Config{}, fmt.Errorf("invalid ALBION_EVENTS_PAGE_SIZE: %d", cfg.EventsPageSize)
 	}
-	if cfg.MaxPages <= 0 {
-		return Config{}, fmt.Errorf("invalid ALBION_EVENTS_MAX_PAGES: %d", cfg.MaxPages)
+	if cfg.EventsMaxPages <= 0 {
+		return Config{}, fmt.Errorf("invalid ALBION_EVENTS_MAX_PAGES: %d", cfg.EventsMaxPages)
 	}
 	if cfg.EventsInterval <= 0 {
 		return Config{}, fmt.Errorf("invalid ALBION_EVENTS_INTERVAL: %v", cfg.EventsInterval)
+	}
+	if cfg.BattleboardPageSize <= 0 {
+		return Config{}, fmt.Errorf("invalid ALBION_BATTLE_BOARD_PAGE_SIZE: %d", cfg.BattleboardPageSize)
+	}
+	if cfg.BattleboardMaxPages <= 0 {
+		return Config{}, fmt.Errorf("invalid ALBION_BATTLE_BOARD_MAX_PAGES: %d", cfg.BattleboardMaxPages)
+	}
+	if cfg.BattleboardInterval <= 0 {
+		return Config{}, fmt.Errorf("invalid ALBION_BATTLE_BOARD_INTERVAL: %v", cfg.BattleboardInterval)
 	}
 	if cfg.PlayerRate <= 0 {
 		return Config{}, fmt.Errorf("invalid ALBION_PLAYER_RATE: %d", cfg.PlayerRate)
 	}
 	if cfg.PlayerBatch <= 0 {
 		return Config{}, fmt.Errorf("invalid ALBION_PLAYER_BATCH: %d", cfg.PlayerBatch)
-	}
-	if cfg.KillboardPageSize <= 0 {
-		return Config{}, fmt.Errorf("invalid ALBION_KILLBOARD_PAGE_SIZE: %d", cfg.KillboardPageSize)
-	}
-	if cfg.KillboardMaxPages <= 0 {
-		return Config{}, fmt.Errorf("invalid ALBION_KILLBOARD_MAX_PAGES: %d", cfg.KillboardMaxPages)
-	}
-	if cfg.KillboardInterval <= 0 {
-		return Config{}, fmt.Errorf("invalid ALBION_KILLBOARD_INTERVAL: %v", cfg.KillboardInterval)
 	}
 
 	cfg.APIBase = strings.TrimRight(cfg.APIBase, "/")

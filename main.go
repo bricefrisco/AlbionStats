@@ -109,9 +109,9 @@ func main() {
 			APIClient:      apiClient,
 			Postgres:       postgres,
 			Logger:         appLogger,
-			PageSize:       cfg.KillboardPageSize,
-			MaxPages:       cfg.KillboardMaxPages,
-			EventsInterval: cfg.KillboardInterval,
+			PageSize:       cfg.EventsPageSize,
+			MaxPages:       cfg.EventsMaxPages,
+			EventsInterval: cfg.EventsInterval,
 		})
 		if err != nil {
 			log.Fatalf("killboard poller init (%s): %v", region, err)
@@ -130,9 +130,9 @@ func main() {
 			Postgres:       postgres,
 			Logger:         appLogger,
 			Region:         region,
-			PageSize:       cfg.PageSize,
-			MaxPages:       cfg.MaxPages,
-			EventsInterval: cfg.EventsInterval,
+			PageSize:       cfg.BattleboardPageSize,
+			MaxPages:       cfg.BattleboardMaxPages,
+			EventsInterval: cfg.BattleboardInterval,
 		})
 
 		go func(poller *battleboard_poller.BattleboardPoller, regionName string) {
