@@ -86,12 +86,12 @@ func main() {
 	regions := []string{"americas", "europe", "asia"}
 	for _, region := range regions {
 		playerPoller, err := player_poller.NewPlayerPoller(player_poller.Config{
-			APIClient:  apiClient,
-			Postgres:   postgres,
-			Logger:     appLogger,
-			Region:     region,
-			BatchSize:  cfg.PlayerBatch,
-			RatePerSec: cfg.PlayerRate,
+			APIClient:   apiClient,
+			Postgres:    postgres,
+			Logger:      appLogger,
+			Region:      region,
+			BatchSize:   cfg.PlayerBatch,
+			WorkerCount: cfg.PlayerWorkerCount,
 		})
 		if err != nil {
 			log.Fatalf("player poller init (%s): %v", region, err)

@@ -18,16 +18,16 @@ type Config struct {
 	Logger     *slog.Logger
 	Region     string
 	BatchSize  int
-	RatePerSec int
+	WorkerCount int
 }
 
 type PlayerPoller struct {
-	api        *tasks.Client
-	postgres   *postgres.Postgres
-	log        *slog.Logger
-	region     string
-	batchSize  int
-	ratePerSec int
+	api         *tasks.Client
+	postgres    *postgres.Postgres
+	log         *slog.Logger
+	region      string
+	batchSize   int
+	workerCount int
 }
 
 type processResult struct {
@@ -40,17 +40,17 @@ type processResult struct {
 
 func NewPlayerPoller(cfg Config) (*PlayerPoller, error) {
 	return &PlayerPoller{
-		api:        cfg.APIClient,
-		postgres:   cfg.Postgres,
-		log:        cfg.Logger.With("component", "player_poller", "region", cfg.Region),
-		region:     cfg.Region,
-		batchSize:  cfg.BatchSize,
-		ratePerSec: cfg.RatePerSec,
+		api:         cfg.APIClient,
+		postgres:    cfg.Postgres,
+		log:         cfg.Logger.With("component", "player_poller", "region", cfg.Region),
+		region:      cfg.Region,
+		batchSize:   cfg.BatchSize,
+		workerCount: cfg.WorkerCount,
 	}, nil
 }
 
 func (p *PlayerPoller) Run() {
-	p.log.Info("player polling started", "region", p.region, "batch_size", p.batchSize, "rate_per_sec", p.ratePerSec)
+	p.log.Info("player polling started", "region", p.region, "batch_size", p.batchSize)
 
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
@@ -72,7 +72,7 @@ func (p *PlayerPoller) runBatch() {
 	}
 
 	p.log.Info("starting batch", "num_players", len(players))
-	pool := NewWorkerPool[processResult](p.ratePerSec)
+	pool := NewWorkerPool[processResult](p.workerCount)
 	for _, player := range players {
 		pool.Add(func() processResult {
 			return p.processPlayer(player)

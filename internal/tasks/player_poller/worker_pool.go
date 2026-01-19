@@ -2,30 +2,19 @@ package player_poller
 
 import (
 	"sync"
-	"time"
 )
 
 type WorkerPool[R any] struct {
 	workers int
-	limiter <-chan time.Time
 	jobs    []func() R
 }
 
-func NewWorkerPool[R any](ratePerSec int) *WorkerPool[R] {
-	var limiter <-chan time.Time
-	if ratePerSec > 0 {
-		t := time.NewTicker(time.Second / time.Duration(ratePerSec))
-		limiter = t.C
-	}
-
-	workers := ratePerSec
+func NewWorkerPool[R any](workers int) *WorkerPool[R] {
 	if workers < 1 {
 		workers = 1
 	}
-
 	return &WorkerPool[R]{
 		workers: workers,
-		limiter: limiter,
 		jobs:    make([]func() R, 0),
 	}
 }
@@ -45,9 +34,6 @@ func (p *WorkerPool[R]) ExecuteJobs() []R {
 		go func() {
 			defer wg.Done()
 			for job := range jobCh {
-				if p.limiter != nil {
-					<-p.limiter
-				}
 				results <- job()
 			}
 		}()

@@ -19,8 +19,8 @@ type Config struct {
 	BattleboardMaxPages      int
 	BattleboardInterval      time.Duration
 	HTTPTimeout              time.Duration
-	PlayerRate               int
 	PlayerBatch              int
+	PlayerWorkerCount        int
 	UserAgent                string
 	APIPort                  string
 }
@@ -32,8 +32,8 @@ const (
 	defaultBattleboardPageSize = 51
 	defaultBattleboardMaxPages = 1
 	defaultBattleboardInterval = 60 * time.Second
-	defaultPlayerRate          = 6
 	defaultPlayerBatch         = 100
+	defaultPlayerWorkerCount   = 5
 	defaultAPIPort             = "8080"
 	defaultDBDSN               = "postgres://postgres:postgres@localhost/postgres?sslmode=disable"
 	defaultConfigPath          = ".env"
@@ -58,8 +58,8 @@ func Load() (Config, error) {
 		BattleboardPageSize:      intFrom(values, "ALBION_BATTLE_BOARD_PAGE_SIZE", defaultBattleboardPageSize),
 		BattleboardMaxPages:      intFrom(values, "ALBION_BATTLE_BOARD_MAX_PAGES", defaultBattleboardMaxPages),
 		BattleboardInterval:      durationFrom(values, "ALBION_BATTLE_BOARD_INTERVAL", defaultBattleboardInterval),
-		PlayerRate:               intFrom(values, "ALBION_PLAYER_RATE", defaultPlayerRate),
 		PlayerBatch:              intFrom(values, "ALBION_PLAYER_BATCH", defaultPlayerBatch),
+		PlayerWorkerCount:        intFrom(values, "ALBION_PLAYER_WORKER_COUNT", defaultPlayerWorkerCount),
 		APIPort:                  valueWithDefault(values, "API_PORT", defaultAPIPort),
 	}
 
@@ -81,11 +81,11 @@ func Load() (Config, error) {
 	if cfg.BattleboardInterval <= 0 {
 		return Config{}, fmt.Errorf("invalid ALBION_BATTLE_BOARD_INTERVAL: %v", cfg.BattleboardInterval)
 	}
-	if cfg.PlayerRate <= 0 {
-		return Config{}, fmt.Errorf("invalid ALBION_PLAYER_RATE: %d", cfg.PlayerRate)
-	}
 	if cfg.PlayerBatch <= 0 {
 		return Config{}, fmt.Errorf("invalid ALBION_PLAYER_BATCH: %d", cfg.PlayerBatch)
+	}
+	if cfg.PlayerWorkerCount <= 0 {
+		return Config{}, fmt.Errorf("invalid ALBION_PLAYER_WORKER_COUNT: %d", cfg.PlayerWorkerCount)
 	}
 
 	cfg.APIBase = strings.TrimRight(cfg.APIBase, "/")
