@@ -24,9 +24,9 @@ var (
 func getRegionLimiter(region string) *rate.Limiter {
 	regionLimitersOnce.Do(func() {
 		regionLimiters = map[string]*rate.Limiter{
-			"americas": rate.NewLimiter(5, 5),
-			"europe":   rate.NewLimiter(5, 5),
-			"asia":     rate.NewLimiter(5, 5),
+			"americas": rate.NewLimiter(3, 3),
+			"europe":   rate.NewLimiter(3, 3),
+			"asia":     rate.NewLimiter(3, 3),
 		}
 	})
 	return regionLimiters[region]
