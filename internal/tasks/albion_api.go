@@ -351,8 +351,8 @@ type Participant struct {
 	KillFame             int64                  `json:"KillFame,omitempty"`
 	FameRatio            float64                `json:"FameRatio,omitempty"`
 	LifetimeStatistics   *LifetimeStats         `json:"LifetimeStatistics,omitempty"`
-	DamageDone           int64                  `json:"DamageDone,omitempty"`
-	SupportHealingDone   int64                  `json:"SupportHealingDone,omitempty"`
+	DamageDone           float64                `json:"DamageDone,omitempty"`
+	SupportHealingDone   float64                `json:"SupportHealingDone,omitempty"`
 }
 
 type BattlePlayer struct {
