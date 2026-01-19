@@ -23,7 +23,7 @@ func (p *Postgres) InsertBattleQueues(queues []BattleQueue) error {
 func (p *Postgres) GetBattleQueuesByRegion(region Region, limit int) ([]BattleQueue, error) {
 	var queues []BattleQueue
 	err := p.db.
-		Where("region = ?", region).
+		Where("region = ? AND processed = false", region).
 		Order("ts ASC").
 		Limit(limit).
 		Find(&queues).Error
