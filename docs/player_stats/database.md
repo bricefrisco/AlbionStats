@@ -106,7 +106,11 @@ CREATE TABLE player_stats_latest (
     PRIMARY KEY (region, player_id)
 );
 
-CREATE INDEX idx_player_name_lower ON player_stats_latest (region, lower(name));
+CREATE INDEX idx_psl_region_lower_name_prefix
+ON player_stats_latest (
+  region,
+  lower(name) text_pattern_ops
+);
 ```
 
 ## Player Stats (Snapshots)
