@@ -1,4 +1,5 @@
 <script>
+	import { resolve } from '$app/paths';
 	import GithubIcon from './icons/GithubIcon.svelte';
 	import SunIcon from './icons/SunIcon.svelte';
 	import MoonIcon from './icons/MoonIcon.svelte';
@@ -13,19 +14,19 @@
 		<div class="mb-4 flex items-center justify-between">
 			<nav class="flex items-center gap-4">
 				<a
-					href="/"
+					href={resolve('/')}
 					class="text-lg font-medium text-gray-900 hover:text-gray-700 dark:text-white dark:hover:text-gray-300 pr-4 border-r border-gray-300 dark:border-gray-600"
 				>
 					AlbionStats
 				</a>
 				<a
-					href="/battle-boards"
+					href={resolve('/battle-boards')}
 					class="text-sm text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100"
 				>
 					Battle Boards
 				</a>
 				<a
-					href="/players"
+					href={resolve('/players')}
 					class="text-sm text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100"
 				>
 					Players
