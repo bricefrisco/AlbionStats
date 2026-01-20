@@ -4,9 +4,9 @@
 	import SunIcon from './icons/SunIcon.svelte';
 	import MoonIcon from './icons/MoonIcon.svelte';
 	import SearchBar from './SearchBar.svelte';
+	import RegionSelect from './RegionSelect.svelte';
 
-	export let isDarkMode;
-	export let toggleDarkMode;
+	let { isDarkMode, toggleDarkMode } = $props();
 </script>
 
 <header class="border-b border-gray-200 dark:border-neutral-800">
@@ -33,8 +33,9 @@
 				</a>
 			</nav>
 			<div class="flex items-center gap-3">
+				<RegionSelect />
 				<button
-					on:click={toggleDarkMode}
+					onclick={toggleDarkMode}
 					class="flex items-center text-gray-600 transition-colors hover:text-gray-900 dark:text-neutral-400 dark:hover:text-neutral-100"
 					aria-label="Toggle dark mode"
 				>

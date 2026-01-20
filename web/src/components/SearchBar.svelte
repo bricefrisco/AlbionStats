@@ -1,31 +1,20 @@
 <script>
 	import SearchIcon from './icons/SearchIcon.svelte';
-	import ChevronDownIcon from './icons/ChevronDownIcon.svelte';
 
-	let selectedRegion = 'americas';
-	const regions = [
-		{ label: 'Americas', value: 'americas' },
-		{ label: 'Europe', value: 'europe' },
-		{ label: 'Asia', value: 'asia' }
-	];
+	import { regionState } from '$lib/regionState.svelte';
 
-	let container;
+	let container = $state();
 
-	let showDropdown = false;
-	let searchQuery = '';
-	let players = [];
-
-	let isFetching = false;
+	let showDropdown = $state(false);
+	let searchQuery = $state('');
+	let players = $state([]);
 
 	let searchTimeout;
-	let isSearching = false;
+	let isSearching = $state(false);
 
-	$: showNoResults = searchQuery.length >= 2 && players.length === 0;
+	let showNoResults = $derived(searchQuery.length >= 2 && players.length === 0);
 
-	function handleRegionChange(region) {
-		selectedRegion = region;
-	}
-
+	import { resolve } from '$app/paths';
 	async function handleInput() {
 		if (searchQuery.trim().length < 2) {
 			players = [];
@@ -45,10 +34,9 @@
 	}
 
 	async function performSearch() {
-		isFetching = true;
 		try {
 			const response = await fetch(
-				`https://albionstats.bricefrisco.com/api/search/${selectedRegion}/${encodeURIComponent(searchQuery)}`
+				`https://albionstats.bricefrisco.com/api/search/${regionState.value}/${encodeURIComponent(searchQuery)}`
 			);
 			const data = await response.json();
 			players = data.players || [];
@@ -56,7 +44,6 @@
 			console.error('search failed', error);
 			players = [];
 		} finally {
-			isFetching = false;
 			isSearching = false;
 			showDropdown = Boolean(players.length || searchQuery.length >= 2);
 		}
@@ -84,38 +71,17 @@
 </script>
 
 <div class="relative" bind:this={container}>
-	<div class="flex gap-2">
-		<div class="relative flex-1">
-			<input
-				type="text"
-				bind:value={searchQuery}
-				on:input={handleInput}
-				on:focus={handleInput}
-				placeholder="Player name"
-				class="w-full rounded border border-gray-300 bg-gray-50 px-3 py-2 pl-9 text-sm text-gray-900 placeholder-gray-500 focus:border-gray-400 focus:outline-none dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-100 dark:placeholder-neutral-500 dark:focus:border-neutral-700"
-			/>
-			<div class="absolute top-[11px] left-3 flex items-center text-gray-500 dark:text-neutral-500">
-				<SearchIcon size={16} />
-			</div>
-		</div>
-
-		<div class="relative">
-			<select
-				value={selectedRegion}
-				on:change={(e) => handleRegionChange(e.target.value)}
-				class="cursor-pointer appearance-none rounded border border-gray-300 bg-gray-50 px-3 py-2 pr-8 text-sm text-gray-900 focus:border-gray-400 focus:outline-none dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-100 dark:focus:border-neutral-700"
-			>
-				{#each regions as region}
-					<option value={region.value}>
-						{region.label}
-					</option>
-				{/each}
-			</select>
-			<div
-				class="pointer-events-none absolute top-1/2 right-2 flex -translate-y-1/2 items-center text-gray-500 dark:text-neutral-500"
-			>
-				<ChevronDownIcon size={16} />
-			</div>
+	<div class="relative flex-1">
+		<input
+			type="text"
+			bind:value={searchQuery}
+			oninput={handleInput}
+			onfocus={handleInput}
+			placeholder="Player name"
+			class="w-full rounded border border-gray-300 bg-gray-50 px-3 py-2 pl-9 text-sm text-gray-900 placeholder-gray-500 focus:border-gray-400 focus:outline-none dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-100 dark:placeholder-neutral-500 dark:focus:border-neutral-700"
+		/>
+		<div class="absolute top-[11px] left-3 flex items-center text-gray-500 dark:text-neutral-500">
+			<SearchIcon size={16} />
 		</div>
 	</div>
 
@@ -126,11 +92,11 @@
 			{#if isSearching}
 				<div class="px-3 py-2 text-sm text-gray-500 dark:text-neutral-400">Searching...</div>
 			{:else if players.length > 0}
-				{#each players as player}
+				{#each players as player (player.name)}
 					<a
-						href="/players/{selectedRegion}/{encodeURIComponent(player.name)}"
+						href={resolve(`/players/${regionState.value}/${encodeURIComponent(player.name)}`)}
 						class="block border-b border-gray-100 px-3 py-2 text-sm text-gray-900 last:border-none hover:bg-gray-50 dark:border-neutral-800 dark:text-neutral-100 dark:hover:bg-neutral-800"
-						on:click={() => handleOptionClick(player)}
+						onclick={() => handleOptionClick(player)}
 					>
 						<div class="font-medium">{player.name}</div>
 						<div class="text-xs text-gray-500 dark:text-neutral-400">
