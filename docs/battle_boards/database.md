@@ -43,6 +43,9 @@ CREATE TABLE battle_alliance_stats (
 
   PRIMARY KEY (region, battle_id, alliance_name)
 );
+
+CREATE INDEX idx_bas_alliance_players_battle
+ON battle_alliance_stats (region, alliance_name, player_count DESC, battle_id);
 ```
 
 ## Battle Guild Stats

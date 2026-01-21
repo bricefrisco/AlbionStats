@@ -40,21 +40,21 @@ func (s *Server) setupRoutes() {
 			if !strings.Contains(c.GetHeader("Accept-Encoding"), "gzip") {
 				return false
 			}
-	
+
 			if c.Writer.Header().Get("Content-Encoding") != "" {
 				return false
 			}
-	
+
 			cl := c.Writer.Header().Get("Content-Length")
 			if cl == "" {
 				return false
 			}
-	
+
 			n, err := strconv.Atoi(cl)
 			if err != nil {
 				return false
 			}
-	
+
 			return n >= 2048
 		}),
 	))
@@ -77,6 +77,7 @@ func (s *Server) setupRoutes() {
 	v1.GET("/players/:server/:name", s.player)
 	v1.GET("/search/:server/:query", s.search)
 	v1.GET("/boards/:region", s.battleSummaries)
+	v1.GET("/boards/alliance/:region/:allianceName", s.battleAllianceSummaries)
 }
 
 func (s *Server) Run(addr string) error {

@@ -40,3 +40,21 @@ func (p *Postgres) UpdateBattleAllianceStats(stats []BattleAllianceStats) error 
 		return nil
 	})
 }
+
+func (p *Postgres) GetBattleSummariesByAlliance(region string, allianceName string, playerCount int, limit int, offset int) ([]BattleSummary, error) {
+	var summaries []BattleSummary
+	err := p.db.Raw(`
+		SELECT bs.*
+		FROM battle_alliance_stats bas
+		JOIN battle_summary bs
+		  ON bs.region = bas.region
+		 AND bs.battle_id = bas.battle_id
+		WHERE bas.region = ?
+		  AND bas.alliance_name = ?
+		  AND bas.player_count >= ?
+		ORDER BY bs.start_time DESC
+		LIMIT ? OFFSET ?
+	`, region, allianceName, playerCount, limit, offset).Scan(&summaries).Error
+
+	return summaries, err
+}
