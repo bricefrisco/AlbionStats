@@ -1,4 +1,5 @@
 <script>
+	import { resolve } from '$app/paths';
 	import Page from '$components/Page.svelte';
 	import PageHeader from '$components/PageHeader.svelte';
 	import Typography from '$components/Typography.svelte';
@@ -38,7 +39,28 @@
 			</div>
 		</div>
 
-		<div class="mt-3 font-medium">To get started, search for a player above.</div>
+		<div class="mt-6">
+			<p class="font-medium text-gray-900 dark:text-white">To get started:</p>
+			<ul class="mt-2 list-inside list-disc space-y-1 text-sm text-gray-600 dark:text-gray-400">
+				<li>
+					Head over to the
+					<a
+						href={resolve('/battle-boards')}
+						class="font-medium text-blue-600 hover:underline dark:text-blue-400"
+						>Battle Boards</a
+					>
+					to see recent large scale battles.
+				</li>
+				<li>
+					Visit the
+					<a
+						href={resolve('/players')}
+						class="font-medium text-blue-600 hover:underline dark:text-blue-400">Players</a
+					>
+					page to search for and track specific players.
+				</li>
+			</ul>
+		</div>
 	</Typography>
 
 	<div class="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-2">

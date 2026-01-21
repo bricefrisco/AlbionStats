@@ -1,9 +1,9 @@
 <script>
-	import { onMount } from 'svelte';
+	import { regionState } from '$lib/regionState.svelte';
 
-	let battles = [];
-	let loading = true;
-	let error = null;
+	let battles = $state([]);
+	let loading = $state(true);
+	let error = $state(null);
 
 	function formatDate(dateString) {
 		const date = new Date(dateString);
@@ -40,8 +40,10 @@
 	}
 
 	async function fetchBattles() {
+		loading = true;
+		error = null;
 		try {
-			const response = await fetch('https://albionstats.bricefrisco.com/api/boards/americas');
+			const response = await fetch(`https://albionstats.bricefrisco.com/api/boards/${regionState.value}`);
 			if (!response.ok) {
 				throw new Error(`HTTP error! status: ${response.status}`);
 			}
@@ -59,7 +61,7 @@
 		}
 	}
 
-	onMount(() => {
+	$effect(() => {
 		fetchBattles();
 	});
 </script>
@@ -102,7 +104,7 @@
 					<td class="px-4 py-3 align-top" style="vertical-align: top;">
 						<div class="grid gap-1 text-xs text-gray-700 dark:text-gray-300">
 							{#if battle.AllianceEntries?.length}
-								{#each battle.AllianceEntries.slice(0, 3) as entry}
+								{#each battle.AllianceEntries.slice(0, 3) as entry (entry.label)}
 									<div class="grid grid-cols-[1fr_auto] items-center gap-2">
 										<span class="truncate">{entry.label}</span>
 										{#if entry.count}
@@ -123,7 +125,7 @@
 					<td class="px-4 py-3 align-top" style="vertical-align: top;">
 						<div class="grid gap-1 text-xs text-gray-700 dark:text-gray-300">
 							{#if battle.GuildEntries?.length}
-								{#each battle.GuildEntries.slice(0, 3) as entry}
+								{#each battle.GuildEntries.slice(0, 3) as entry (entry.label)}
 									<div class="grid grid-cols-[1fr_auto] items-center gap-2">
 										<span class="truncate">{entry.label}</span>
 										{#if entry.count}

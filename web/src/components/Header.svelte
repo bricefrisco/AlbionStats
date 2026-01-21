@@ -3,15 +3,16 @@
 	import GithubIcon from './icons/GithubIcon.svelte';
 	import SunIcon from './icons/SunIcon.svelte';
 	import MoonIcon from './icons/MoonIcon.svelte';
-	import SearchBar from './SearchBar.svelte';
 	import RegionSelect from './RegionSelect.svelte';
 
 	let { isDarkMode, toggleDarkMode } = $props();
 </script>
 
-<header class="border-b border-gray-200 dark:border-neutral-800">
-	<div class="mx-auto max-w-5xl px-4 py-4 xl:px-0">
-		<div class="mb-4 flex items-center justify-between">
+<header
+	class="sticky top-0 z-50 border-b border-gray-200 bg-white dark:border-neutral-800 dark:bg-neutral-950"
+>
+	<div class="mx-auto max-w-5xl px-4 py-3 xl:px-0">
+		<div class="flex items-center justify-between">
 			<nav class="flex items-center gap-4">
 				<a
 					href={resolve('/')}
@@ -55,7 +56,5 @@
 				</a>
 			</div>
 		</div>
-
-		<SearchBar />
 	</div>
 </header>
