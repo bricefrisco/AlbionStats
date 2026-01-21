@@ -6,3 +6,12 @@ func NullableString(val string) *string {
 	}
 	return &val
 }
+
+func IsValidServer(server string) bool {
+	validServers := map[string]bool{
+		"americas": true,
+		"europe":   true,
+		"asia":     true,
+	}
+	return validServers[server]
+}

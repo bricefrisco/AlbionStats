@@ -37,7 +37,7 @@
 	async function performSearch() {
 		try {
 			const response = await fetch(
-				`https://albionstats.bricefrisco.com/api/search/${regionState.value}/${encodeURIComponent(searchQuery)}`
+				`https://albionstats.bricefrisco.com/api/players/search/${regionState.value}/${encodeURIComponent(searchQuery)}`
 			);
 			const data = await response.json();
 			players = data.players || [];

@@ -111,6 +111,13 @@ ON player_stats_latest (
   region,
   lower(name) text_pattern_ops
 );
+
+CREATE INDEX idx_psl_region_lower_alliance_prefix
+ON player_stats_latest (
+    region,
+    lower(alliance_name) text_pattern_ops
+)
+WHERE alliance_name IS NOT NULL;
 ```
 
 ## Player Stats (Snapshots)

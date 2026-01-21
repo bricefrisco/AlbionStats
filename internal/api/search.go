@@ -4,11 +4,12 @@ import (
 	"net/http"
 
 	"albionstats/internal/postgres"
+	"albionstats/internal/util"
 
 	"github.com/gin-gonic/gin"
 )
 
-func (s *Server) search(c *gin.Context) {
+func (s *Server) searchPlayers(c *gin.Context) {
 	server := c.Param("server")
 	query := c.Param("query")
 
@@ -17,13 +18,7 @@ func (s *Server) search(c *gin.Context) {
 		return
 	}
 
-	// Validate server parameter
-	validServers := map[string]bool{
-		"americas": true,
-		"europe":   true,
-		"asia":     true,
-	}
-	if !validServers[server] {
+	if !util.IsValidServer(server) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid server. Must be one of: americas, europe, asia"})
 		return
 	}
@@ -58,5 +53,36 @@ func (s *Server) search(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"players": results,
+	})
+}
+
+func (s *Server) searchAlliances(c *gin.Context) {
+	server := c.Param("server")
+	query := c.Param("query")
+
+	if server == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Server is required"})
+		return
+	}
+
+	// Validate server parameter
+	if !util.IsValidServer(server) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid server. Must be one of: americas, europe, asia"})
+		return
+	}
+
+	if query == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Query is required"})
+		return
+	}
+
+	alliances, err := s.postgres.SearchAlliances(c.Request.Context(), postgres.Region(server), query)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database query failed"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"alliances": alliances,
 	})
 }

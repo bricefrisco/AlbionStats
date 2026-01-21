@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"albionstats/internal/postgres"
+	"albionstats/internal/util"
 
 	"github.com/gin-gonic/gin"
 )
@@ -17,13 +18,7 @@ func (s *Server) playerCrafting(c *gin.Context) {
 		return
 	}
 
-	validServers := map[string]bool{
-		"americas": true,
-		"europe":   true,
-		"asia":     true,
-	}
-
-	if !validServers[server] {
+	if !util.IsValidServer(server) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid server. Must be one of: americas, europe, asia"})
 		return
 	}

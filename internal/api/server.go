@@ -75,7 +75,8 @@ func (s *Server) setupRoutes() {
 	v1.GET("/metrics/gathering/:server/:playerId", s.playerGathering)
 	v1.GET("/metrics/crafting/:server/:playerId", s.playerCrafting)
 	v1.GET("/players/:server/:name", s.player)
-	v1.GET("/search/:server/:query", s.search)
+	v1.GET("/players/search/:server/:query", s.searchPlayers)
+	v1.GET("/alliances/search/:server/:query", s.searchAlliances)
 	v1.GET("/boards/:region", s.battleSummaries)
 	v1.GET("/boards/alliance/:region/:allianceName", s.battleAllianceSummaries)
 }
