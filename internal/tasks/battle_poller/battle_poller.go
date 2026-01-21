@@ -8,25 +8,25 @@ import (
 )
 
 type Config struct {
-	APIClient       *tasks.Client
-	Postgres        *postgres.Postgres
-	Logger          *slog.Logger
-	Region          string
+	APIClient *tasks.Client
+	Postgres  *postgres.Postgres
+	Logger    *slog.Logger
+	Region    string
 }
 
 type BattlePoller struct {
 	apiClient *tasks.Client
-	postgres *postgres.Postgres
-	log *slog.Logger
-	region string
+	postgres  *postgres.Postgres
+	log       *slog.Logger
+	region    string
 }
 
-func NewBattlePoller(cfg Config) (*BattlePoller) {
+func NewBattlePoller(cfg Config) *BattlePoller {
 	return &BattlePoller{
 		apiClient: cfg.APIClient,
-		postgres: cfg.Postgres,
-		log: cfg.Logger.With("component", "battle_poller", "region", cfg.Region),
-		region: cfg.Region,
+		postgres:  cfg.Postgres,
+		log:       cfg.Logger.With("component", "battle_poller", "region", cfg.Region),
+		region:    cfg.Region,
 	}
 }
 
@@ -63,6 +63,16 @@ func (p *BattlePoller) runBatch() {
 			continue
 		}
 
+		if len(events) == 0 {
+			p.log.Info("battle events empty", "battle_id", queue.BattleID)
+			if err := p.postgres.MarkBattleQueueProcessed(postgres.Region(p.region), queue.BattleID); err != nil {
+				p.log.Error("mark battle queue processed failed", "err", err)
+				continue
+			}
+
+			continue
+		}
+
 		allianceStats := p.processBattleAllianceStats(events)
 		guildStats := p.processBattleGuildStats(events)
 		playerStats := p.processPlayerStats(events)
@@ -93,10 +103,10 @@ func (p *BattlePoller) runBatch() {
 			continue
 		}
 
-		p.log.Info("battle processed", "battle_id", queue.BattleID, 
-		    "alliance_stats", len(allianceStats), 
-			"guild_stats", len(guildStats), 
-			"player_stats", len(playerStats), 
+		p.log.Info("battle processed", "battle_id", queue.BattleID,
+			"alliance_stats", len(allianceStats),
+			"guild_stats", len(guildStats),
+			"player_stats", len(playerStats),
 			"kills", len(kills))
 	}
 }
@@ -154,11 +164,11 @@ func (p *BattlePoller) processBattleAllianceStats(events []tasks.Event) []postgr
 		deathFame := allianceDeathFame[alliance]
 		averageIp := int32(allianceTotalIp[alliance] / float64(allianceTotalPlayers[alliance]))
 		playerStats = append(playerStats, postgres.BattleAllianceStats{
-			Region: postgres.Region(p.region),
-			BattleID: battleId,
+			Region:       postgres.Region(p.region),
+			BattleID:     battleId,
 			AllianceName: alliance,
-			DeathFame: &deathFame,
-			IP: &averageIp,
+			DeathFame:    &deathFame,
+			IP:           &averageIp,
 		})
 	}
 
@@ -193,11 +203,11 @@ func (p *BattlePoller) processBattleGuildStats(events []tasks.Event) []postgres.
 		deathFame := guildDeathFame[guild]
 		averageIp := int32(guildTotalIp[guild] / float64(guildTotalPlayers[guild]))
 		guildStats = append(guildStats, postgres.BattleGuildStats{
-			Region: postgres.Region(p.region),
-			BattleID: battleId,
+			Region:    postgres.Region(p.region),
+			BattleID:  battleId,
 			GuildName: guild,
 			DeathFame: &deathFame,
-			IP: &averageIp,
+			IP:        &averageIp,
 		})
 	}
 
@@ -257,14 +267,14 @@ func (p *BattlePoller) processPlayerStats(events []tasks.Event) []postgres.Battl
 		heal := playerHeal[name]
 
 		playerStats = append(playerStats, postgres.BattlePlayerStats{
-			Region: postgres.Region(p.region),
-			BattleID: battleId,
+			Region:     postgres.Region(p.region),
+			BattleID:   battleId,
 			PlayerName: name,
-			DeathFame: &deathFame,
-			IP: &ip,
-			Weapon: &weapon,
-			Damage: &damage,
-			Heal: &heal,
+			DeathFame:  &deathFame,
+			IP:         &ip,
+			Weapon:     &weapon,
+			Damage:     &damage,
+			Heal:       &heal,
 		})
 	}
 
@@ -289,16 +299,16 @@ func (p *BattlePoller) processBattleKills(events []tasks.Event) []postgres.Battl
 		}
 
 		playerStats = append(playerStats, postgres.BattleKills{
-			Region: postgres.Region(p.region),
-			BattleID: event.BattleID,
-			TS: event.TimeStamp,
-			KillerName: event.Killer.Name,
-			KillerIP: int32(event.Killer.AverageItemPower),
+			Region:       postgres.Region(p.region),
+			BattleID:     event.BattleID,
+			TS:           event.TimeStamp,
+			KillerName:   event.Killer.Name,
+			KillerIP:     int32(event.Killer.AverageItemPower),
 			KillerWeapon: killerWeapon,
-			VictimName: event.Victim.Name,
-			VictimIP: int32(event.Victim.AverageItemPower),
+			VictimName:   event.Victim.Name,
+			VictimIP:     int32(event.Victim.AverageItemPower),
 			VictimWeapon: victimWeapon,
-			Fame: event.TotalVictimKillFame,
+			Fame:         event.TotalVictimKillFame,
 		})
 	}
 	return playerStats
