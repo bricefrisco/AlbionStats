@@ -13,11 +13,11 @@ import (
 )
 
 type Config struct {
-	APIClient  *tasks.Client
-	Postgres   *postgres.Postgres
-	Logger     *slog.Logger
-	Region     string
-	BatchSize  int
+	APIClient   *tasks.Client
+	Postgres    *postgres.Postgres
+	Logger      *slog.Logger
+	Region      string
+	BatchSize   int
 	WorkerCount int
 }
 
@@ -311,13 +311,17 @@ func scheduleNextPoll(lastEncountered, killboardLastActivity, otherLastActivity 
 	staleness := now.Sub(*mostRecent)
 	switch {
 	case staleness <= 24*time.Hour:
-		return now.Add(6 * time.Hour), nil
-	case staleness <= 7*24*time.Hour:
+		return now.Add(12 * time.Hour), nil
+	case staleness <= 2*24*time.Hour:
 		return now.Add(24 * time.Hour), nil
-	case staleness <= 30*24*time.Hour:
+	case staleness <= 4*24*time.Hour:
 		return now.Add(48 * time.Hour), nil
+	case staleness <= 8*24*time.Hour:
+		return now.Add(96 * time.Hour), nil
+	case staleness <= 16*24*time.Hour:
+		return now.Add(192 * time.Hour), nil
 	default:
-		return now.Add(24 * 30 * time.Hour), nil
+		return now.Add(30 * 24 * time.Hour), nil
 	}
 }
 
