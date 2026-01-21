@@ -1,4 +1,6 @@
 <script>
+	let { onSelect } = $props();
+
 	import SearchIcon from './icons/SearchIcon.svelte';
 
 	import { regionState } from '$lib/regionState.svelte';
@@ -14,7 +16,6 @@
 
 	let showNoResults = $derived(searchQuery.length >= 2 && players.length === 0);
 
-	import { resolve } from '$app/paths';
 	async function handleInput() {
 		if (searchQuery.trim().length < 2) {
 			players = [];
@@ -60,6 +61,7 @@
 	const handleOptionClick = (player) => {
 		showDropdown = false;
 		searchQuery = player.name;
+		onSelect?.(player);
 	};
 
 	import { onMount } from 'svelte';
@@ -93,9 +95,9 @@
 				<div class="px-3 py-2 text-sm text-gray-500 dark:text-neutral-400">Searching...</div>
 			{:else if players.length > 0}
 				{#each players as player (player.name)}
-					<a
-						href={resolve(`/players/${regionState.value}/${encodeURIComponent(player.name)}`)}
-						class="block border-b border-gray-100 px-3 py-2 text-sm text-gray-900 last:border-none hover:bg-gray-50 dark:border-neutral-800 dark:text-neutral-100 dark:hover:bg-neutral-800"
+					<button
+						type="button"
+						class="block w-full border-b border-gray-100 px-3 py-2 text-left text-sm text-gray-900 last:border-none hover:bg-gray-50 dark:border-neutral-800 dark:text-neutral-100 dark:hover:bg-neutral-800"
 						onclick={() => handleOptionClick(player)}
 					>
 						<div class="font-medium">{player.name}</div>
@@ -106,7 +108,7 @@
 								{player.guild_name}
 							{/if}
 						</div>
-					</a>
+					</button>
 				{/each}
 			{:else if showNoResults}
 				<div class="px-3 py-2 text-sm text-gray-500 dark:text-neutral-400">No players found</div>
