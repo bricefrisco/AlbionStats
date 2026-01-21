@@ -33,7 +33,7 @@ func (s *Postgres) UpsertPlayerPolls(polls map[string]PlayerPoll) error {
 	assignmentsOnConflict := map[string]interface{}{
 		"next_poll_at": gorm.Expr(
 			"LEAST(" +
-				"COALESCE(player_polls.last_poll_at + INTERVAL '6 hours', player_polls.next_poll_at)," +
+				"COALESCE(player_polls.last_poll_at + INTERVAL '12 hours', player_polls.next_poll_at)," +
 				"player_polls.next_poll_at" +
 				")",
 		),
