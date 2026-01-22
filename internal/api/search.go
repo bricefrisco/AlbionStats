@@ -65,7 +65,6 @@ func (s *Server) searchAlliances(c *gin.Context) {
 		return
 	}
 
-	// Validate server parameter
 	if !util.IsValidServer(server) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid server. Must be one of: americas, europe, asia"})
 		return
@@ -84,5 +83,35 @@ func (s *Server) searchAlliances(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"alliances": alliances,
+	})
+}
+
+func (s *Server) searchGuilds(c *gin.Context) {
+	server := c.Param("server")
+	query := c.Param("query")
+
+	if server == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Server is required"})
+		return
+	}
+
+	if !util.IsValidServer(server) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid server. Must be one of: americas, europe, asia"})
+		return
+	}
+
+	if query == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Query is required"})
+		return
+	}
+
+	guilds, err := s.postgres.SearchGuilds(c.Request.Context(), postgres.Region(server), query)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database query failed"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"guilds": guilds,
 	})
 }

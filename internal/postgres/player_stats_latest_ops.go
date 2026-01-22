@@ -18,6 +18,18 @@ func (s *Postgres) SearchPlayers(ctx context.Context, region Region, prefix stri
 	return players, err
 }
 
+func (s *Postgres) SearchGuilds(ctx context.Context, region Region, prefix string) ([]string, error) {
+	var guilds []string
+	err := s.db.WithContext(ctx).
+		Model(&PlayerStatsLatest{}).
+		Distinct("guild_name").
+		Where("region = ? AND LOWER(guild_name) LIKE ?", region, strings.ToLower(prefix)+"%").
+		Order("guild_name ASC").
+		Limit(6).
+		Pluck("guild_name", &guilds).Error
+	return guilds, err
+}
+
 func (s *Postgres) SearchAlliances(ctx context.Context, region Region, prefix string) ([]string, error) {
 	var alliances []string
 	err := s.db.WithContext(ctx).
