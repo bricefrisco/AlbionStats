@@ -70,6 +70,9 @@ CREATE TABLE battle_guild_stats (
 
   PRIMARY KEY (region, battle_id, guild_name)
 );
+
+CREATE INDEX idx_bas_guild_players_battle
+ON battle_guild_stats (region, guild_name, player_count DESC, battle_id);
 ```
 
 ## Battle Player Stats
