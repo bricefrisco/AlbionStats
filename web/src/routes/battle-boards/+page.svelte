@@ -11,12 +11,14 @@
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import { SvelteSet } from 'svelte/reactivity';
 
 	let searchQuery = $state(page.url.searchParams.get('q') || '');
 	let searchType = $state(page.url.searchParams.get('type') || 'alliance');
 	let minPlayers = $state(page.url.searchParams.get('p') || '10');
 	let offset = $state(0);
 	let hasMore = $state(true);
+	let selectedIds = new SvelteSet();
 
 	// "Snapshot" of search values to pass to BattleTable, updated only on submission or URL change
 	let activeQ = $state(searchQuery);
@@ -127,9 +129,18 @@
 		>
 			Apply filter
 		</button>
+
+		{#if selectedIds.size > 0}
+			<a
+				href={resolve(`/battle-boards/${regionState.value}/${Array.from(selectedIds).join(',')}`)}
+				class="inline-flex h-[38px] items-center cursor-pointer rounded border border-gray-300 bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 focus:border-gray-400 focus:outline-none dark:border-neutral-800 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:bg-neutral-700 dark:focus:border-neutral-700"
+			>
+				View battles
+			</a>
+		{/if}
 	</form>
 
-	<BattleTable q={activeQ} type={activeType} p={activeP} {offset} bind:hasMore />
+	<BattleTable q={activeQ} type={activeType} p={activeP} {offset} bind:hasMore bind:selectedIds />
 
 	<div class="mt-8 flex justify-center gap-4">
 		{#if hasMore && searchQuery === activeQ && searchType === activeType && minPlayers === activeP}

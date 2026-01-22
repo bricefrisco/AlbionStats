@@ -1,8 +1,10 @@
 <script>
 	import { untrack } from 'svelte';
+	import { SvelteSet } from 'svelte/reactivity';
 	import { regionState } from '$lib/regionState.svelte';
+	import { resolve } from '$app/paths';
 
-	let { q = '', type = 'alliance', p = '10', offset = 0, hasMore = $bindable(true) } = $props();
+	let { q = '', type = 'alliance', p = '10', offset = 0, hasMore = $bindable(true), selectedIds = $bindable(new SvelteSet()) } = $props();
 	let battles = $state([]);
 	let loading = $state(true);
 	let error = $state(null);
@@ -41,6 +43,14 @@
 				count: match ? match[2] : null
 			};
 		});
+	}
+
+	function toggleSelection(id) {
+		if (selectedIds.has(id)) {
+			selectedIds.delete(id);
+		} else {
+			selectedIds.add(id);
+		}
 	}
 
 	async function fetchBattles() {
@@ -110,6 +120,7 @@
 		// Fetch battles when region or search parameters change
 		if (q !== prevParams.q || type !== prevParams.type || p !== prevParams.p) {
 			battles = [];
+			selectedIds.clear();
 			prevParams = { q, type, p };
 		}
 
@@ -134,6 +145,8 @@
 		<table class="w-full table-fixed text-sm">
 			<thead class="bg-gray-50/60 dark:bg-gray-800/40">
 			<tr class="text-sm capitalize tracking-wide text-gray-600 dark:text-gray-300">
+				<th class="w-12 px-4 py-3 text-left">
+				</th>
 				<th class="w-1/6 px-4 py-3 text-left font-semibold">Battle ID</th>
 				<th class="w-1/6 px-4 py-3 text-left font-semibold">Start Time</th>
 				<th class="w-1/12 px-4 py-3 text-right font-semibold">Players</th>
@@ -146,8 +159,21 @@
 			<tbody class="divide-y divide-gray-200/60 dark:divide-gray-700/60">
 			{#each battles as battle (battle.BattleID)}
 				<tr class="align-top text-gray-700 hover:bg-gray-50/60 dark:text-gray-300 dark:hover:bg-gray-800/30">
+					<td class="px-4 py-3">
+						<input
+							type="checkbox"
+							checked={selectedIds.has(battle.BattleID)}
+							onclick={() => toggleSelection(battle.BattleID)}
+							class="h-[18px] w-[18px] rounded border-gray-300 bg-gray-100 text-blue-600 focus:ring-blue-500 dark:border-neutral-800 dark:bg-neutral-900 mt-[1.75px]"
+						/>
+					</td>
 					<td class="px-4 py-3 font-medium text-gray-900 dark:text-white break-words">
-						{battle.BattleID}
+						<a
+							href={resolve(`/battle-boards/${regionState.value}/${battle.BattleID}`)}
+							class="underline hover:text-blue-600 dark:hover:text-blue-400"
+						>
+							{battle.BattleID}
+						</a>
 					</td>
 					<td class="px-4 py-3 whitespace-nowrap">{formatDate(battle.StartTime)}</td>
 					<td class="px-4 py-3 text-right font-medium text-blue-600 dark:text-blue-400">
