@@ -16,7 +16,9 @@
 	let showNoResults = $derived(value.length >= 1 && alliances.length === 0);
 
 	$effect(() => {
-		if (value.length >= 1) {
+		// Include regionState.value to trigger re-search when region changes
+		const currentRegion = regionState.value;
+		if (value.length >= 1 && currentRegion) {
 			performSearch();
 		} else {
 			alliances = [];

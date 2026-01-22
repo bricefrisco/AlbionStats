@@ -18,7 +18,9 @@
 	let showNoResults = $derived(value.length >= 3 && players.length === 0);
 
 	$effect(() => {
-		if (value.length >= 3) {
+		// Include regionState.value to trigger re-search when region changes
+		const currentRegion = regionState.value;
+		if (value.length >= 3 && currentRegion) {
 			performSearch();
 		} else {
 			players = [];
