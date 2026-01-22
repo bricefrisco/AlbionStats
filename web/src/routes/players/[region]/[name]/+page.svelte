@@ -7,6 +7,7 @@
 	import SubHeader from '$components/SubHeader.svelte';
 	import Typography from '$components/Typography.svelte';
 	import PlayerStats from '$components/PlayerStats.svelte';
+	import PlayerSearchBar from '$components/PlayerSearchBar.svelte';
 	import Tabs from '$components/Tabs.svelte';
 	import PlayerPvPCharts from '$components/charts/PlayerPvPCharts.svelte';
 	import PlayerPvECharts from '$components/charts/PlayerPvECharts.svelte';
@@ -24,6 +25,7 @@
 	// Fetch player data when route parameters change
 	$effect(() => {
 		if (validRegion && decodedName) {
+			searchName = decodedName;
 			playerData = null;
 			loading = true;
 			error = null;
@@ -32,6 +34,7 @@
 	});
 
 	// Player data
+	let searchName = $state(decodedName);
 	let playerData = $state(null);
 	let loading = $state(true);
 	let error = $state(null);
@@ -80,6 +83,10 @@
 </script>
 
 <Page>
+	<div class="mb-4">
+		<PlayerSearchBar bind:value={searchName} />
+	</div>
+
 	<div>
 		{#if !validRegion}
 			<PageHeader title="Invalid Region" />
