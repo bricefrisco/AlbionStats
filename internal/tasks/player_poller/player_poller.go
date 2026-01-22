@@ -69,6 +69,7 @@ func (p *PlayerPoller) runBatch() {
 
 	if len(players) == 0 {
 		time.Sleep(time.Second)
+		return
 	}
 
 	p.log.Info("starting batch", "num_players", len(players))
