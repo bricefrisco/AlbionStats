@@ -65,9 +65,9 @@ func (p *Postgres) GetBattleSummariesByPlayer(region string, playerName string, 
 	return summaries, err
 }
 
-func (p *Postgres) GetBattlePlayerStats(region string, battleID int64) ([]BattlePlayerStats, error) {
+func (p *Postgres) GetBattlePlayerStatsByIDs(region string, battleIDs []int64) ([]BattlePlayerStats, error) {
 	var stats []BattlePlayerStats
-	err := p.db.Where("region = ? AND battle_id = ?", region, battleID).
+	err := p.db.Where("region = ? AND battle_id IN ?", region, battleIDs).
 		Order("kill_fame DESC").
 		Find(&stats).Error
 

@@ -62,9 +62,9 @@ func (p *Postgres) GetBattleSummariesByGuild(region string, guildName string, pl
 	return summaries, err
 }
 
-func (p *Postgres) GetBattleGuildStats(region string, battleID int64) ([]BattleGuildStats, error) {
+func (p *Postgres) GetBattleGuildStatsByIDs(region string, battleIDs []int64) ([]BattleGuildStats, error) {
 	var stats []BattleGuildStats
-	err := p.db.Where("region = ? AND battle_id = ?", region, battleID).
+	err := p.db.Where("region = ? AND battle_id IN ?", region, battleIDs).
 		Order("player_count DESC").
 		Find(&stats).Error
 

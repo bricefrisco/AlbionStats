@@ -30,9 +30,11 @@ func (p *Postgres) GetBattleSummariesByRegion(region string, limit, offset, minT
 	return summaries, err
 }
 
-func (p *Postgres) GetBattleSummary(region string, battleID int64) (BattleSummary, error) {
-	var summary BattleSummary
-	err := p.db.Where("region = ? AND battle_id = ?", region, battleID).
-		First(&summary).Error
-	return summary, err
+func (p *Postgres) GetBattleSummariesByIDs(region string, battleIDs []int64) ([]BattleSummary, error) {
+	var summaries []BattleSummary
+	err := p.db.
+		Select("region, battle_id, start_time, end_time, total_players, total_kills, total_fame").
+		Where("region = ? AND battle_id IN ?", region, battleIDs).
+		Find(&summaries).Error
+	return summaries, err
 }
