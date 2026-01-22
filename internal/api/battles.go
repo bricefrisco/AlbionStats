@@ -20,9 +20,9 @@ type MergedBattleResponse struct {
 	TotalPlayers  int                   `json:"total_players"`
 	TotalKills    int                   `json:"total_kills"`
 	TotalFame     int64                 `json:"total_fame"`
-	AllianceStats []*MergedAllianceStat `json:"alliance_stats"`
-	GuildStats    []*MergedGuildStat    `json:"guild_stats"`
-	PlayerStats   []*MergedPlayerStat   `json:"player_stats"`
+	AllianceStats []*MergedAllianceStat `json:"alliances"`
+	GuildStats    []*MergedGuildStat    `json:"guilds"`
+	PlayerStats   []*MergedPlayerStat   `json:"players"`
 }
 
 type MergedAllianceStat struct {
