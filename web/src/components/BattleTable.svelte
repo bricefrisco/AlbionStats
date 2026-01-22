@@ -56,6 +56,10 @@
 					`https://albionstats.bricefrisco.com/api/boards/guild/${regionState.value}/${encodeURIComponent(q)}`
 				);
 				url.searchParams.set('playerCount', p || '10');
+			} else if (type === 'player' && q) {
+				url = new URL(
+					`https://albionstats.bricefrisco.com/api/boards/player/${regionState.value}/${encodeURIComponent(q)}`
+				);
 			} else {
 				url = new URL(`https://albionstats.bricefrisco.com/api/boards/${regionState.value}`);
 				url.searchParams.set('totalPlayers', p || '10');
