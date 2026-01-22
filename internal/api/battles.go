@@ -153,6 +153,12 @@ func (s *Server) mergeBattleSummaries(region string, summaries []postgres.Battle
 
 func (s *Server) mergeAllianceStats(stats []postgres.BattleAllianceStats) []*MergedAllianceStat {
 	mergedMap := make(map[string]*MergedAllianceStat)
+	type ipCalc struct {
+		totalWeightedIP int64
+		count           int64
+	}
+	ipMap := make(map[string]*ipCalc)
+
 	for _, stat := range stats {
 		m, ok := mergedMap[stat.AllianceName]
 		if !ok {
@@ -160,6 +166,7 @@ func (s *Server) mergeAllianceStats(stats []postgres.BattleAllianceStats) []*Mer
 				AllianceName: stat.AllianceName,
 			}
 			mergedMap[stat.AllianceName] = m
+			ipMap[stat.AllianceName] = &ipCalc{}
 		}
 		m.PlayerCount += stat.PlayerCount
 		m.Kills += stat.Kills
@@ -169,12 +176,16 @@ func (s *Server) mergeAllianceStats(stats []postgres.BattleAllianceStats) []*Mer
 			m.DeathFame += *stat.DeathFame
 		}
 		if stat.IP != nil {
-			m.IP += *stat.IP
+			ipMap[stat.AllianceName].totalWeightedIP += int64(*stat.IP) * int64(stat.PlayerCount)
+			ipMap[stat.AllianceName].count += int64(stat.PlayerCount)
 		}
 	}
 
 	merged := make([]*MergedAllianceStat, 0, len(mergedMap))
-	for _, v := range mergedMap {
+	for name, v := range mergedMap {
+		if ipMap[name].count > 0 {
+			v.IP = int32(ipMap[name].totalWeightedIP / ipMap[name].count)
+		}
 		merged = append(merged, v)
 	}
 
@@ -187,6 +198,12 @@ func (s *Server) mergeAllianceStats(stats []postgres.BattleAllianceStats) []*Mer
 
 func (s *Server) mergeGuildStats(stats []postgres.BattleGuildStats) []*MergedGuildStat {
 	mergedMap := make(map[string]*MergedGuildStat)
+	type ipCalc struct {
+		totalWeightedIP int64
+		count           int64
+	}
+	ipMap := make(map[string]*ipCalc)
+
 	for _, stat := range stats {
 		m, ok := mergedMap[stat.GuildName]
 		if !ok {
@@ -195,6 +212,7 @@ func (s *Server) mergeGuildStats(stats []postgres.BattleGuildStats) []*MergedGui
 				AllianceName: stat.AllianceName,
 			}
 			mergedMap[stat.GuildName] = m
+			ipMap[stat.GuildName] = &ipCalc{}
 		}
 		m.PlayerCount += stat.PlayerCount
 		m.Kills += stat.Kills
@@ -204,12 +222,16 @@ func (s *Server) mergeGuildStats(stats []postgres.BattleGuildStats) []*MergedGui
 			m.DeathFame += *stat.DeathFame
 		}
 		if stat.IP != nil {
-			m.IP += *stat.IP
+			ipMap[stat.GuildName].totalWeightedIP += int64(*stat.IP) * int64(stat.PlayerCount)
+			ipMap[stat.GuildName].count += int64(stat.PlayerCount)
 		}
 	}
 
 	merged := make([]*MergedGuildStat, 0, len(mergedMap))
-	for _, v := range mergedMap {
+	for name, v := range mergedMap {
+		if ipMap[name].count > 0 {
+			v.IP = int32(ipMap[name].totalWeightedIP / ipMap[name].count)
+		}
 		merged = append(merged, v)
 	}
 
@@ -222,6 +244,12 @@ func (s *Server) mergeGuildStats(stats []postgres.BattleGuildStats) []*MergedGui
 
 func (s *Server) mergePlayerStats(stats []postgres.BattlePlayerStats) []*MergedPlayerStat {
 	mergedMap := make(map[string]*MergedPlayerStat)
+	type ipCalc struct {
+		totalIP int64
+		count   int64
+	}
+	ipMap := make(map[string]*ipCalc)
+
 	for _, stat := range stats {
 		m, ok := mergedMap[stat.PlayerName]
 		if !ok {
@@ -231,6 +259,7 @@ func (s *Server) mergePlayerStats(stats []postgres.BattlePlayerStats) []*MergedP
 				AllianceName: stat.AllianceName,
 			}
 			mergedMap[stat.PlayerName] = m
+			ipMap[stat.PlayerName] = &ipCalc{}
 		}
 		m.Kills += stat.Kills
 		m.Deaths += stat.Deaths
@@ -239,12 +268,16 @@ func (s *Server) mergePlayerStats(stats []postgres.BattlePlayerStats) []*MergedP
 			m.DeathFame += *stat.DeathFame
 		}
 		if stat.IP != nil {
-			m.IP += *stat.IP
+			ipMap[stat.PlayerName].totalIP += int64(*stat.IP)
+			ipMap[stat.PlayerName].count++
 		}
 	}
 
 	merged := make([]*MergedPlayerStat, 0, len(mergedMap))
-	for _, v := range mergedMap {
+	for name, v := range mergedMap {
+		if ipMap[name].count > 0 {
+			v.IP = int32(ipMap[name].totalIP / ipMap[name].count)
+		}
 		merged = append(merged, v)
 	}
 
