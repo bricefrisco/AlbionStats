@@ -81,6 +81,11 @@ func (s *Server) battle(c *gin.Context) {
 		return
 	}
 
+	if len(battleIDs) > 20 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Maximum 20 battleIds allowed"})
+		return
+	}
+
 	summaries, err := s.postgres.GetBattleSummariesByIDs(region, battleIDs)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch battle summaries"})
