@@ -3,6 +3,7 @@ package battleboard_poller
 import (
 	"albionstats/internal/postgres"
 	"albionstats/internal/tasks"
+	"albionstats/internal/util"
 	"fmt"
 	"log/slog"
 	"sort"
@@ -28,9 +29,10 @@ type BattleboardPoller struct {
 	pageSize       int
 	maxPages       int
 	region         string
+	battleIDCache  *util.IDCache
 }
 
-func NewBattleboardPoller(cfg Config) (*BattleboardPoller) {
+func NewBattleboardPoller(cfg Config) *BattleboardPoller {
 	return &BattleboardPoller{
 		apiClient:      cfg.APIClient,
 		postgres:       cfg.Postgres,
@@ -39,6 +41,7 @@ func NewBattleboardPoller(cfg Config) (*BattleboardPoller) {
 		pageSize:       cfg.PageSize,
 		maxPages:       cfg.MaxPages,
 		region:         cfg.Region,
+		battleIDCache:  util.NewIDCache(500),
 	}
 }
 
@@ -73,7 +76,15 @@ func (p *BattleboardPoller) runBatch() {
 		}
 
 		// Append battles to allBattles slice
-		allBattles = append(allBattles, battles...)
+		for _, battle := range battles {
+			if added := p.battleIDCache.Add(battle.ID); added {
+				allBattles = append(allBattles, battle)
+			}
+		}
+	}
+
+	if len(allBattles) == 0 {
+		return
 	}
 
 	summaries := p.collectBattleSummaries(allBattles)
@@ -108,7 +119,7 @@ func (p *BattleboardPoller) runBatch() {
 	}
 
 	p.log.Info("battleboard polling completed", "battles", len(allBattles), "summaries", len(summaries),
-	 "alliance_stats", len(allianceStats), "guild_stats", len(guildStats), "player_stats", len(playerStats), "queues", len(queues))
+		"alliance_stats", len(allianceStats), "guild_stats", len(guildStats), "player_stats", len(playerStats), "queues", len(queues))
 }
 
 func (p *BattleboardPoller) fetchBattlesWithRetry(region string, offset, limit int) ([]tasks.Battle, error) {
@@ -134,7 +145,7 @@ func (p *BattleboardPoller) fetchBattlesWithRetry(region string, offset, limit i
 	return nil, fmt.Errorf("unexpected error in retry logic")
 }
 
-func (p *BattleboardPoller) collectBattleSummaries(battles []tasks.Battle) ([]postgres.BattleSummary){
+func (p *BattleboardPoller) collectBattleSummaries(battles []tasks.Battle) []postgres.BattleSummary {
 	summary := make([]postgres.BattleSummary, 0, len(battles))
 
 	for _, battle := range battles {
@@ -162,7 +173,7 @@ func (p *BattleboardPoller) collectBattleSummaries(battles []tasks.Battle) ([]po
 			name := alliance.Name + " (" + strconv.Itoa(int(allianceNumParticipants[alliance.Name])) + ")"
 			allianceNames = append(allianceNames, name)
 		}
-	
+
 		guildSlice := make([]tasks.BattleGuild, 0, len(battle.Guilds))
 		for _, guild := range battle.Guilds {
 			guildSlice = append(guildSlice, guild)
@@ -175,7 +186,7 @@ func (p *BattleboardPoller) collectBattleSummaries(battles []tasks.Battle) ([]po
 			name := guild.Name + " (" + strconv.Itoa(int(guildNumParticipants[guild.Name])) + ")"
 			guildNames = append(guildNames, name)
 		}
-	
+
 		playerSlice := make([]tasks.BattlePlayer, 0, len(battle.Players))
 		for _, player := range battle.Players {
 			playerSlice = append(playerSlice, player)
@@ -189,23 +200,23 @@ func (p *BattleboardPoller) collectBattleSummaries(battles []tasks.Battle) ([]po
 		}
 
 		summary = append(summary, postgres.BattleSummary{
-			Region:       postgres.Region(p.region),
-			BattleID:     battle.ID,
-			StartTime:    battle.StartTime,
-			EndTime:      battle.EndTime,
-			TotalPlayers: int32(len(battle.Players)),
-			TotalKills:   int32(battle.TotalKills),
-			TotalFame:    battle.TotalFame,
+			Region:        postgres.Region(p.region),
+			BattleID:      battle.ID,
+			StartTime:     battle.StartTime,
+			EndTime:       battle.EndTime,
+			TotalPlayers:  int32(len(battle.Players)),
+			TotalKills:    int32(battle.TotalKills),
+			TotalFame:     battle.TotalFame,
 			AllianceNames: allianceNames,
-			GuildNames: guildNames,
-			PlayerNames: playerNames,
+			GuildNames:    guildNames,
+			PlayerNames:   playerNames,
 		})
 	}
 
 	return summary
 }
 
-func (p *BattleboardPoller) collectBattleAllianceStats(battles []tasks.Battle) ([]postgres.BattleAllianceStats){
+func (p *BattleboardPoller) collectBattleAllianceStats(battles []tasks.Battle) []postgres.BattleAllianceStats {
 	allianceStats := make([]postgres.BattleAllianceStats, 0)
 	for _, battle := range battles {
 		for _, alliance := range battle.Alliances {
@@ -215,7 +226,7 @@ func (p *BattleboardPoller) collectBattleAllianceStats(battles []tasks.Battle) (
 					playerCount++
 				}
 			}
-	
+
 			allianceStats = append(allianceStats, postgres.BattleAllianceStats{
 				Region:       postgres.Region(p.region),
 				BattleID:     battle.ID,
@@ -230,7 +241,7 @@ func (p *BattleboardPoller) collectBattleAllianceStats(battles []tasks.Battle) (
 	return allianceStats
 }
 
-func (p *BattleboardPoller) collectBattleGuildStats(battles []tasks.Battle) ([]postgres.BattleGuildStats){
+func (p *BattleboardPoller) collectBattleGuildStats(battles []tasks.Battle) []postgres.BattleGuildStats {
 	guildStats := make([]postgres.BattleGuildStats, 0)
 	for _, battle := range battles {
 		for _, guild := range battle.Guilds {
@@ -240,7 +251,7 @@ func (p *BattleboardPoller) collectBattleGuildStats(battles []tasks.Battle) ([]p
 					playerCount++
 				}
 			}
-	
+
 			guildStats = append(guildStats, postgres.BattleGuildStats{
 				Region:       postgres.Region(p.region),
 				BattleID:     battle.ID,
@@ -256,7 +267,7 @@ func (p *BattleboardPoller) collectBattleGuildStats(battles []tasks.Battle) ([]p
 	return guildStats
 }
 
-func (p *BattleboardPoller) collectBattlePlayerStats(battles []tasks.Battle) ([]postgres.BattlePlayerStats){
+func (p *BattleboardPoller) collectBattlePlayerStats(battles []tasks.Battle) []postgres.BattlePlayerStats {
 	playerStats := make([]postgres.BattlePlayerStats, 0)
 	for _, battle := range battles {
 		for _, player := range battle.Players {
@@ -275,15 +286,15 @@ func (p *BattleboardPoller) collectBattlePlayerStats(battles []tasks.Battle) ([]
 	return playerStats
 }
 
-func (p *BattleboardPoller) collectBattleQueues(battles []tasks.Battle) ([]postgres.BattleQueue){
+func (p *BattleboardPoller) collectBattleQueues(battles []tasks.Battle) []postgres.BattleQueue {
 	queues := make([]postgres.BattleQueue, 0, len(battles))
 
 	for _, battle := range battles {
 		queues = append(queues, postgres.BattleQueue{
-			Region:       postgres.Region(p.region),
-			BattleID:     battle.ID,
-			TS:           battle.StartTime,
-			ErrorCount:   0,
+			Region:     postgres.Region(p.region),
+			BattleID:   battle.ID,
+			TS:         battle.StartTime,
+			ErrorCount: 0,
 		})
 	}
 	return queues
