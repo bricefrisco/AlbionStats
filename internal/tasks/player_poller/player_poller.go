@@ -80,6 +80,10 @@ func (p *PlayerPoller) runBatch() {
 	}
 
 	results := pool.ExecuteJobs()
+	if len(results) == 0 {
+		return
+	}
+
 	p.processResults(results)
 }
 

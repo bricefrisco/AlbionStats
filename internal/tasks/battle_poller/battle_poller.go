@@ -51,7 +51,6 @@ func (p *BattlePoller) runBatch() {
 	}
 
 	if len(queues) == 0 {
-		p.log.Info("no battle queues found")
 		time.Sleep(time.Second)
 		return
 	}
