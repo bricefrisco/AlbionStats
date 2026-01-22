@@ -23,6 +23,9 @@ CREATE TABLE battle_summary (
 CREATE INDEX idx_bs_region_start_desc_inc_players
 ON battle_summary (region, start_time DESC)
 INCLUDE (total_players);
+
+CREATE INDEX idx_bs_region_start_time_battle
+ON battle_summary (region, start_time DESC, battle_id);
 ```
 
 ## Battle Alliance Stats
