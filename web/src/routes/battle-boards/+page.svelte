@@ -5,6 +5,7 @@
 	import Typography from '$components/Typography.svelte';
 	import Select from '$components/Select.svelte';
 	import AllianceSearchBar from '$components/AllianceSearchBar.svelte';
+	import GuildSearchBar from '$components/GuildSearchBar.svelte';
 	import PlayerSearchBar from '$components/PlayerSearchBar.svelte';
 	import { regionState } from '$lib/regionState.svelte';
 	import { page } from '$app/state';
@@ -47,6 +48,12 @@
 	}
 
 	$effect(() => {
+		if (searchType === 'player') {
+			minPlayers = '1';
+		}
+	});
+
+	$effect(() => {
 		const urlQ = page.url.searchParams.get('q') || '';
 		const urlType = page.url.searchParams.get('type') || 'alliance';
 		const urlP = page.url.searchParams.get('p') || '10';
@@ -78,7 +85,8 @@
 				id="min-players"
 				type="number"
 				bind:value={minPlayers}
-				class="w-24 rounded border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder-gray-500 focus:border-gray-400 focus:outline-none dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-100 dark:placeholder-neutral-500 dark:focus:border-neutral-700"
+				disabled={searchType === 'player'}
+				class="w-24 rounded border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder-gray-500 focus:border-gray-400 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-100 dark:placeholder-neutral-500 dark:focus:border-neutral-700"
 			/>
 		</div>
 
@@ -98,6 +106,12 @@
 					bind:value={searchQuery}
 					onselect={(p) => searchQuery = p.name}
 					links={false}
+					label="Name"
+				/>
+			{:else if searchType === 'guild'}
+				<GuildSearchBar
+					bind:value={searchQuery}
+					onselect={(g) => searchQuery = g}
 					label="Name"
 				/>
 			{:else}
