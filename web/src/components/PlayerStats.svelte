@@ -1,5 +1,5 @@
 <script>
-	export let playerData = null;
+	let { playerData = null } = $props();
 
 	function formatNumber(num) {
 		return num ? num.toLocaleString() : '0';
@@ -10,7 +10,7 @@
 		return new Date(dateString).toLocaleString();
 	}
 
-	$: lastActivity = playerData
+	let lastActivity = $derived(playerData
 		? (() => {
 				const killboardDate = playerData.KillboardLastActivity
 					? new Date(playerData.KillboardLastActivity)
@@ -25,9 +25,9 @@
 
 				return killboardDate > otherDate ? killboardDate : otherDate;
 			})()
-		: null;
+		: null);
 
-	const pvpStats = [
+	let pvpStats = $derived([
 		{
 			label: 'Kill Fame',
 			value: formatNumber(playerData.KillFame),
@@ -47,9 +47,9 @@
 			value2: formatNumber(playerData.PveOutlands)
 		},
 		{ label: '-', value: '-', label2: 'Avalon', value2: formatNumber(playerData.PveAvalon) }
-	];
+	]);
 
-	const gatheringStats = [
+	let gatheringStats = $derived([
 		{
 			label: 'Total',
 			value: formatNumber(playerData.GatherAllTotal),
@@ -63,7 +63,7 @@
 			label2: '-',
 			value2: '-'
 		}
-	];
+	]);
 </script>
 
 <div class="mt-4">
@@ -76,7 +76,7 @@
 				<td class="w-1/4 px-4 py-3 text-left font-semibold text-gray-900 dark:text-white">PvE</td>
 				<td class="w-1/4 px-4 py-3 text-right font-semibold text-gray-900 dark:text-white"></td>
 			</tr>
-			{#each pvpStats as stat}
+			{#each pvpStats as stat (stat.label)}
 				<tr>
 					<td class="py-2 pr-4 pl-4 text-gray-600 dark:text-gray-400">{stat.label}</td>
 					<td class="py-2 pr-4 text-right font-medium">{stat.value}</td>
@@ -96,7 +96,7 @@
 				>
 				<td class="w-1/4 px-4 py-3 text-right font-semibold text-gray-900 dark:text-white"></td>
 			</tr>
-			{#each gatheringStats as stat}
+			{#each gatheringStats as stat (stat.label)}
 				<tr>
 					<td class="py-2 pr-4 pl-4 text-gray-600 dark:text-gray-400">{stat.label}</td>
 					<td class="py-2 pr-4 text-right font-medium">{stat.value}</td>
