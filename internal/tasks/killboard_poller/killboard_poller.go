@@ -55,7 +55,6 @@ func (p *KillboardPoller) Run() {
 }
 
 func (p *KillboardPoller) runBatch() {
-	p.log.Info("fetch killboard events", "limit", p.pageSize, "offset", 0)
 	events, err := p.apiClient.FetchEvents(p.region, p.pageSize, 0)
 	if err != nil {
 		p.log.Warn("fetch killboard events failed", "err", err)
