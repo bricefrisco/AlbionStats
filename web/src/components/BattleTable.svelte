@@ -2,10 +2,11 @@
 	import { untrack } from 'svelte';
 	import { regionState } from '$lib/regionState.svelte';
 
-	let { q = '', type = 'alliance', p = '10' } = $props();
+	let { q = '', type = 'alliance', p = '10', offset = 0, hasMore = $bindable(true) } = $props();
 	let battles = $state([]);
 	let loading = $state(true);
 	let error = $state(null);
+	let prevOffset = 0;
 
 	function formatDate(dateString) {
 		const date = new Date(dateString);
@@ -66,19 +67,35 @@
 				url.searchParams.set('totalPlayers', p || '10');
 			}
 
+			if (offset > 0) {
+				url.searchParams.set('offset', offset.toString());
+			}
+
 			const response = await fetch(url.toString());
 			if (!response.ok) {
 				throw new Error(`HTTP error! status: ${response.status}`);
 			}
 			const data = await response.json();
 			if (Array.isArray(data)) {
-				battles = data.map((battle) => ({
+				const newBattles = data.map((battle) => ({
 					...battle,
 					AllianceEntries: mapEntries(battle.AllianceNames),
 					GuildEntries: mapEntries(battle.GuildNames)
 				}));
+
+				hasMore = newBattles.length >= 20;
+
+				if (offset > 0 && offset > prevOffset) {
+					battles = [...battles, ...newBattles];
+				} else {
+					battles = newBattles;
+				}
+				prevOffset = offset;
 			} else {
-				battles = [];
+				hasMore = false;
+				if (offset === 0) {
+					battles = [];
+				}
 			}
 		} catch (err) {
 			error = err.message;
@@ -94,15 +111,16 @@
 		q;
 		type;
 		p;
+		offset;
 		untrack(() => fetchBattles());
 	});
 </script>
 
-{#if loading}
+{#if loading && battles.length === 0}
 	<p class="text-sm text-gray-600 dark:text-gray-300">Loading battles...</p>
-{:else if error}
+{:else if error && battles.length === 0}
 	<p class="text-sm text-red-600 dark:text-red-400">{error}</p>
-{:else if battles.length === 0}
+{:else if battles.length === 0 && !loading}
 	<p class="text-sm text-gray-600 dark:text-gray-300">No battles found.</p>
 {:else}
 	<div
@@ -183,6 +201,14 @@
 			</tbody>
 		</table>
 	</div>
+
+	{#if loading}
+		<p class="mt-4 text-sm text-gray-600 dark:text-gray-300 italic animate-pulse">Loading more battles...</p>
+	{/if}
+
+	{#if error}
+		<p class="mt-4 text-sm text-red-600 dark:text-red-400">{error}</p>
+	{/if}
 {/if}
 
 

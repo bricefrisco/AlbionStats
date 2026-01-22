@@ -15,6 +15,8 @@
 	let searchQuery = $state(page.url.searchParams.get('q') || '');
 	let searchType = $state(page.url.searchParams.get('type') || 'alliance');
 	let minPlayers = $state(page.url.searchParams.get('p') || '10');
+	let offset = $state(0);
+	let hasMore = $state(true);
 
 	// "Snapshot" of search values to pass to BattleTable, updated only on submission or URL change
 	let activeQ = $state(searchQuery);
@@ -23,6 +25,7 @@
 
 	async function updateUrl(q = searchQuery, p = minPlayers) {
 		const url = new URL(page.url);
+		offset = 0;
 		if (q) {
 			url.searchParams.set('q', q);
 		} else {
@@ -57,6 +60,7 @@
 			searchQuery = urlQ;
 			searchType = urlType;
 			minPlayers = urlP;
+			offset = 0;
 
 			activeQ = urlQ;
 			activeType = urlType;
@@ -125,5 +129,25 @@
 		</button>
 	</form>
 
-	<BattleTable q={activeQ} type={activeType} p={activeP} />
+	<BattleTable q={activeQ} type={activeType} p={activeP} {offset} bind:hasMore />
+
+	<div class="mt-8 flex justify-center gap-4">
+		{#if hasMore && searchQuery === activeQ && searchType === activeType && minPlayers === activeP}
+			<button
+				type="button"
+				onclick={() => offset += 20}
+				class="cursor-pointer rounded border border-gray-300 bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 focus:border-gray-400 focus:outline-none dark:border-neutral-800 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:bg-neutral-700 dark:focus:border-neutral-700"
+			>
+				Load more
+			</button>
+		{/if}
+
+		<button
+			type="button"
+			onclick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+			class="cursor-pointer rounded border border-gray-300 bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 focus:border-gray-400 focus:outline-none dark:border-neutral-800 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:bg-neutral-700 dark:focus:border-neutral-700"
+		>
+			Back to top
+		</button>
+	</div>
 </Page>
