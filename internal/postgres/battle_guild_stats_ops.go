@@ -45,13 +45,16 @@ func (p *Postgres) GetBattleSummariesByGuild(region string, guildName string, pl
 	var summaries []BattleSummary
 	err := p.db.Raw(`
 		SELECT bs.*
-		FROM battle_guild_stats bgs
+		FROM (
+		    SELECT region, battle_id
+		    FROM battle_guild_stats
+		    WHERE region = ?
+		    AND guild_name = ?
+		    AND player_count >= ?
+		) bgs
 		JOIN battle_summary bs
-		  ON bs.region = bgs.region
-		 AND bs.battle_id = bgs.battle_id
-		WHERE bgs.region = ?
-		  AND bgs.guild_name = ?
-		  AND bgs.player_count >= ?
+		ON bs.region = bgs.region
+		AND bs.battle_id = bgs.battle_id
 		ORDER BY bs.start_time DESC
 		LIMIT ? OFFSET ?
 	`, region, guildName, playerCount, limit, offset).Scan(&summaries).Error

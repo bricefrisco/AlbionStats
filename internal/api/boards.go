@@ -117,6 +117,7 @@ func (s *Server) battlePlayerSummaries(c *gin.Context) {
 
 	limitStr := c.DefaultQuery("limit", "20")
 	offsetStr := c.DefaultQuery("offset", "0")
+	playerCountStr := c.DefaultQuery("playerCount", "0")
 
 	limit, err := strconv.Atoi(limitStr)
 	if err != nil || limit <= 0 || limit > 50 {
@@ -130,7 +131,13 @@ func (s *Server) battlePlayerSummaries(c *gin.Context) {
 		return
 	}
 
-	summaries, err := s.postgres.GetBattleSummariesByPlayer(region, playerName, limit, offset)
+	playerCount, err := strconv.Atoi(playerCountStr)
+	if err != nil || playerCount < 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid playerCount parameter"})
+		return
+	}
+
+	summaries, err := s.postgres.GetBattleSummariesByPlayer(region, playerName, playerCount, limit, offset)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get battle summaries"})
 		return
