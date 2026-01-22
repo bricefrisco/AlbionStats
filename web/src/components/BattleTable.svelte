@@ -1,8 +1,11 @@
 <script>
-	import { untrack } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { regionState } from '$lib/regionState.svelte';
 	import { resolve } from '$app/paths';
+	import Table from './Table.svelte';
+	import TableHeader from './TableHeader.svelte';
+	import TableRow from './TableRow.svelte';
+	import TableData from './TableData.svelte';
 
 	let { q = '', type = 'alliance', p = '10', offset = 0, hasMore = $bindable(true), selectedIds = $bindable(new SvelteSet()), hasResults = $bindable(false) } = $props();
 	let battles = $state([]);
@@ -101,7 +104,9 @@
 				hasMore = newBattles.length >= 20;
 
 				if (offset > 0 && offset > prevOffset) {
-					battles = [...battles, ...newBattles];
+					const existingIds = new Set(battles.map((b) => b.BattleID));
+					const uniqueNewBattles = newBattles.filter((b) => !existingIds.has(b.BattleID));
+					battles = [...battles, ...uniqueNewBattles];
 				} else {
 					battles = newBattles;
 				}
@@ -122,17 +127,18 @@
 
 	$effect(() => {
 		// Fetch battles when region or search parameters change
-		if (q !== prevParams.q || type !== prevParams.type || p !== prevParams.p) {
+		const currentParams = { q, type, p };
+		if (currentParams.q !== prevParams.q || currentParams.type !== prevParams.type || currentParams.p !== prevParams.p) {
 			battles = [];
 			selectedIds.clear();
-			prevParams = { q, type, p };
+			prevParams = currentParams;
 		}
 
 		// Ensure we track these dependencies for the effect
 		regionState.value;
 		offset;
 
-		untrack(() => fetchBattles());
+		fetchBattles();
 	});
 </script>
 
@@ -143,99 +149,91 @@
 {:else if battles.length === 0 && !loading}
 	<p class="text-sm text-gray-600 dark:text-gray-300">No battles found.</p>
 {:else}
-	<div
-		class="overflow-hidden rounded-lg border border-gray-200/60 bg-transparent shadow-sm dark:border-gray-800/60 dark:bg-transparent"
-	>
-		<table class="w-full table-fixed text-sm">
-			<thead class="bg-gray-50/60 dark:bg-gray-800/40">
-			<tr class="text-sm capitalize tracking-wide text-gray-600 dark:text-gray-300">
-				<th class="w-12 px-4 py-3 text-left">
-				</th>
-				<th class="w-1/6 px-4 py-3 text-left font-semibold">Battle ID</th>
-				<th class="w-1/6 px-4 py-3 text-left font-semibold">Start Time</th>
-				<th class="w-1/12 px-4 py-3 text-right font-semibold">Players</th>
-				<th class="w-1/12 px-4 py-3 text-right font-semibold">Kills</th>
-				<th class="w-1/4 px-4 py-3 text-left font-semibold">Alliances</th>
-				<th class="w-1/4 px-4 py-3 text-left font-semibold">Guilds</th>
-				<th class="w-1/12 px-4 py-3 text-right font-semibold">Fame</th>
-			</tr>
-			</thead>
-			<tbody class="divide-y divide-gray-200/60 dark:divide-gray-700/60">
-			{#each battles as battle (battle.BattleID)}
-				<tr class="align-top text-gray-700 hover:bg-gray-50/60 dark:text-gray-300 dark:hover:bg-gray-800/30">
-					<td class="px-4 py-3">
-						<input
-							type="checkbox"
-							checked={selectedIds.has(battle.BattleID)}
-							onclick={() => toggleSelection(battle.BattleID)}
-							class="h-[18px] w-[18px] rounded border-gray-300 bg-gray-100 text-blue-600 focus:ring-blue-500 dark:border-neutral-800 dark:bg-neutral-900 mt-[1.75px]"
-						/>
-					</td>
-					<td class="px-4 py-3 font-medium text-gray-900 dark:text-white break-words">
-						<a
-							href={resolve(`/battle-boards/${regionState.value}/${battle.BattleID}`)}
-							class="underline hover:text-blue-600 dark:hover:text-blue-400"
-						>
-							{battle.BattleID}
-						</a>
-					</td>
-					<td class="px-4 py-3 whitespace-nowrap">{formatDate(battle.StartTime)}</td>
-					<td class="px-4 py-3 text-right font-medium text-blue-600 dark:text-blue-400">
-						{formatNumber(battle.TotalPlayers)}
-					</td>
-					<td class="px-4 py-3 text-right font-medium text-red-600 dark:text-red-400">
-						{formatNumber(battle.TotalKills)}
-					</td>
-					<td class="px-4 py-3 align-top" style="vertical-align: top;">
-						<div class="grid gap-1 text-xs text-gray-700 dark:text-gray-300">
-							{#if battle.AllianceEntries?.length}
-								{#each battle.AllianceEntries.slice(0, 3) as entry (entry.label)}
-									<div class="grid grid-cols-[1fr_auto] items-center gap-2">
-										<span class="truncate">{entry.label}</span>
-										{#if entry.count}
-											<span class="text-right font-semibold">{entry.count}</span>
-										{/if}
-									</div>
-								{/each}
-								{#if battle.AllianceEntries.length > 3}
-										<span class="text-[11px] text-gray-500 dark:text-gray-400">
-											+{battle.AllianceEntries.length - 3} more
-										</span>
-								{/if}
-							{:else}
-								<span class="text-[11px] text-gray-500 dark:text-gray-400">-</span>
+	<Table>
+		{#snippet header()}
+			<TableHeader class="w-12 text-left" />
+			<TableHeader class="w-1/6 text-left font-semibold">Battle ID</TableHeader>
+			<TableHeader class="w-1/6 text-left font-semibold">Start Time</TableHeader>
+			<TableHeader class="w-1/12 text-right font-semibold">Players</TableHeader>
+			<TableHeader class="w-1/12 text-right font-semibold">Kills</TableHeader>
+			<TableHeader class="w-1/4 text-left font-semibold">Alliances</TableHeader>
+			<TableHeader class="w-1/4 text-left font-semibold">Guilds</TableHeader>
+			<TableHeader class="w-1/12 text-right font-semibold">Fame</TableHeader>
+		{/snippet}
+
+		{#each battles as battle (battle.BattleID)}
+			<TableRow>
+				<TableData>
+					<input
+						type="checkbox"
+						checked={selectedIds.has(battle.BattleID)}
+						onchange={() => toggleSelection(battle.BattleID)}
+						class="mt-[1.75px] h-[18px] w-[18px] rounded border-gray-300 bg-gray-100 text-blue-600 focus:ring-blue-500 dark:border-neutral-800 dark:bg-neutral-900"
+					/>
+				</TableData>
+				<TableData class="font-medium text-gray-900 dark:text-white break-words">
+					<a
+						href={resolve(`/battle-boards/${regionState.value}/${battle.BattleID}`)}
+						class="underline hover:text-blue-600 dark:hover:text-blue-400"
+					>
+						{battle.BattleID}
+					</a>
+				</TableData>
+				<TableData class="whitespace-nowrap">{formatDate(battle.StartTime)}</TableData>
+				<TableData class="text-right font-medium text-blue-600 dark:text-blue-400">
+					{formatNumber(battle.TotalPlayers)}
+				</TableData>
+				<TableData class="text-right font-medium text-red-600 dark:text-red-400">
+					{formatNumber(battle.TotalKills)}
+				</TableData>
+				<TableData>
+					<div class="grid gap-1 text-xs text-gray-700 dark:text-gray-300">
+						{#if battle.AllianceEntries?.length}
+							{#each battle.AllianceEntries.slice(0, 3) as entry (entry.label)}
+								<div class="grid grid-cols-[1fr_auto] items-center gap-2">
+									<span class="truncate">{entry.label}</span>
+									{#if entry.count}
+										<span class="text-right font-semibold">{entry.count}</span>
+									{/if}
+								</div>
+							{/each}
+							{#if battle.AllianceEntries.length > 3}
+								<span class="text-[11px] text-gray-500 dark:text-gray-400">
+									+{battle.AllianceEntries.length - 3} more
+								</span>
 							{/if}
-						</div>
-					</td>
-					<td class="px-4 py-3 align-top" style="vertical-align: top;">
-						<div class="grid gap-1 text-xs text-gray-700 dark:text-gray-300">
-							{#if battle.GuildEntries?.length}
-								{#each battle.GuildEntries.slice(0, 3) as entry (entry.label)}
-									<div class="grid grid-cols-[1fr_auto] items-center gap-2">
-										<span class="truncate">{entry.label}</span>
-										{#if entry.count}
-											<span class="text-right font-semibold">{entry.count}</span>
-										{/if}
-									</div>
-								{/each}
-								{#if battle.GuildEntries.length > 3}
-										<span class="text-[11px] text-gray-500 dark:text-gray-400">
-											+{battle.GuildEntries.length - 3} more
-										</span>
-								{/if}
-							{:else}
-								<span class="text-[11px] text-gray-500 dark:text-gray-400">-</span>
+						{:else}
+							<span class="text-[11px] text-gray-500 dark:text-gray-400">-</span>
+						{/if}
+					</div>
+				</TableData>
+				<TableData>
+					<div class="grid gap-1 text-xs text-gray-700 dark:text-gray-300">
+						{#if battle.GuildEntries?.length}
+							{#each battle.GuildEntries.slice(0, 3) as entry (entry.label)}
+								<div class="grid grid-cols-[1fr_auto] items-center gap-2">
+									<span class="truncate">{entry.label}</span>
+									{#if entry.count}
+										<span class="text-right font-semibold">{entry.count}</span>
+									{/if}
+								</div>
+							{/each}
+							{#if battle.GuildEntries.length > 3}
+								<span class="text-[11px] text-gray-500 dark:text-gray-400">
+									+{battle.GuildEntries.length - 3} more
+								</span>
 							{/if}
-						</div>
-					</td>
-					<td class="px-4 py-3 text-right font-medium text-yellow-600 dark:text-yellow-400">
-						{formatFame(battle.TotalFame)}
-					</td>
-				</tr>
-			{/each}
-			</tbody>
-		</table>
-	</div>
+						{:else}
+							<span class="text-[11px] text-gray-500 dark:text-gray-400">-</span>
+						{/if}
+					</div>
+				</TableData>
+				<TableData class="text-right font-medium text-yellow-600 dark:text-yellow-400">
+					{formatFame(battle.TotalFame)}
+				</TableData>
+			</TableRow>
+		{/each}
+	</Table>
 
 	{#if loading}
 		<p class="mt-4 text-sm text-gray-600 dark:text-gray-300 italic animate-pulse">Loading more battles...</p>
