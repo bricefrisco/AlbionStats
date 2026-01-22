@@ -4,6 +4,7 @@ import (
 	"albionstats/internal/postgres"
 	"albionstats/internal/util"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -12,28 +13,30 @@ import (
 )
 
 type MergedBattleResponse struct {
-	Region        string                         `json:"region"`
-	BattleIDs     []int64                        `json:"battle_ids"`
-	StartTime     time.Time                      `json:"start_time"`
-	EndTime       time.Time                      `json:"end_time"`
-	TotalPlayers  int                            `json:"total_players"`
-	TotalKills    int                            `json:"total_kills"`
-	TotalFame     int64                          `json:"total_fame"`
-	AllianceStats map[string]*MergedAllianceStat `json:"alliance_stats"`
-	GuildStats    map[string]*MergedGuildStat    `json:"guild_stats"`
-	PlayerStats   map[string]*MergedPlayerStat   `json:"player_stats"`
+	Region        string                `json:"region"`
+	BattleIDs     []int64               `json:"battle_ids"`
+	StartTime     time.Time             `json:"start_time"`
+	EndTime       time.Time             `json:"end_time"`
+	TotalPlayers  int                   `json:"total_players"`
+	TotalKills    int                   `json:"total_kills"`
+	TotalFame     int64                 `json:"total_fame"`
+	AllianceStats []*MergedAllianceStat `json:"alliance_stats"`
+	GuildStats    []*MergedGuildStat    `json:"guild_stats"`
+	PlayerStats   []*MergedPlayerStat   `json:"player_stats"`
 }
 
 type MergedAllianceStat struct {
-	PlayerCount int32 `json:"player_count"`
-	Kills       int32 `json:"kills"`
-	Deaths      int32 `json:"deaths"`
-	KillFame    int64 `json:"kill_fame"`
-	DeathFame   int64 `json:"death_fame"`
-	IP          int32 `json:"ip"`
+	AllianceName string `json:"alliance_name"`
+	PlayerCount  int32  `json:"player_count"`
+	Kills        int32  `json:"kills"`
+	Deaths       int32  `json:"deaths"`
+	KillFame     int64  `json:"kill_fame"`
+	DeathFame    int64  `json:"death_fame"`
+	IP           int32  `json:"ip"`
 }
 
 type MergedGuildStat struct {
+	GuildName    string  `json:"guild_name"`
 	AllianceName *string `json:"alliance_name"`
 	PlayerCount  int32   `json:"player_count"`
 	Kills        int32   `json:"kills"`
@@ -44,6 +47,7 @@ type MergedGuildStat struct {
 }
 
 type MergedPlayerStat struct {
+	PlayerName   string  `json:"player_name"`
 	GuildName    *string `json:"guild_name"`
 	AllianceName *string `json:"alliance_name"`
 	Kills        int32   `json:"kills"`
@@ -142,37 +146,15 @@ func (s *Server) mergeBattleSummaries(region string, summaries []postgres.Battle
 	return resp
 }
 
-func (s *Server) mergeAllianceStats(stats []postgres.BattleAllianceStats) map[string]*MergedAllianceStat {
-	merged := make(map[string]*MergedAllianceStat)
+func (s *Server) mergeAllianceStats(stats []postgres.BattleAllianceStats) []*MergedAllianceStat {
+	mergedMap := make(map[string]*MergedAllianceStat)
 	for _, stat := range stats {
-		m, ok := merged[stat.AllianceName]
+		m, ok := mergedMap[stat.AllianceName]
 		if !ok {
-			m = &MergedAllianceStat{}
-			merged[stat.AllianceName] = m
-		}
-		m.PlayerCount += stat.PlayerCount
-		m.Kills += stat.Kills
-		m.Deaths += stat.Deaths
-		m.KillFame += stat.KillFame
-		if stat.DeathFame != nil {
-			m.DeathFame += *stat.DeathFame
-		}
-		if stat.IP != nil {
-			m.IP += *stat.IP
-		}
-	}
-	return merged
-}
-
-func (s *Server) mergeGuildStats(stats []postgres.BattleGuildStats) map[string]*MergedGuildStat {
-	merged := make(map[string]*MergedGuildStat)
-	for _, stat := range stats {
-		m, ok := merged[stat.GuildName]
-		if !ok {
-			m = &MergedGuildStat{
+			m = &MergedAllianceStat{
 				AllianceName: stat.AllianceName,
 			}
-			merged[stat.GuildName] = m
+			mergedMap[stat.AllianceName] = m
 		}
 		m.PlayerCount += stat.PlayerCount
 		m.Kills += stat.Kills
@@ -185,19 +167,65 @@ func (s *Server) mergeGuildStats(stats []postgres.BattleGuildStats) map[string]*
 			m.IP += *stat.IP
 		}
 	}
+
+	merged := make([]*MergedAllianceStat, 0, len(mergedMap))
+	for _, v := range mergedMap {
+		merged = append(merged, v)
+	}
+
+	sort.Slice(merged, func(i, j int) bool {
+		return merged[i].PlayerCount > merged[j].PlayerCount
+	})
+
 	return merged
 }
 
-func (s *Server) mergePlayerStats(stats []postgres.BattlePlayerStats) map[string]*MergedPlayerStat {
-	merged := make(map[string]*MergedPlayerStat)
+func (s *Server) mergeGuildStats(stats []postgres.BattleGuildStats) []*MergedGuildStat {
+	mergedMap := make(map[string]*MergedGuildStat)
 	for _, stat := range stats {
-		m, ok := merged[stat.PlayerName]
+		m, ok := mergedMap[stat.GuildName]
 		if !ok {
-			m = &MergedPlayerStat{
+			m = &MergedGuildStat{
 				GuildName:    stat.GuildName,
 				AllianceName: stat.AllianceName,
 			}
-			merged[stat.PlayerName] = m
+			mergedMap[stat.GuildName] = m
+		}
+		m.PlayerCount += stat.PlayerCount
+		m.Kills += stat.Kills
+		m.Deaths += stat.Deaths
+		m.KillFame += stat.KillFame
+		if stat.DeathFame != nil {
+			m.DeathFame += *stat.DeathFame
+		}
+		if stat.IP != nil {
+			m.IP += *stat.IP
+		}
+	}
+
+	merged := make([]*MergedGuildStat, 0, len(mergedMap))
+	for _, v := range mergedMap {
+		merged = append(merged, v)
+	}
+
+	sort.Slice(merged, func(i, j int) bool {
+		return merged[i].PlayerCount > merged[j].PlayerCount
+	})
+
+	return merged
+}
+
+func (s *Server) mergePlayerStats(stats []postgres.BattlePlayerStats) []*MergedPlayerStat {
+	mergedMap := make(map[string]*MergedPlayerStat)
+	for _, stat := range stats {
+		m, ok := mergedMap[stat.PlayerName]
+		if !ok {
+			m = &MergedPlayerStat{
+				PlayerName:   stat.PlayerName,
+				GuildName:    stat.GuildName,
+				AllianceName: stat.AllianceName,
+			}
+			mergedMap[stat.PlayerName] = m
 		}
 		m.Kills += stat.Kills
 		m.Deaths += stat.Deaths
@@ -209,5 +237,15 @@ func (s *Server) mergePlayerStats(stats []postgres.BattlePlayerStats) map[string
 			m.IP += *stat.IP
 		}
 	}
+
+	merged := make([]*MergedPlayerStat, 0, len(mergedMap))
+	for _, v := range mergedMap {
+		merged = append(merged, v)
+	}
+
+	sort.Slice(merged, func(i, j int) bool {
+		return merged[i].Kills > merged[j].Kills
+	})
+
 	return merged
 }
