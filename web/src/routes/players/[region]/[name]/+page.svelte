@@ -1,5 +1,7 @@
 <script>
 	import { page } from '$app/stores';
+	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import Page from '$components/Page.svelte';
 	import PageHeader from '$components/PageHeader.svelte';
 	import SubHeader from '$components/SubHeader.svelte';
@@ -12,28 +14,30 @@
 	import PlayerCraftingCharts from '$components/charts/PlayerCraftingCharts.svelte';
 
 	// Get parameters from URL
-	$: region = $page.params.region;
-	$: playerName = $page.params.name;
-	$: decodedName = playerName ? decodeURIComponent(playerName) : '';
+	let region = $derived($page.params.region);
+	let playerName = $derived($page.params.name);
+	let decodedName = $derived(playerName ? decodeURIComponent(playerName) : '');
 
 	// Validate region
-	$: validRegion = ['americas', 'europe', 'asia'].includes(region);
+	let validRegion = $derived(['americas', 'europe', 'asia'].includes(region));
 
 	// Fetch player data when route parameters change
-	$: if (validRegion && decodedName) {
-		playerData = null;
-		loading = true;
-		error = null;
-		fetchPlayerData();
-	}
+	$effect(() => {
+		if (validRegion && decodedName) {
+			playerData = null;
+			loading = true;
+			error = null;
+			fetchPlayerData();
+		}
+	});
 
 	// Player data
-	let playerData = null;
-	let loading = true;
-	let error = null;
+	let playerData = $state(null);
+	let loading = $state(true);
+	let error = $state(null);
 
 	// Active tab state
-	let activeTab = 'pvp';
+	let activeTab = $derived($page.url.searchParams.get('tab') || 'pvp');
 
 	// Tab configuration
 	const tabs = [
@@ -42,6 +46,13 @@
 		{ id: 'gathering', label: 'Gathering' },
 		{ id: 'crafting', label: 'Crafting' }
 	];
+
+	function handleTabChange(detail) {
+		const newTabId = detail.tabId;
+		const url = new URL($page.url);
+		url.searchParams.set('tab', newTabId);
+		goto(resolve(url.pathname + url.search), { replaceState: true, noScroll: true });
+	}
 
 	async function fetchPlayerData() {
 		try {
@@ -103,7 +114,7 @@
 
 			<!-- Tab Navigation -->
 			<div class="mt-2 mb-6">
-				<Tabs {tabs} {activeTab} on:tabChange={(e) => (activeTab = e.detail.tabId)} />
+				<Tabs {tabs} {activeTab} ontabChange={handleTabChange} />
 			</div>
 
 			<!-- Tab Content -->
