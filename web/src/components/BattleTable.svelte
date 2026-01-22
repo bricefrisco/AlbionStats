@@ -60,6 +60,7 @@
 				url = new URL(
 					`https://albionstats.bricefrisco.com/api/boards/player/${regionState.value}/${encodeURIComponent(q)}`
 				);
+				url.searchParams.set('playerCount', p || '10');
 			} else {
 				url = new URL(`https://albionstats.bricefrisco.com/api/boards/${regionState.value}`);
 				url.searchParams.set('totalPlayers', p || '10');
