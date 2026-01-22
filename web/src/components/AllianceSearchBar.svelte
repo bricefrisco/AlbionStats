@@ -6,6 +6,8 @@
 	let {
 		onselect,
 		oninput,
+		label = '',
+		placeholder = '',
 		value = $bindable('')
 	} = $props();
 
@@ -67,7 +69,8 @@
 	oninput={handleInput}
 	onfocus={handleInput}
 	{isSearching}
-	placeholder="Alliance name"
+	{label}
+	{placeholder}
 >
 	{#snippet dropdownContent()}
 		{#if alliances.length > 0}

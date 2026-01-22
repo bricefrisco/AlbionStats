@@ -87,7 +87,11 @@
 
 <Page>
 	<div class="mb-4">
-		<PlayerSearchBar bind:value={searchName} onselect={(p) => goto(resolve(`/players/${region}/${encodeURIComponent(p.name)}`))} />
+		<PlayerSearchBar
+			bind:value={searchName}
+			onselect={(p) => goto(resolve(`/players/${region}/${encodeURIComponent(p.name)}`))}
+			placeholder="Player name"
+		/>
 	</div>
 
 	<div>

@@ -31,6 +31,6 @@
 	</Typography>
 
 	<div class="mb-4">
-		<PlayerSearchBar bind:value={searchQuery} onselect={updateUrl} />
+		<PlayerSearchBar bind:value={searchQuery} onselect={updateUrl} placeholder="Player name" />
 	</div>
 </Page>

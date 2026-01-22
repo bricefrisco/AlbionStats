@@ -1,6 +1,8 @@
 <script>
+	import { untrack } from 'svelte';
 	import { regionState } from '$lib/regionState.svelte';
 
+	let { q = '', type = 'alliance', p = '10' } = $props();
 	let battles = $state([]);
 	let loading = $state(true);
 	let error = $state(null);
@@ -43,7 +45,18 @@
 		loading = true;
 		error = null;
 		try {
-			const response = await fetch(`https://albionstats.bricefrisco.com/api/boards/${regionState.value}`);
+			let url;
+			if (type === 'alliance' && q) {
+				url = new URL(
+					`https://albionstats.bricefrisco.com/api/boards/alliance/${regionState.value}/${encodeURIComponent(q)}`
+				);
+				url.searchParams.set('playerCount', p || '10');
+			} else {
+				url = new URL(`https://albionstats.bricefrisco.com/api/boards/${regionState.value}`);
+				url.searchParams.set('totalPlayers', p || '10');
+			}
+
+			const response = await fetch(url.toString());
 			if (!response.ok) {
 				throw new Error(`HTTP error! status: ${response.status}`);
 			}
@@ -62,7 +75,12 @@
 	}
 
 	$effect(() => {
-		fetchBattles();
+		// Fetch battles when region or search parameters change
+		regionState.value;
+		q;
+		type;
+		p;
+		untrack(() => fetchBattles());
 	});
 </script>
 

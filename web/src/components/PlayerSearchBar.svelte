@@ -8,6 +8,8 @@
 		links = true,
 		onselect,
 		oninput,
+		label = '',
+		placeholder = '',
 		value = $bindable('')
 	} = $props();
 
@@ -69,7 +71,8 @@
 	oninput={handleInput}
 	onfocus={handleInput}
 	{isSearching}
-	placeholder="Player name"
+	{label}
+	{placeholder}
 >
 	{#snippet dropdownContent()}
 		{#if players.length > 0}
