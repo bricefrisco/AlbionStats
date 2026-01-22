@@ -6,6 +6,7 @@ import (
 
 	"albionstats/internal/postgres"
 	"albionstats/internal/tasks"
+	"albionstats/internal/util"
 )
 
 type Config struct {
@@ -25,6 +26,7 @@ type KillboardPoller struct {
 	eventsInterval time.Duration
 	pageSize       int
 	region         string
+	eventIDCache   *util.IDCache
 }
 
 func NewKillboardPoller(cfg Config) (*KillboardPoller, error) {
@@ -35,6 +37,7 @@ func NewKillboardPoller(cfg Config) (*KillboardPoller, error) {
 		eventsInterval: cfg.EventsInterval,
 		pageSize:       cfg.PageSize,
 		region:         cfg.Region,
+		eventIDCache:   util.NewIDCache(500),
 	}, nil
 }
 
@@ -64,8 +67,20 @@ func (p *KillboardPoller) runBatch() {
 		return
 	}
 
+	filteredEvents := make([]tasks.Event, 0, len(events))
+	for _, ev := range events {
+		if added := p.eventIDCache.Add(ev.EventID); added {
+			filteredEvents = append(filteredEvents, ev)
+		}
+	}
+
+	if len(filteredEvents) == 0 {
+		p.log.Info("all events filtered out")
+		return
+	}
+
 	playerMap := make(map[string]postgres.PlayerPoll)
-	p.collectPlayers(events, playerMap)
+	p.collectPlayers(filteredEvents, playerMap)
 
 	if len(playerMap) == 0 {
 		return
