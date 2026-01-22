@@ -30,7 +30,7 @@
 		<p>Search for a player to view their stats.</p>
 	</Typography>
 
-	<div class="mt-8">
+	<div class="mb-4">
 		<PlayerSearchBar bind:value={searchQuery} onselect={updateUrl} />
 	</div>
 </Page>
