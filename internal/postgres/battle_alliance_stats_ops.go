@@ -1,6 +1,8 @@
 package postgres
 
 import (
+	"context"
+
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -62,9 +64,9 @@ func (p *Postgres) GetBattleSummariesByAlliance(region string, allianceName stri
 	return summaries, err
 }
 
-func (p *Postgres) GetBattleAllianceStatsByIDs(region string, battleIDs []int64) ([]BattleAllianceStats, error) {
+func (p *Postgres) GetBattleAllianceStatsByIDs(ctx context.Context, region string, battleIDs []int64) ([]BattleAllianceStats, error) {
 	var stats []BattleAllianceStats
-	err := p.db.Where("region = ? AND battle_id IN ?", region, battleIDs).
+	err := p.db.WithContext(ctx).Where("region = ? AND battle_id IN ?", region, battleIDs).
 		Order("player_count DESC").
 		Find(&stats).Error
 

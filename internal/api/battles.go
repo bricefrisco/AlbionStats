@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/sync/errgroup"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -20,9 +22,10 @@ type MergedBattleResponse struct {
 	TotalPlayers  int
 	TotalKills    int
 	TotalFame     int64
-	AllianceStats []*MergedAllianceStat `json:"Alliances"`
-	GuildStats    []*MergedGuildStat    `json:"Guilds"`
-	PlayerStats   []*MergedPlayerStat   `json:"Players"`
+	AllianceStats []*MergedAllianceStat  `json:"Alliances"`
+	GuildStats    []*MergedGuildStat     `json:"Guilds"`
+	PlayerStats   []*MergedPlayerStat    `json:"Players"`
+	Kills         []postgres.BattleKills `json:"Kills"`
 }
 
 type MergedAllianceStat struct {
@@ -55,6 +58,9 @@ type MergedPlayerStat struct {
 	KillFame     int64
 	DeathFame    int64
 	IP           int32
+	Weapon       *string
+	Damage       int64
+	Heal         int64
 }
 
 func (s *Server) battle(c *gin.Context) {
@@ -86,9 +92,48 @@ func (s *Server) battle(c *gin.Context) {
 		return
 	}
 
-	summaries, err := s.postgres.GetBattleSummariesByIDs(region, battleIDs)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch battle summaries"})
+	var (
+		summaries     []postgres.BattleSummary
+		allianceStats []postgres.BattleAllianceStats
+		guildStats    []postgres.BattleGuildStats
+		playerStats   []postgres.BattlePlayerStats
+		battleKills   []postgres.BattleKills
+	)
+
+	g, ctx := errgroup.WithContext(c.Request.Context())
+
+	g.Go(func() error {
+		var err error
+		summaries, err = s.postgres.GetBattleSummariesByIDs(ctx, region, battleIDs)
+		return err
+	})
+
+	g.Go(func() error {
+		var err error
+		allianceStats, err = s.postgres.GetBattleAllianceStatsByIDs(ctx, region, battleIDs)
+		return err
+	})
+
+	g.Go(func() error {
+		var err error
+		guildStats, err = s.postgres.GetBattleGuildStatsByIDs(ctx, region, battleIDs)
+		return err
+	})
+
+	g.Go(func() error {
+		var err error
+		playerStats, err = s.postgres.GetBattlePlayerStatsByIDs(ctx, region, battleIDs)
+		return err
+	})
+
+	g.Go(func() error {
+		var err error
+		battleKills, err = s.postgres.GetBattleKillsByIDs(ctx, region, battleIDs)
+		return err
+	})
+
+	if err := g.Wait(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch battle data: " + err.Error()})
 		return
 	}
 
@@ -97,28 +142,11 @@ func (s *Server) battle(c *gin.Context) {
 		return
 	}
 
-	allianceStats, err := s.postgres.GetBattleAllianceStatsByIDs(region, battleIDs)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch alliance stats"})
-		return
-	}
-
-	guildStats, err := s.postgres.GetBattleGuildStatsByIDs(region, battleIDs)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch guild stats"})
-		return
-	}
-
-	playerStats, err := s.postgres.GetBattlePlayerStatsByIDs(region, battleIDs)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch player stats"})
-		return
-	}
-
 	resp := s.mergeBattleSummaries(region, summaries)
 	resp.AllianceStats = s.mergeAllianceStats(allianceStats)
 	resp.GuildStats = s.mergeGuildStats(guildStats)
 	resp.PlayerStats = s.mergePlayerStats(playerStats)
+	resp.Kills = battleKills
 
 	c.JSON(http.StatusOK, resp)
 }
@@ -270,6 +298,15 @@ func (s *Server) mergePlayerStats(stats []postgres.BattlePlayerStats) []*MergedP
 		if stat.IP != nil {
 			ipMap[stat.PlayerName].totalIP += int64(*stat.IP)
 			ipMap[stat.PlayerName].count++
+		}
+		if m.Weapon == nil {
+			m.Weapon = stat.Weapon
+		}
+		if stat.Damage != nil {
+			m.Damage += *stat.Damage
+		}
+		if stat.Heal != nil {
+			m.Heal += *stat.Heal
 		}
 	}
 
