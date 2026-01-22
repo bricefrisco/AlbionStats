@@ -1,5 +1,6 @@
 <script>
 	import SearchBar from './SearchBar.svelte';
+	import { untrack } from 'svelte';
 	import { regionState } from '$lib/regionState.svelte';
 
 	let {
@@ -18,10 +19,13 @@
 	$effect(() => {
 		// Include regionState.value to trigger re-search when region changes
 		const currentRegion = regionState.value;
-		if (value.length >= 1 && currentRegion) {
-			performSearch();
+		const currentValue = value;
+		if (currentValue.length >= 1 && currentRegion) {
+			untrack(() => performSearch());
 		} else {
-			alliances = [];
+			untrack(() => {
+				alliances = [];
+			});
 		}
 	});
 

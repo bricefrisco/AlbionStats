@@ -1,5 +1,6 @@
 <script>
 	import { page } from '$app/stores';
+	import { untrack } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import Page from '$components/Page.svelte';
@@ -25,11 +26,13 @@
 	// Fetch player data when route parameters change
 	$effect(() => {
 		if (validRegion && decodedName) {
-			searchName = decodedName;
-			playerData = null;
-			loading = true;
-			error = null;
-			fetchPlayerData();
+			untrack(() => {
+				searchName = decodedName;
+				playerData = null;
+				loading = true;
+				error = null;
+				fetchPlayerData();
+			});
 		}
 	});
 
@@ -84,7 +87,7 @@
 
 <Page>
 	<div class="mb-4">
-		<PlayerSearchBar bind:value={searchName} />
+		<PlayerSearchBar bind:value={searchName} onselect={(p) => goto(resolve(`/players/${region}/${encodeURIComponent(p.name)}`))} />
 	</div>
 
 	<div>

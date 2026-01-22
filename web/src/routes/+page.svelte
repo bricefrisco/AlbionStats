@@ -11,7 +11,7 @@
 <Page>
 	<PageHeader title="Welcome to AlbionStats" />
 	<Typography>
-		<p>We track Albion Online player statistics over time, including:</p>
+		<p>We track Albion Online statistics over time, including:</p>
 		<div class="mt-3 grid grid-cols-2 gap-2 text-sm md:grid-cols-3">
 			<div class="flex items-center">
 				<span class="mr-2 h-1.5 w-1.5 rounded-full bg-gray-400"></span>
@@ -49,7 +49,7 @@
 						class="font-medium text-blue-600 hover:underline dark:text-blue-400"
 						>Battle Boards</a
 					>
-					to see recent large scale battles.
+					to see recent battles.
 				</li>
 				<li>
 					Visit the
@@ -57,7 +57,7 @@
 						href={resolve('/players')}
 						class="font-medium text-blue-600 hover:underline dark:text-blue-400">Players</a
 					>
-					page to search for and track specific players.
+					page to search for specific player statistics.
 				</li>
 			</ul>
 		</div>
