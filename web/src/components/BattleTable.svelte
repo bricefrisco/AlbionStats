@@ -7,6 +7,7 @@
 	let loading = $state(true);
 	let error = $state(null);
 	let prevOffset = 0;
+	let prevParams = { q, type, p };
 
 	function formatDate(dateString) {
 		const date = new Date(dateString);
@@ -107,11 +108,15 @@
 
 	$effect(() => {
 		// Fetch battles when region or search parameters change
+		if (q !== prevParams.q || type !== prevParams.type || p !== prevParams.p) {
+			battles = [];
+			prevParams = { q, type, p };
+		}
+
+		// Ensure we track these dependencies for the effect
 		regionState.value;
-		q;
-		type;
-		p;
 		offset;
+
 		untrack(() => fetchBattles());
 	});
 </script>
