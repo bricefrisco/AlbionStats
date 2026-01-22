@@ -61,3 +61,12 @@ func (p *Postgres) GetBattleSummariesByAlliance(region string, allianceName stri
 
 	return summaries, err
 }
+
+func (p *Postgres) GetBattleAllianceStats(region string, battleID int64) ([]BattleAllianceStats, error) {
+	var stats []BattleAllianceStats
+	err := p.db.Where("region = ? AND battle_id = ?", region, battleID).
+		Order("player_count DESC").
+		Find(&stats).Error
+
+	return stats, err
+}
