@@ -13,48 +13,48 @@ import (
 )
 
 type MergedBattleResponse struct {
-	Region        string                `json:"region"`
-	BattleIDs     []int64               `json:"battle_ids"`
-	StartTime     time.Time             `json:"start_time"`
-	EndTime       time.Time             `json:"end_time"`
-	TotalPlayers  int                   `json:"total_players"`
-	TotalKills    int                   `json:"total_kills"`
-	TotalFame     int64                 `json:"total_fame"`
-	AllianceStats []*MergedAllianceStat `json:"alliances"`
-	GuildStats    []*MergedGuildStat    `json:"guilds"`
-	PlayerStats   []*MergedPlayerStat   `json:"players"`
+	Region        string
+	BattleIDs     []int64
+	StartTime     time.Time
+	EndTime       time.Time
+	TotalPlayers  int
+	TotalKills    int
+	TotalFame     int64
+	AllianceStats []*MergedAllianceStat `json:"Alliances"`
+	GuildStats    []*MergedGuildStat    `json:"Guilds"`
+	PlayerStats   []*MergedPlayerStat   `json:"Players"`
 }
 
 type MergedAllianceStat struct {
-	AllianceName string `json:"alliance_name"`
-	PlayerCount  int32  `json:"player_count"`
-	Kills        int32  `json:"kills"`
-	Deaths       int32  `json:"deaths"`
-	KillFame     int64  `json:"kill_fame"`
-	DeathFame    int64  `json:"death_fame"`
-	IP           int32  `json:"ip"`
+	AllianceName string
+	PlayerCount  int32
+	Kills        int32
+	Deaths       int32
+	KillFame     int64
+	DeathFame    int64
+	IP           int32
 }
 
 type MergedGuildStat struct {
-	GuildName    string  `json:"guild_name"`
-	AllianceName *string `json:"alliance_name"`
-	PlayerCount  int32   `json:"player_count"`
-	Kills        int32   `json:"kills"`
-	Deaths       int32   `json:"deaths"`
-	KillFame     int64   `json:"kill_fame"`
-	DeathFame    int64   `json:"death_fame"`
-	IP           int32   `json:"ip"`
+	GuildName    string
+	AllianceName *string
+	PlayerCount  int32
+	Kills        int32
+	Deaths       int32
+	KillFame     int64
+	DeathFame    int64
+	IP           int32
 }
 
 type MergedPlayerStat struct {
-	PlayerName   string  `json:"player_name"`
-	GuildName    *string `json:"guild_name"`
-	AllianceName *string `json:"alliance_name"`
-	Kills        int32   `json:"kills"`
-	Deaths       int32   `json:"deaths"`
-	KillFame     int64   `json:"kill_fame"`
-	DeathFame    int64   `json:"death_fame"`
-	IP           int32   `json:"ip"`
+	PlayerName   string
+	GuildName    *string
+	AllianceName *string
+	Kills        int32
+	Deaths       int32
+	KillFame     int64
+	DeathFame    int64
+	IP           int32
 }
 
 func (s *Server) battle(c *gin.Context) {
