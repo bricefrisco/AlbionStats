@@ -4,12 +4,16 @@
 	import { regionState } from '$lib/regionState.svelte';
 	import { resolve } from '$app/paths';
 
-	let { q = '', type = 'alliance', p = '10', offset = 0, hasMore = $bindable(true), selectedIds = $bindable(new SvelteSet()) } = $props();
+	let { q = '', type = 'alliance', p = '10', offset = 0, hasMore = $bindable(true), selectedIds = $bindable(new SvelteSet()), hasResults = $bindable(false) } = $props();
 	let battles = $state([]);
 	let loading = $state(true);
 	let error = $state(null);
 	let prevOffset = 0;
 	let prevParams = { q, type, p };
+
+	$effect(() => {
+		hasResults = battles.length > 0;
+	});
 
 	function formatDate(dateString) {
 		const date = new Date(dateString);
