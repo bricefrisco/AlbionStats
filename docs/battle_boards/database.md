@@ -97,6 +97,9 @@ CREATE TABLE battle_player_stats (
 
   PRIMARY KEY (region, battle_id, player_name)
 );
+
+CREATE INDEX idx_bas_players_battle
+ON battle_player_stats (region, player_name, battle_id);
 ```
 
 ## Battle queue

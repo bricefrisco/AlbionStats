@@ -43,3 +43,20 @@ func (p *Postgres) UpdateBattlePlayerStats(stats []BattlePlayerStats) error {
 		return nil
 	})
 }
+
+func (p *Postgres) GetBattleSummariesByPlayer(region string, playerName string, limit int, offset int) ([]BattleSummary, error) {
+	var summaries []BattleSummary
+	err := p.db.Raw(`
+		SELECT bs.*
+		FROM battle_player_stats bps
+		JOIN battle_summary bs
+		  ON bs.region = bps.region
+		 AND bs.battle_id = bps.battle_id
+		WHERE bps.region = ?
+		  AND bps.player_name = ?
+		ORDER BY bs.start_time DESC
+		LIMIT ? OFFSET ?
+	`, region, playerName, limit, offset).Scan(&summaries).Error
+
+	return summaries, err
+}

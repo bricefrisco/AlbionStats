@@ -81,6 +81,7 @@ func (s *Server) setupRoutes() {
 	v1.GET("/boards/:region", s.battleSummaries)
 	v1.GET("/boards/guild/:region/:guildName", s.battleGuildSummaries)
 	v1.GET("/boards/alliance/:region/:allianceName", s.battleAllianceSummaries)
+	v1.GET("/boards/player/:region/:playerName", s.battlePlayerSummaries)
 }
 
 func (s *Server) Run(addr string) error {
