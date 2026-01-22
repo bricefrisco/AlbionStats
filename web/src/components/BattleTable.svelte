@@ -71,11 +71,15 @@
 				throw new Error(`HTTP error! status: ${response.status}`);
 			}
 			const data = await response.json();
-			battles = data.map((battle) => ({
-				...battle,
-				AllianceEntries: mapEntries(battle.AllianceNames),
-				GuildEntries: mapEntries(battle.GuildNames)
-			}));
+			if (Array.isArray(data)) {
+				battles = data.map((battle) => ({
+					...battle,
+					AllianceEntries: mapEntries(battle.AllianceNames),
+					GuildEntries: mapEntries(battle.GuildNames)
+				}));
+			} else {
+				battles = [];
+			}
 		} catch (err) {
 			error = err.message;
 			console.error('Failed to fetch battle data:', err);
