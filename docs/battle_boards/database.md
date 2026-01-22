@@ -20,6 +20,10 @@ CREATE TABLE battle_summary (
   PRIMARY KEY(region, battle_id)
 );
 
+CREATE INDEX idx_bs_region_start_desc_inc_players
+ON battle_summary (region, start_time DESC)
+INCLUDE (total_players); -- Used for join with battle_player_stats
+
 CREATE INDEX idx_bs_region_start_time_battle
 ON battle_summary (region, start_time DESC, battle_id);
 ```
