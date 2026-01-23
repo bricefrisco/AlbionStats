@@ -1,15 +1,6 @@
 import { getApiBase } from '$lib/apiBase';
+import { buildBattleBoardsUrl, mapBattleBoardsData } from '$lib/battleBoards';
 const validTypes = new Set(['alliance', 'guild', 'player']);
-
-function mapEntries(list = []) {
-	return (list || []).map((entry) => {
-		const match = entry?.match(/^(.*?)\s*\((\d+)\)$/);
-		return {
-			label: match ? match[1].trim() : entry,
-			count: match ? match[2] : null
-		};
-	});
-}
 
 async function fetchJson(fetch, url) {
 	const response = await fetch(url);
@@ -30,30 +21,18 @@ export const load = async ({ url, fetch }) => {
 	let initialError = null;
 
 	try {
-		let apiUrl;
-		if (type === 'alliance' && q) {
-			apiUrl = new URL(`${getApiBase()}/boards/alliance/${region}/${encodeURIComponent(q)}`);
-			apiUrl.searchParams.set('playerCount', p || '10');
-		} else if (type === 'guild' && q) {
-			apiUrl = new URL(`${getApiBase()}/boards/guild/${region}/${encodeURIComponent(q)}`);
-			apiUrl.searchParams.set('playerCount', p || '10');
-		} else if (type === 'player' && q) {
-			apiUrl = new URL(`${getApiBase()}/boards/player/${region}/${encodeURIComponent(q)}`);
-			apiUrl.searchParams.set('playerCount', p || '10');
-		} else {
-			apiUrl = new URL(`${getApiBase()}/boards/${region}`);
-			apiUrl.searchParams.set('totalPlayers', p || '10');
-		}
+		const apiUrl = buildBattleBoardsUrl({
+			base: getApiBase(),
+			region,
+			type,
+			q,
+			p,
+			offset: 0
+		});
 
 		const data = await fetchJson(fetch, apiUrl.toString());
-		if (Array.isArray(data)) {
-			initialBattles = data.map((battle) => ({
-				...battle,
-				AllianceEntries: mapEntries(battle.AllianceNames),
-				GuildEntries: mapEntries(battle.GuildNames)
-			}));
-			initialHasMore = initialBattles.length >= 20;
-		}
+		initialBattles = mapBattleBoardsData(data);
+		initialHasMore = initialBattles.length >= 20;
 	} catch (err) {
 		initialError = err instanceof Error ? err.message : 'Failed to load battles';
 	}

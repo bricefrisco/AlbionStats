@@ -1,9 +1,9 @@
 <script>
-	import { onMount } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { regionState } from '$lib/regionState.svelte';
 	import { resolve } from '$app/paths';
 	import { formatNumber, formatFame } from '$lib/utils';
+	import { buildBattleBoardsUrl, mapBattleBoardsData } from '$lib/battleBoards';
 	import Table from './Table.svelte';
 	import TableHeader from './TableHeader.svelte';
 	import TableRow from './TableRow.svelte';
@@ -22,12 +22,10 @@
 		initialHasMore = true,
 		initialError = null
 	} = $props();
-	let battles = $state(initialBattles);
-	let error = $state(initialError);
+	let extraBattles = $state([]);
+	let error = $state(null);
 	let prevOffset = 0;
-	let prevParams = { q, type, p };
-	let prevRegion = $state(regionState.value);
-	let hydrated = $state(false);
+	let battles = $derived([...initialBattles, ...extraBattles]);
 
 	$effect(() => {
 		hasResults = battles.length > 0;
@@ -35,14 +33,11 @@
 
 	$effect(() => {
 		hasMore = initialHasMore;
-		if (initialError) {
-			error = initialError;
-		}
+		error = initialError;
 		loading = false;
-	});
-
-	onMount(() => {
-		hydrated = true;
+		prevOffset = 0;
+		extraBattles = [];
+		selectedIds.clear();
 	});
 
 	function formatDate(dateString) {
@@ -52,16 +47,6 @@
 		const hours = String(date.getUTCHours()).padStart(2, '0');
 		const minutes = String(date.getUTCMinutes()).padStart(2, '0');
 		return `${month}/${day} ${hours}:${minutes}`;
-	}
-
-	function mapEntries(list = []) {
-		return (list || []).map((entry) => {
-			const match = entry?.match(/^(.*?)\s*\((\d+)\)$/);
-			return {
-				label: match ? match[1].trim() : entry,
-				count: match ? match[2] : null
-			};
-		});
 	}
 
 	function toggleSelection(id) {
@@ -76,59 +61,32 @@
 		loading = true;
 		error = null;
 		try {
-			let url;
-			if (type === 'alliance' && q) {
-				url = new URL(
-					`https://albionstats.bricefrisco.com/api/boards/alliance/${regionState.value}/${encodeURIComponent(q)}`
-				);
-				url.searchParams.set('playerCount', p || '10');
-			} else if (type === 'guild' && q) {
-				url = new URL(
-					`https://albionstats.bricefrisco.com/api/boards/guild/${regionState.value}/${encodeURIComponent(q)}`
-				);
-				url.searchParams.set('playerCount', p || '10');
-			} else if (type === 'player' && q) {
-				url = new URL(
-					`https://albionstats.bricefrisco.com/api/boards/player/${regionState.value}/${encodeURIComponent(q)}`
-				);
-				url.searchParams.set('playerCount', p || '10');
-			} else {
-				url = new URL(`https://albionstats.bricefrisco.com/api/boards/${regionState.value}`);
-				url.searchParams.set('totalPlayers', p || '10');
-			}
-
-			if (offset > 0) {
-				url.searchParams.set('offset', offset.toString());
-			}
+			const url = buildBattleBoardsUrl({
+				base: 'https://albionstats.bricefrisco.com/api',
+				region: regionState.value,
+				type,
+				q,
+				p,
+				offset
+			});
 
 			const response = await fetch(url.toString());
 			if (!response.ok) {
 				throw new Error(`HTTP error! status: ${response.status}`);
 			}
 			const data = await response.json();
-			if (Array.isArray(data)) {
-				const newBattles = data.map((battle) => ({
-					...battle,
-					AllianceEntries: mapEntries(battle.AllianceNames),
-					GuildEntries: mapEntries(battle.GuildNames)
-				}));
 
-				hasMore = newBattles.length >= 20;
+			const newBattles = mapBattleBoardsData(data);
+			hasMore = newBattles.length >= 20;
 
-				if (offset > 0 && offset > prevOffset) {
-					const existingIds = new Set(battles.map((b) => b.BattleID));
-					const uniqueNewBattles = newBattles.filter((b) => !existingIds.has(b.BattleID));
-					battles = [...battles, ...uniqueNewBattles];
-				} else {
-					battles = newBattles;
-				}
-				prevOffset = offset;
-			} else {
-				hasMore = false;
-				if (offset === 0) {
-					battles = [];
-				}
+			if (offset > 0 && offset > prevOffset) {
+				const existingIds = new Set(
+					[...initialBattles, ...extraBattles].map((b) => b.BattleID)
+				);
+				const uniqueNewBattles = newBattles.filter((b) => !existingIds.has(b.BattleID));
+				extraBattles = [...extraBattles, ...uniqueNewBattles];
 			}
+			prevOffset = offset;
 		} catch (err) {
 			error = err.message;
 			console.error('Failed to fetch battle data:', err);
@@ -138,30 +96,9 @@
 	}
 
 	$effect(() => {
-		// Fetch battles when region or search parameters change
-		const currentParams = { q, type, p };
-		const region = regionState.value;
-		const paramsChanged =
-			currentParams.q !== prevParams.q ||
-			currentParams.type !== prevParams.type ||
-			currentParams.p !== prevParams.p;
-		const regionChanged = region !== prevRegion;
-
-		if (paramsChanged || regionChanged) {
-			battles = [];
-			selectedIds.clear();
-			prevParams = currentParams;
-			prevRegion = region;
-		}
-
-		// Ensure we track these dependencies for the effect
-		offset;
-
-		if (!hydrated) return;
-		if (offset === 0 && battles.length > 0 && !paramsChanged && !regionChanged) {
-			return;
-		}
-
+		// Only fetch on pagination. Initial data comes from SSR.
+		if (offset <= 0) return;
+		if (offset <= prevOffset) return;
 		fetchBattles();
 	});
 </script>
