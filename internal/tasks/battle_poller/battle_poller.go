@@ -229,7 +229,7 @@ func (p *BattlePoller) processPlayerStats(events []tasks.Event) []postgres.Battl
 		}
 
 		if event.Victim.Equipment != nil {
-			if mainHand, exists := event.Killer.Equipment["MainHand"]; mainHand != nil && exists {
+			if mainHand, exists := event.Killer.Equipment["MainHand"]; mainHand != nil && mainHand.Type != "" && exists {
 				if _, ok := playerWeapon[event.Killer.Name]; !ok {
 					playerWeapon[event.Killer.Name] = mainHand.Type
 				}
@@ -246,7 +246,7 @@ func (p *BattlePoller) processPlayerStats(events []tasks.Event) []postgres.Battl
 		}
 
 		if event.Victim.Equipment != nil {
-			if mainHand, exists := event.Victim.Equipment["MainHand"]; mainHand != nil && exists {
+			if mainHand, exists := event.Victim.Equipment["MainHand"]; mainHand != nil && mainHand.Type != "" && exists {
 				if _, ok := playerWeapon[event.Victim.Name]; !ok {
 					playerWeapon[event.Victim.Name] = mainHand.Type
 				}
@@ -264,7 +264,7 @@ func (p *BattlePoller) processPlayerStats(events []tasks.Event) []postgres.Battl
 			}
 
 			if participant.Equipment != nil {
-				if mainHand, exists := participant.Equipment["MainHand"]; mainHand != nil && exists {
+				if mainHand, exists := participant.Equipment["MainHand"]; mainHand != nil && mainHand.Type != "" && exists {
 					if _, ok := playerWeapon[participant.Name]; !ok {
 						playerWeapon[participant.Name] = mainHand.Type
 					}
