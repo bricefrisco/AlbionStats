@@ -273,6 +273,19 @@ func (p *BattlePoller) processPlayerStats(events []tasks.Event) []postgres.Battl
 		}
 	}
 
+	// ...and then group members
+	for _, event := range events {
+		for _, member := range event.GroupMembers {
+			if member.Equipment != nil {
+				if mainHand, exists := member.Equipment["MainHand"]; mainHand != nil && mainHand.Type != "" && exists {
+					if _, ok := playerWeapon[member.Name]; !ok {
+						playerWeapon[member.Name] = mainHand.Type
+					}
+				}
+			}
+		}
+	}
+
 	playerStats := make([]postgres.BattlePlayerStats, 0)
 
 	for name, _ := range playerIp {
