@@ -225,10 +225,10 @@ func (p *BattlePoller) processPlayerStats(events []tasks.Event) []postgres.Battl
 	// Iterate kills first
 	for _, event := range events {
 		if _, ok := playerIp[event.Killer.Name]; !ok {
-			playerIp[event.Killer.Name] = event.Victim.AverageItemPower
+			playerIp[event.Killer.Name] = event.Killer.AverageItemPower
 		}
 
-		if event.Victim.Equipment != nil {
+		if event.Killer.Equipment != nil {
 			if mainHand, exists := event.Killer.Equipment["MainHand"]; mainHand != nil && mainHand.Type != "" && exists {
 				if _, ok := playerWeapon[event.Killer.Name]; !ok {
 					playerWeapon[event.Killer.Name] = mainHand.Type
