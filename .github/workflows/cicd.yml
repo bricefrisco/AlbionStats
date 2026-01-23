@@ -58,9 +58,9 @@ jobs:
           scp albionstats pi:/usr/local/bin/albionstats_temp
           scp -r web/build pi:/usr/local/share/albionstats_web_temp
 
-#      - name: Atomic deployment
-#        run: |
-#          ssh pi "sudo systemctl stop albionstats"
-#          ssh pi "sudo rm -rf /usr/local/share/albionstats_web && sudo mv /usr/local/share/albionstats_web_temp /usr/local/share/albionstats_web"
-#          ssh pi "sudo mv /usr/local/bin/albionstats_temp /usr/local/bin/albionstats && sudo chmod +x /usr/local/bin/albionstats"
-#          ssh pi "sudo systemctl start albionstats"
+      - name: Atomic deployment
+        run: |
+          ssh pi "sudo systemctl stop albionstats"
+          ssh pi "sudo rm -rf /usr/local/share/albionstats_web && sudo mv /usr/local/share/albionstats_web_temp /usr/local/share/albionstats_web"
+          ssh pi "sudo mv /usr/local/bin/albionstats_temp /usr/local/bin/albionstats && sudo chmod +x /usr/local/bin/albionstats"
+          ssh pi "sudo systemctl start albionstats"
