@@ -216,6 +216,7 @@ func (p *BattlePoller) processBattleGuildStats(events []tasks.Event) []postgres.
 func (p *BattlePoller) processPlayerStats(events []tasks.Event) []postgres.BattlePlayerStats {
 	battleId := events[0].BattleID
 
+	all := make(map[string]bool)
 	playerIp := make(map[string]float64)
 	playerDeathFame := make(map[string]int64)
 	playerWeapon := make(map[string]string)
@@ -224,6 +225,7 @@ func (p *BattlePoller) processPlayerStats(events []tasks.Event) []postgres.Battl
 
 	// kills
 	for _, event := range events {
+		all[event.Killer.Name] = true
 		if _, ok := playerIp[event.Killer.Name]; !ok {
 			playerIp[event.Killer.Name] = event.Killer.AverageItemPower
 		}
@@ -237,6 +239,7 @@ func (p *BattlePoller) processPlayerStats(events []tasks.Event) []postgres.Battl
 
 	// deaths
 	for _, event := range events {
+		all[event.Victim.Name] = true
 		playerDeathFame[event.Victim.Name] += event.TotalVictimKillFame
 
 		if _, ok := playerIp[event.Victim.Name]; !ok {
@@ -253,6 +256,7 @@ func (p *BattlePoller) processPlayerStats(events []tasks.Event) []postgres.Battl
 	// participants
 	for _, event := range events {
 		for _, p := range event.Participants {
+			all[p.Name] = true
 			playerDamage[p.Name] += int64(p.DamageDone)
 			playerHeal[p.Name] += int64(p.SupportHealingDone)
 
@@ -271,6 +275,7 @@ func (p *BattlePoller) processPlayerStats(events []tasks.Event) []postgres.Battl
 	// group members (weapon only)
 	for _, event := range events {
 		for _, m := range event.GroupMembers {
+			all[m.Name] = true
 			if eq := m.Equipment; eq != nil {
 				if mh, ok := eq["MainHand"]; ok && mh != nil && mh.Type != "" {
 					playerWeapon[m.Name] = mh.Type
@@ -281,7 +286,7 @@ func (p *BattlePoller) processPlayerStats(events []tasks.Event) []postgres.Battl
 
 	playerStats := make([]postgres.BattlePlayerStats, 0, len(playerIp))
 
-	for name := range playerIp {
+	for name := range all {
 		stat := postgres.BattlePlayerStats{
 			Region:     postgres.Region(p.region),
 			BattleID:   battleId,
