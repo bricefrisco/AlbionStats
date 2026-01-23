@@ -59,13 +59,6 @@ func (s *Server) setupRoutes() {
 		}),
 	))
 
-	// Static front-end files
-	s.router.Static("/_app", "/usr/local/share/albionstats_web/_app")
-	s.router.StaticFile("/robots.txt", "/usr/local/share/albionstats_web/robots.txt")
-	s.router.NoRoute(func(c *gin.Context) {
-		c.File("/usr/local/share/albionstats_web/200.html")
-	})
-
 	// API routes
 	v1 := s.router.Group("/api")
 	v1.GET("/metrics/admin", s.admin)

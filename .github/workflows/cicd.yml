@@ -57,6 +57,11 @@ jobs:
         run: |
           scp albionstats pi:/usr/local/bin/albionstats_temp
           scp -r web/build pi:/usr/local/share/albionstats_web_temp
+          scp web/package.json web/package-lock.json pi:/usr/local/share/albionstats_web_temp/
+
+      - name: Install production deps on Pi
+        run: |
+          ssh pi "cd /usr/local/bin/albionstats_web_temp && npm ci --omit=dev"
 
       - name: Atomic deployment
         run: |
