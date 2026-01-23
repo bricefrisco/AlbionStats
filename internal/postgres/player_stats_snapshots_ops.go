@@ -14,38 +14,38 @@ func (s *Postgres) InsertPlayerStatsSnapshots(stats []PlayerStatsSnapshot) error
 }
 
 type PlayerPvpSeries struct {
-	KillFame  []int64    `json:"kill_fame"`
-	DeathFame []int64    `json:"death_fame"`
-	FameRatio []*float64 `json:"fame_ratio"`
+	KillFame  []int64
+	DeathFame []int64
+	FameRatio []*float64
 }
 
 type PlayerPveSeries struct {
-	Total     []int64 `json:"total"`
-	Royal     []int64 `json:"royal"`
-	Outlands  []int64 `json:"outlands"`
-	Avalon    []int64 `json:"avalon"`
-	Hellgate  []int64 `json:"hellgate"`
-	Corrupted []int64 `json:"corrupted"`
-	Mists     []int64 `json:"mists"`
+	Total     []int64
+	Royal     []int64
+	Outlands  []int64
+	Avalon    []int64
+	Hellgate  []int64
+	Corrupted []int64
+	Mists     []int64
 }
 
 type PlayerGatheringSeries struct {
-	Total    []int64 `json:"total"`
-	Royal    []int64 `json:"royal"`
-	Outlands []int64 `json:"outlands"`
-	Avalon   []int64 `json:"avalon"`
+	Total    []int64
+	Royal    []int64
+	Outlands []int64
+	Avalon   []int64
 }
 
 type PlayerCraftingSeries struct {
-	Total []int64 `json:"total"`
+	Total []int64
 }
 
 type PlayerStatsSeries struct {
-	Timestamps []int64               `json:"timestamps"`
-	Pvp        PlayerPvpSeries       `json:"pvp"`
-	Pve        PlayerPveSeries       `json:"pve"`
-	Gathering  PlayerGatheringSeries `json:"gathering"`
-	Crafting   PlayerCraftingSeries  `json:"crafting"`
+	Timestamps []int64
+	Pvp        PlayerPvpSeries
+	Pve        PlayerPveSeries
+	Gathering  PlayerGatheringSeries
+	Crafting   PlayerCraftingSeries
 }
 
 func (s *Postgres) GetPlayerStatsSeries(region Region, playerID string) (*PlayerStatsSeries, error) {

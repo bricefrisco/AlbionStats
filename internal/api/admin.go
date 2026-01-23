@@ -8,8 +8,8 @@ import (
 
 // AdminStats represents the admin dashboard statistics
 type AdminStats struct {
-	PlayersReadyToPoll int64 `json:"players_ready_to_poll"`
-	PlayersWithErrors  int64 `json:"players_with_errors"`
+	PlayersReadyToPoll int64
+	PlayersWithErrors  int64
 }
 
 func (s *Server) admin(c *gin.Context) {
