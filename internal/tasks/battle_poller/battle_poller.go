@@ -222,22 +222,20 @@ func (p *BattlePoller) processPlayerStats(events []tasks.Event) []postgres.Battl
 	playerDamage := make(map[string]int64)
 	playerHeal := make(map[string]int64)
 
-	// Iterate kills first
+	// kills
 	for _, event := range events {
 		if _, ok := playerIp[event.Killer.Name]; !ok {
 			playerIp[event.Killer.Name] = event.Killer.AverageItemPower
 		}
 
-		if event.Killer.Equipment != nil {
-			if mainHand, exists := event.Killer.Equipment["MainHand"]; mainHand != nil && mainHand.Type != "" && exists {
-				if _, ok := playerWeapon[event.Killer.Name]; !ok {
-					playerWeapon[event.Killer.Name] = mainHand.Type
-				}
+		if eq := event.Killer.Equipment; eq != nil {
+			if mh, ok := eq["MainHand"]; ok && mh != nil && mh.Type != "" {
+				playerWeapon[event.Killer.Name] = mh.Type
 			}
 		}
 	}
 
-	// ...deaths second
+	// deaths
 	for _, event := range events {
 		playerDeathFame[event.Victim.Name] += event.TotalVictimKillFame
 
@@ -245,66 +243,77 @@ func (p *BattlePoller) processPlayerStats(events []tasks.Event) []postgres.Battl
 			playerIp[event.Victim.Name] = event.Victim.AverageItemPower
 		}
 
-		if event.Victim.Equipment != nil {
-			if mainHand, exists := event.Victim.Equipment["MainHand"]; mainHand != nil && mainHand.Type != "" && exists {
-				if _, ok := playerWeapon[event.Victim.Name]; !ok {
-					playerWeapon[event.Victim.Name] = mainHand.Type
-				}
+		if eq := event.Victim.Equipment; eq != nil {
+			if mh, ok := eq["MainHand"]; ok && mh != nil && mh.Type != "" {
+				playerWeapon[event.Victim.Name] = mh.Type
 			}
 		}
 	}
 
-	// ...and then participants
+	// participants
 	for _, event := range events {
-		for _, participant := range event.Participants {
-			playerDamage[participant.Name] += int64(participant.DamageDone)
-			playerHeal[participant.Name] += int64(participant.SupportHealingDone)
-			if _, ok := playerIp[participant.Name]; !ok {
-				playerIp[participant.Name] = participant.AverageItemPower
+		for _, p := range event.Participants {
+			playerDamage[p.Name] += int64(p.DamageDone)
+			playerHeal[p.Name] += int64(p.SupportHealingDone)
+
+			if _, ok := playerIp[p.Name]; !ok {
+				playerIp[p.Name] = p.AverageItemPower
 			}
 
-			if participant.Equipment != nil {
-				if mainHand, exists := participant.Equipment["MainHand"]; mainHand != nil && mainHand.Type != "" && exists {
-					if _, ok := playerWeapon[participant.Name]; !ok {
-						playerWeapon[participant.Name] = mainHand.Type
-					}
+			if eq := p.Equipment; eq != nil {
+				if mh, ok := eq["MainHand"]; ok && mh != nil && mh.Type != "" {
+					playerWeapon[p.Name] = mh.Type
 				}
 			}
 		}
 	}
 
-	// ...and then group members
+	// group members (weapon only)
 	for _, event := range events {
-		for _, member := range event.GroupMembers {
-			if member.Equipment != nil {
-				if mainHand, exists := member.Equipment["MainHand"]; mainHand != nil && mainHand.Type != "" && exists {
-					if _, ok := playerWeapon[member.Name]; !ok {
-						playerWeapon[member.Name] = mainHand.Type
-					}
+		for _, m := range event.GroupMembers {
+			if eq := m.Equipment; eq != nil {
+				if mh, ok := eq["MainHand"]; ok && mh != nil && mh.Type != "" {
+					playerWeapon[m.Name] = mh.Type
 				}
 			}
 		}
 	}
 
-	playerStats := make([]postgres.BattlePlayerStats, 0)
+	playerStats := make([]postgres.BattlePlayerStats, 0, len(playerIp))
 
-	for name, _ := range playerIp {
-		deathFame := playerDeathFame[name]
-		ip := int32(playerIp[name])
-		weapon := playerWeapon[name]
-		damage := playerDamage[name]
-		heal := playerHeal[name]
-
-		playerStats = append(playerStats, postgres.BattlePlayerStats{
+	for name := range playerIp {
+		stat := postgres.BattlePlayerStats{
 			Region:     postgres.Region(p.region),
 			BattleID:   battleId,
 			PlayerName: name,
-			DeathFame:  &deathFame,
-			IP:         &ip,
-			Weapon:     &weapon,
-			Damage:     &damage,
-			Heal:       &heal,
-		})
+		}
+
+		if v, ok := playerDeathFame[name]; ok {
+			v := v
+			stat.DeathFame = &v
+		}
+
+		if v, ok := playerIp[name]; ok {
+			ip := int32(v)
+			stat.IP = &ip
+		}
+
+		if v, ok := playerWeapon[name]; ok {
+			v := v
+			stat.Weapon = &v
+		}
+
+		if v, ok := playerDamage[name]; ok {
+			v := v
+			stat.Damage = &v
+		}
+
+		if v, ok := playerHeal[name]; ok {
+			v := v
+			stat.Heal = &v
+		}
+
+		playerStats = append(playerStats, stat)
 	}
 
 	return playerStats
