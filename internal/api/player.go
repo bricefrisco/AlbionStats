@@ -7,16 +7,16 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"golang.org/x/sync/errgroup"
 	"gorm.io/gorm"
 )
 
 type PlayerStatsResponse struct {
-	Player    *postgres.PlayerStatsLatest
-	Pve       *postgres.PlayerPveStats
-	Pvp       *postgres.PlayerPvpStats
-	Gathering *postgres.PlayerGatheringStats
-	Crafting  *postgres.PlayerCraftingStats
+	Player     *postgres.PlayerStatsLatest
+	Timestamps []int64
+	Pve        *postgres.PlayerPveSeries
+	Pvp        *postgres.PlayerPvpSeries
+	Gathering  *postgres.PlayerGatheringSeries
+	Crafting   *postgres.PlayerCraftingSeries
 }
 
 func (s *Server) player(c *gin.Context) {
@@ -49,50 +49,19 @@ func (s *Server) player(c *gin.Context) {
 		return
 	}
 
-	var (
-		pveStats       *postgres.PlayerPveStats
-		pvpStats       *postgres.PlayerPvpStats
-		gatheringStats *postgres.PlayerGatheringStats
-		craftingStats  *postgres.PlayerCraftingStats
-	)
-
-	g, _ := errgroup.WithContext(c.Request.Context())
-
-	g.Go(func() error {
-		var err error
-		pveStats, err = s.postgres.GetPlayerPveStats(region, player.PlayerID)
-		return err
-	})
-
-	g.Go(func() error {
-		var err error
-		pvpStats, err = s.postgres.GetPlayerPvpStats(region, player.PlayerID)
-		return err
-	})
-
-	g.Go(func() error {
-		var err error
-		gatheringStats, err = s.postgres.GetPlayerGatheringStats(region, player.PlayerID)
-		return err
-	})
-
-	g.Go(func() error {
-		var err error
-		craftingStats, err = s.postgres.GetPlayerCraftingStats(region, player.PlayerID)
-		return err
-	})
-
-	if err := g.Wait(); err != nil {
+	statsSeries, err := s.postgres.GetPlayerStatsSeries(region, player.PlayerID)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch player stats"})
 		return
 	}
 
 	response := PlayerStatsResponse{
-		Player:    player,
-		Pve:       pveStats,
-		Pvp:       pvpStats,
-		Gathering: gatheringStats,
-		Crafting:  craftingStats,
+		Player:     player,
+		Timestamps: statsSeries.Timestamps,
+		Pve:        &statsSeries.Pve,
+		Pvp:        &statsSeries.Pvp,
+		Gathering:  &statsSeries.Gathering,
+		Crafting:   &statsSeries.Crafting,
 	}
 
 	c.JSON(http.StatusOK, response)

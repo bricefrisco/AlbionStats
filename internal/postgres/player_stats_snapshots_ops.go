@@ -13,40 +13,44 @@ func (s *Postgres) InsertPlayerStatsSnapshots(stats []PlayerStatsSnapshot) error
 	return s.db.Create(&stats).Error
 }
 
-type PlayerPvpStats struct {
-	Timestamps []int64     `json:"timestamps"`
-	KillFame   []int64     `json:"kill_fame"`
-	DeathFame  []int64     `json:"death_fame"`
-	FameRatio  []*float64  `json:"fame_ratio"`
+type PlayerPvpSeries struct {
+	KillFame  []int64    `json:"kill_fame"`
+	DeathFame []int64    `json:"death_fame"`
+	FameRatio []*float64 `json:"fame_ratio"`
 }
 
-type PlayerPveStats struct {
-	Timestamps []int64 `json:"timestamps"`
-	Total      []int64 `json:"total"`
-	Royal      []int64 `json:"royal"`
-	Outlands   []int64 `json:"outlands"`
-	Avalon     []int64 `json:"avalon"`
-	Hellgate   []int64 `json:"hellgate"`
-	Corrupted  []int64 `json:"corrupted"`
-	Mists      []int64 `json:"mists"`
+type PlayerPveSeries struct {
+	Total     []int64 `json:"total"`
+	Royal     []int64 `json:"royal"`
+	Outlands  []int64 `json:"outlands"`
+	Avalon    []int64 `json:"avalon"`
+	Hellgate  []int64 `json:"hellgate"`
+	Corrupted []int64 `json:"corrupted"`
+	Mists     []int64 `json:"mists"`
 }
 
-type PlayerGatheringStats struct {
-	Timestamps []int64 `json:"timestamps"`
-	Total      []int64 `json:"total"`
-	Royal      []int64 `json:"royal"`
-	Outlands   []int64 `json:"outlands"`
-	Avalon     []int64 `json:"avalon"`
+type PlayerGatheringSeries struct {
+	Total    []int64 `json:"total"`
+	Royal    []int64 `json:"royal"`
+	Outlands []int64 `json:"outlands"`
+	Avalon   []int64 `json:"avalon"`
 }
 
-type PlayerCraftingStats struct {
-	Timestamps []int64 `json:"timestamps"`
-	Total      []int64 `json:"total"`
+type PlayerCraftingSeries struct {
+	Total []int64 `json:"total"`
 }
 
-func (s *Postgres) GetPlayerPvpStats(region Region, playerID string) (*PlayerPvpStats, error) {
+type PlayerStatsSeries struct {
+	Timestamps []int64               `json:"timestamps"`
+	Pvp        PlayerPvpSeries       `json:"pvp"`
+	Pve        PlayerPveSeries       `json:"pve"`
+	Gathering  PlayerGatheringSeries `json:"gathering"`
+	Crafting   PlayerCraftingSeries  `json:"crafting"`
+}
+
+func (s *Postgres) GetPlayerStatsSeries(region Region, playerID string) (*PlayerStatsSeries, error) {
 	rows, err := s.db.
-		Raw("SELECT ts, kill_fame, death_fame, fame_ratio FROM player_stats_snapshots WHERE region = ? AND player_id = ? ORDER BY ts", region, playerID).
+		Raw("SELECT ts, kill_fame, death_fame, fame_ratio, pve_total, pve_royal, pve_outlands, pve_avalon, pve_hellgate, pve_corrupted, pve_mists, gather_all_total, gather_all_royal, gather_all_outlands, gather_all_avalon, crafting_total FROM player_stats_snapshots WHERE region = ? AND player_id = ? ORDER BY ts", region, playerID).
 		Rows()
 	if err != nil {
 		return nil, err
@@ -54,144 +58,76 @@ func (s *Postgres) GetPlayerPvpStats(region Region, playerID string) (*PlayerPvp
 	defer rows.Close()
 
 	var (
-		stats     PlayerPvpStats
-		ts        time.Time
-		killFame  int64
-		deathFame int64
-		fameRatio sql.NullFloat64
+		series     PlayerStatsSeries
+		ts         time.Time
+		killFame   int64
+		deathFame  int64
+		fameRatio  sql.NullFloat64
+		pveTotal   int64
+		pveRoyal   int64
+		pveOut     int64
+		pveAvalon  int64
+		pveHell    int64
+		pveCorr    int64
+		pveMists   int64
+		gathTotal  int64
+		gathRoyal  int64
+		gathOut    int64
+		gathAval   int64
+		craftTotal int64
 	)
 
 	for rows.Next() {
-		if err := rows.Scan(&ts, &killFame, &deathFame, &fameRatio); err != nil {
+		if err := rows.Scan(
+			&ts,
+			&killFame,
+			&deathFame,
+			&fameRatio,
+			&pveTotal,
+			&pveRoyal,
+			&pveOut,
+			&pveAvalon,
+			&pveHell,
+			&pveCorr,
+			&pveMists,
+			&gathTotal,
+			&gathRoyal,
+			&gathOut,
+			&gathAval,
+			&craftTotal,
+		); err != nil {
 			return nil, err
 		}
 
-		stats.Timestamps = append(stats.Timestamps, ts.UnixMilli())
-		stats.KillFame = append(stats.KillFame, killFame)
-		stats.DeathFame = append(stats.DeathFame, deathFame)
-
+		series.Timestamps = append(series.Timestamps, ts.UnixMilli())
+		series.Pvp.KillFame = append(series.Pvp.KillFame, killFame)
+		series.Pvp.DeathFame = append(series.Pvp.DeathFame, deathFame)
 		if fameRatio.Valid {
 			value := fameRatio.Float64
-			stats.FameRatio = append(stats.FameRatio, &value)
+			series.Pvp.FameRatio = append(series.Pvp.FameRatio, &value)
 		} else {
-			stats.FameRatio = append(stats.FameRatio, nil)
+			series.Pvp.FameRatio = append(series.Pvp.FameRatio, nil)
 		}
+
+		series.Pve.Total = append(series.Pve.Total, pveTotal)
+		series.Pve.Royal = append(series.Pve.Royal, pveRoyal)
+		series.Pve.Outlands = append(series.Pve.Outlands, pveOut)
+		series.Pve.Avalon = append(series.Pve.Avalon, pveAvalon)
+		series.Pve.Hellgate = append(series.Pve.Hellgate, pveHell)
+		series.Pve.Corrupted = append(series.Pve.Corrupted, pveCorr)
+		series.Pve.Mists = append(series.Pve.Mists, pveMists)
+
+		series.Gathering.Total = append(series.Gathering.Total, gathTotal)
+		series.Gathering.Royal = append(series.Gathering.Royal, gathRoyal)
+		series.Gathering.Outlands = append(series.Gathering.Outlands, gathOut)
+		series.Gathering.Avalon = append(series.Gathering.Avalon, gathAval)
+
+		series.Crafting.Total = append(series.Crafting.Total, craftTotal)
 	}
 
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 
-	return &stats, nil
-}
-
-func (s *Postgres) GetPlayerPveStats(region Region, playerID string) (*PlayerPveStats, error) {
-	rows, err := s.db.
-		Raw("SELECT ts, pve_total, pve_royal, pve_outlands, pve_avalon, pve_hellgate, pve_corrupted, pve_mists FROM player_stats_snapshots WHERE region = ? AND player_id = ? ORDER BY ts", region, playerID).
-		Rows()
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var (
-		stats      PlayerPveStats
-		ts         time.Time
-		total      int64
-		royal      int64
-		outlands   int64
-		avalon     int64
-		hellgate   int64
-		corrupted  int64
-		mists      int64
-	)
-
-	for rows.Next() {
-		if err := rows.Scan(&ts, &total, &royal, &outlands, &avalon, &hellgate, &corrupted, &mists); err != nil {
-			return nil, err
-		}
-
-		stats.Timestamps = append(stats.Timestamps, ts.UnixMilli())
-		stats.Total = append(stats.Total, total)
-		stats.Royal = append(stats.Royal, royal)
-		stats.Outlands = append(stats.Outlands, outlands)
-		stats.Avalon = append(stats.Avalon, avalon)
-		stats.Hellgate = append(stats.Hellgate, hellgate)
-		stats.Corrupted = append(stats.Corrupted, corrupted)
-		stats.Mists = append(stats.Mists, mists)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return &stats, nil
-}
-
-func (s *Postgres) GetPlayerGatheringStats(region Region, playerID string) (*PlayerGatheringStats, error) {
-	rows, err := s.db.
-		Raw("SELECT ts, gather_all_total, gather_all_royal, gather_all_outlands, gather_all_avalon FROM player_stats_snapshots WHERE region = ? AND player_id = ? ORDER BY ts", region, playerID).
-		Rows()
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var (
-		stats    PlayerGatheringStats
-		ts       time.Time
-		total    int64
-		royal    int64
-		outlands int64
-		avalon   int64
-	)
-
-	for rows.Next() {
-		if err := rows.Scan(&ts, &total, &royal, &outlands, &avalon); err != nil {
-			return nil, err
-		}
-
-		stats.Timestamps = append(stats.Timestamps, ts.UnixMilli())
-		stats.Total = append(stats.Total, total)
-		stats.Royal = append(stats.Royal, royal)
-		stats.Outlands = append(stats.Outlands, outlands)
-		stats.Avalon = append(stats.Avalon, avalon)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return &stats, nil
-}
-
-func (s *Postgres) GetPlayerCraftingStats(region Region, playerID string) (*PlayerCraftingStats, error) {
-	rows, err := s.db.
-		Raw("SELECT ts, crafting_total FROM player_stats_snapshots WHERE region = ? AND player_id = ? ORDER BY ts", region, playerID).
-		Rows()
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var (
-		stats PlayerCraftingStats
-		ts    time.Time
-		total int64
-	)
-
-	for rows.Next() {
-		if err := rows.Scan(&ts, &total); err != nil {
-			return nil, err
-		}
-
-		stats.Timestamps = append(stats.Timestamps, ts.UnixMilli())
-		stats.Total = append(stats.Total, total)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return &stats, nil
+	return &series, nil
 }
