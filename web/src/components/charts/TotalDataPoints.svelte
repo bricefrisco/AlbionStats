@@ -5,10 +5,12 @@
 	import ChartError from './ChartError.svelte';
 	import SubHeader from '../SubHeader.svelte';
 
-	let timestamps = [];
-	let values = [];
-	let loading = true;
-	let error = null;
+	let { data = null } = $props();
+
+	let timestamps = $state(data?.timestamps || []);
+	let values = $state(data?.values || []);
+	let loading = $state(!data);
+	let error = $state(data?.error || null);
 
 	async function fetchData() {
 		try {
@@ -29,8 +31,18 @@
 		}
 	}
 
+	$effect(() => {
+		if (!data) return;
+		timestamps = data.timestamps || [];
+		values = data.values || [];
+		error = data.error || null;
+		loading = false;
+	});
+
 	onMount(() => {
-		fetchData();
+		if (!data) {
+			fetchData();
+		}
 	});
 </script>
 

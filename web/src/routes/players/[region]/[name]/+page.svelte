@@ -1,8 +1,7 @@
 <script>
-	import { page } from '$app/stores';
-	import { untrack } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import { page } from '$app/state';
 	import Page from '$components/Page.svelte';
 	import PageHeader from '$components/PageHeader.svelte';
 	import SubHeader from '$components/SubHeader.svelte';
@@ -15,35 +14,23 @@
 	import PlayerGatheringCharts from '$components/charts/PlayerGatheringCharts.svelte';
 	import PlayerCraftingCharts from '$components/charts/PlayerCraftingCharts.svelte';
 
+	let { data } = $props();
+
 	// Get parameters from URL
-	let region = $derived($page.params.region);
-	let playerName = $derived($page.params.name);
-	let decodedName = $derived(playerName ? decodeURIComponent(playerName) : '');
+	let region = $derived(data.region);
+	let decodedName = $derived(data.decodedName);
 
 	// Validate region
-	let validRegion = $derived(['americas', 'europe', 'asia'].includes(region));
-
-	// Fetch player data when route parameters change
-	$effect(() => {
-		if (validRegion && decodedName) {
-			untrack(() => {
-				searchName = decodedName;
-				playerData = null;
-				loading = true;
-				error = null;
-				fetchPlayerData();
-			});
-		}
-	});
+	let validRegion = $derived(data.validRegion);
 
 	// Player data
-	let searchName = $state(decodedName);
-	let playerData = $state(null);
-	let loading = $state(true);
-	let error = $state(null);
+	let searchName = $derived(decodedName);
+	let playerData = $derived(data.playerData);
+	let loading = $derived(data.loading);
+	let error = $derived(data.playerError);
 
 	// Active tab state
-	let activeTab = $derived($page.url.searchParams.get('tab') || 'pvp');
+	let activeTab = $derived(data.activeTab || 'pvp');
 
 	// Tab configuration
 	const tabs = [
@@ -55,33 +42,14 @@
 
 	function handleTabChange(detail) {
 		const newTabId = detail.tabId;
-		const url = new URL($page.url);
+		const url = new URL(page.url);
 		url.searchParams.set('tab', newTabId);
 		goto(resolve(url.pathname + url.search), { replaceState: true, noScroll: true });
 	}
 
-	async function fetchPlayerData() {
-		try {
-			const response = await fetch(
-				`https://albionstats.bricefrisco.com/api/players/${region}/${encodeURIComponent(decodedName)}`
-			);
-
-			if (response.status === 404) {
-				error = 'Player not found';
-				return;
-			}
-
-			if (!response.ok) {
-				throw new Error(`HTTP error! status: ${response.status}`);
-			}
-
-			playerData = await response.json();
-		} catch (err) {
-			error = err.message;
-			console.error('Failed to fetch player data:', err);
-		} finally {
-			loading = false;
-		}
+	function handleSelectPlayer(player) {
+		searchName = player.name;
+		goto(resolve(`/players/${region}/${encodeURIComponent(player.name)}`));
 	}
 </script>
 
@@ -89,7 +57,7 @@
 	<div class="mb-4">
 		<PlayerSearchBar
 			bind:value={searchName}
-			onselect={(p) => goto(resolve(`/players/${region}/${encodeURIComponent(p.name)}`))}
+			onselect={handleSelectPlayer}
 			placeholder="Player name"
 		/>
 	</div>
@@ -135,7 +103,7 @@
 			<div class="mt-4">
 				{#if activeTab === 'pvp'}
 					{#if playerData}
-						<PlayerPvPCharts {region} playerId={playerData.PlayerID} />
+						<PlayerPvPCharts {region} playerId={playerData.PlayerID} data={data.metrics?.pvp} />
 					{:else}
 						<div class="py-12 text-center text-gray-500 dark:text-gray-400">
 							<div class="mb-2 text-lg font-medium">Loading PvP Data...</div>
@@ -143,7 +111,7 @@
 					{/if}
 				{:else if activeTab === 'pve'}
 					{#if playerData}
-						<PlayerPvECharts {region} playerId={playerData.PlayerID} />
+						<PlayerPvECharts {region} playerId={playerData.PlayerID} data={data.metrics?.pve} />
 					{:else}
 						<div class="py-12 text-center text-gray-500 dark:text-gray-400">
 							<div class="mb-2 text-lg font-medium">Loading PvE Data...</div>
@@ -151,7 +119,7 @@
 					{/if}
 				{:else if activeTab === 'gathering'}
 					{#if playerData}
-						<PlayerGatheringCharts {region} playerId={playerData.PlayerID} />
+						<PlayerGatheringCharts {region} playerId={playerData.PlayerID} data={data.metrics?.gathering} />
 					{:else}
 						<div class="py-12 text-center text-gray-500 dark:text-gray-400">
 							<div class="mb-2 text-lg font-medium">Loading Gathering Data...</div>
@@ -159,7 +127,7 @@
 					{/if}
 				{:else if activeTab === 'crafting'}
 					{#if playerData}
-						<PlayerCraftingCharts {region} playerId={playerData.PlayerID} />
+						<PlayerCraftingCharts {region} playerId={playerData.PlayerID} data={data.metrics?.crafting} />
 					{:else}
 						<div class="py-12 text-center text-gray-500 dark:text-gray-400">
 							<div class="mb-2 text-lg font-medium">Loading Crafting Data...</div>

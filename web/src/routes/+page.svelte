@@ -6,6 +6,8 @@
 	import PlayersTracked from '$components/charts/PlayersTracked.svelte';
 	import TotalDataPoints from '$components/charts/TotalDataPoints.svelte';
 	import SubHeader from '$components/SubHeader.svelte';
+
+	let { data } = $props();
 </script>
 
 <Page>
@@ -64,8 +66,8 @@
 	</Typography>
 
 	<div class="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-2">
-		<PlayersTracked />
-		<TotalDataPoints />
+		<PlayersTracked data={data.playersTracked} />
+		<TotalDataPoints data={data.totalDataPoints} />
 	</div>
 
 	<SubHeader title="About" classes="mt-8" />

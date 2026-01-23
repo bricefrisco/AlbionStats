@@ -1,7 +1,5 @@
 <script>
 	import { onMount } from 'svelte';
-	import Chart from 'chart.js/auto';
-	import 'chartjs-adapter-date-fns';
 
 	let {
 		timestamps = [],
@@ -47,19 +45,20 @@
 		}
 	}
 
-	// Chart data reactive to props
-	const data = $derived({
-		labels: timestamps,
-		datasets: [
-			{
-				label,
-				data: values,
-				borderColor: color,
-				backgroundColor: 'rgba(75, 192, 192, 0.2)',
-				tension: 0.4
-			}
-		]
-	});
+	function buildData() {
+		return {
+			labels: Array.from(timestamps || []),
+			datasets: [
+				{
+					label,
+					data: Array.from(values || []),
+					borderColor: color,
+					backgroundColor: 'rgba(75, 192, 192, 0.2)',
+					tension: 0.4
+				}
+			]
+		};
+	}
 
 	const options = $derived({
 		responsive: true,
@@ -112,14 +111,21 @@
 		}
 	});
 
-	onMount(() => {
-		if (canvas) {
-			chart = new Chart(canvas, {
-				type: 'line',
-				data,
-				options
-			});
+	onMount(async () => {
+		if (!canvas) {
+			return;
 		}
+
+		const [{ default: Chart }] = await Promise.all([
+			import('chart.js/auto'),
+			import('chartjs-adapter-date-fns')
+		]);
+
+		chart = new Chart(canvas, {
+			type: 'line',
+			data: buildData(),
+			options
+		});
 
 		// Watch for theme changes
 		const observer = new MutationObserver(() => {
@@ -152,8 +158,9 @@
 			chart.options.scales.y.grid.color = gridColor;
 			chart.options.scales.x.grid.color = gridColor;
 		}
-		if (data && data.labels && data.labels.length > 0) {
-			chart.data = data;
+		const nextData = buildData();
+		if (nextData.labels.length > 0) {
+			chart.data = nextData;
 		}
 		chart.update();
 	});

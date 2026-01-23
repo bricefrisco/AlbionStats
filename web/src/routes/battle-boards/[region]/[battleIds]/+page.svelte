@@ -1,5 +1,4 @@
 <script>
-	import { untrack } from 'svelte';
 	import Page from '$components/Page.svelte';
 	import PageHeader from '$components/PageHeader.svelte';
 	import Typography from '$components/Typography.svelte';
@@ -8,14 +7,14 @@
 	import BBGuilds from '$components/BBGuilds.svelte';
 	import BBPlayers from '$components/BBPlayers.svelte';
 	import BBKills from '$components/BBKills.svelte';
-	import { page } from '$app/state';
 
-	let region = $derived(page.params.region);
-	let battleIds = $derived(page.params.battleIds);
+	let { data } = $props();
 
-	let data = $state(null);
-	let loading = $state(true);
-	let error = $state(null);
+	let region = $derived(data.region);
+	let battleIds = $derived(data.battleIds);
+	let battleData = $derived(data.battleData);
+	let loading = $derived(data.loading);
+	let error = $derived(data.error);
 
 	// Tabs state
 	const tabs = [
@@ -27,34 +26,9 @@
 	let activeTab = $state('alliances');
 
 	// Pagination state
-	let alliances = $derived(data?.Alliances || []);
-	let guilds = $derived(data?.Guilds || []);
-	let players = $derived(data?.Players || []);
-
-	async function fetchBattles() {
-		loading = true;
-		error = null;
-		try {
-			const response = await fetch(
-				`https://albionstats.bricefrisco.com/api/battles/${region}/${battleIds}`
-			);
-			if (!response.ok) {
-				throw new Error(`HTTP error! status: ${response.status}`);
-			}
-			data = await response.json();
-		} catch (err) {
-			error = err.message;
-			console.error('Failed to fetch battle data:', err);
-		} finally {
-			loading = false;
-		}
-	}
-
-	$effect(() => {
-		if (region && battleIds) {
-			untrack(() => fetchBattles());
-		}
-	});
+	let alliances = $derived(battleData?.Alliances || []);
+	let guilds = $derived(battleData?.Guilds || []);
+	let players = $derived(battleData?.Players || []);
 </script>
 
 <Page>
@@ -66,7 +40,7 @@
 		<p>Loading battle data...</p>
 	{:else if error}
 		<p class="text-red-600">{error}</p>
-	{:else if data}
+	{:else if battleData}
 		<div class="mt-8">
 			<Tabs {tabs} bind:activeTab />
 		</div>

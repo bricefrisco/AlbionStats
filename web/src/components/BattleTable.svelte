@@ -1,4 +1,5 @@
 <script>
+	import { onMount } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { regionState } from '$lib/regionState.svelte';
 	import { resolve } from '$app/paths';
@@ -8,14 +9,40 @@
 	import TableRow from './TableRow.svelte';
 	import TableData from './TableData.svelte';
 
-	let { q = '', type = 'alliance', p = '10', offset = 0, hasMore = $bindable(true), loading = $bindable(true), selectedIds = $bindable(new SvelteSet()), hasResults = $bindable(false) } = $props();
-	let battles = $state([]);
-	let error = $state(null);
+	let {
+		q = '',
+		type = 'alliance',
+		p = '10',
+		offset = 0,
+		hasMore = $bindable(true),
+		loading = $bindable(true),
+		selectedIds = $bindable(new SvelteSet()),
+		hasResults = $bindable(false),
+		initialBattles = [],
+		initialHasMore = true,
+		initialError = null
+	} = $props();
+	let battles = $state(initialBattles);
+	let error = $state(initialError);
 	let prevOffset = 0;
 	let prevParams = { q, type, p };
+	let prevRegion = $state(regionState.value);
+	let hydrated = $state(false);
 
 	$effect(() => {
 		hasResults = battles.length > 0;
+	});
+
+	$effect(() => {
+		hasMore = initialHasMore;
+		if (initialError) {
+			error = initialError;
+		}
+		loading = false;
+	});
+
+	onMount(() => {
+		hydrated = true;
 	});
 
 	function formatDate(dateString) {
@@ -113,15 +140,27 @@
 	$effect(() => {
 		// Fetch battles when region or search parameters change
 		const currentParams = { q, type, p };
-		if (currentParams.q !== prevParams.q || currentParams.type !== prevParams.type || currentParams.p !== prevParams.p) {
+		const region = regionState.value;
+		const paramsChanged =
+			currentParams.q !== prevParams.q ||
+			currentParams.type !== prevParams.type ||
+			currentParams.p !== prevParams.p;
+		const regionChanged = region !== prevRegion;
+
+		if (paramsChanged || regionChanged) {
 			battles = [];
 			selectedIds.clear();
 			prevParams = currentParams;
+			prevRegion = region;
 		}
 
 		// Ensure we track these dependencies for the effect
-		regionState.value;
 		offset;
+
+		if (!hydrated) return;
+		if (offset === 0 && battles.length > 0 && !paramsChanged && !regionChanged) {
+			return;
+		}
 
 		fetchBattles();
 	});

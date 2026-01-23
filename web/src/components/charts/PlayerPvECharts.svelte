@@ -1,18 +1,17 @@
 <script>
-	import { onMount } from 'svelte';
 	import Chart from './Chart.svelte';
 	import ChartLoading from './ChartLoading.svelte';
 	import ChartError from './ChartError.svelte';
 	import SubHeader from '../SubHeader.svelte';
 
 	// Props
-	export let region = '';
-	export let playerId = '';
+	let { region = '', playerId = '', data = null } = $props();
 
 	// Data state
-	let data = null;
-	let loading = true;
-	let error = null;
+	let chartData = $state(data?.data || null);
+	let loading = $state(!data);
+	let error = $state(data?.error || null);
+	let lastKey = $state('');
 
 	async function fetchPveData() {
 		try {
@@ -27,7 +26,7 @@
 				throw new Error(`HTTP error! status: ${response.status}`);
 			}
 
-			data = await response.json();
+			chartData = await response.json();
 		} catch (err) {
 			error = err.message;
 			console.error('Failed to fetch PvE data:', err);
@@ -36,10 +35,20 @@
 		}
 	}
 
-	// Fetch data when props change
-	$: if (region && playerId) {
+	$effect(() => {
+		if (data) {
+			chartData = data.data || null;
+			error = data.error || null;
+			loading = false;
+			return;
+		}
+
+		if (!region || !playerId) return;
+		const key = `${region}:${playerId}`;
+		if (key === lastKey) return;
+		lastKey = key;
 		fetchPveData();
-	}
+	});
 </script>
 
 <div class="space-y-6">
@@ -60,14 +69,14 @@
 		>
 			<ChartError {error} />
 		</div>
-	{:else if data}
+	{:else if chartData}
 		<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
 			<div>
 				<SubHeader title="Total PvE Fame" classes="mb-4" />
-				{#if data.total && data.total.length > 0}
+				{#if chartData.total && chartData.total.length > 0}
 					<Chart
-						timestamps={data.timestamps}
-						values={data.total}
+						timestamps={chartData.timestamps}
+						values={chartData.total}
 						label="Total PvE Fame"
 						height="h-40"
 					/>
@@ -80,10 +89,10 @@
 
 			<div>
 				<SubHeader title="Royal PvE Fame" classes="mb-4" />
-				{#if data.royal && data.royal.length > 0}
+				{#if chartData.royal && chartData.royal.length > 0}
 					<Chart
-						timestamps={data.timestamps}
-						values={data.royal}
+						timestamps={chartData.timestamps}
+						values={chartData.royal}
 						label="Royal PvE Fame"
 						height="h-40"
 					/>
@@ -96,10 +105,10 @@
 
 			<div>
 				<SubHeader title="Outlands PvE Fame" classes="mb-4" />
-				{#if data.outlands && data.outlands.length > 0}
+				{#if chartData.outlands && chartData.outlands.length > 0}
 					<Chart
-						timestamps={data.timestamps}
-						values={data.outlands}
+						timestamps={chartData.timestamps}
+						values={chartData.outlands}
 						label="Outlands PvE Fame"
 						height="h-40"
 					/>
@@ -112,10 +121,10 @@
 
 			<div>
 				<SubHeader title="Avalon PvE Fame" classes="mb-4" />
-				{#if data.avalon && data.avalon.length > 0}
+				{#if chartData.avalon && chartData.avalon.length > 0}
 					<Chart
-						timestamps={data.timestamps}
-						values={data.avalon}
+						timestamps={chartData.timestamps}
+						values={chartData.avalon}
 						label="Avalon PvE Fame"
 						height="h-40"
 					/>
@@ -128,10 +137,10 @@
 
 			<div>
 				<SubHeader title="Hellgate PvE Fame" classes="mb-4" />
-				{#if data.hellgate && data.hellgate.length > 0}
+				{#if chartData.hellgate && chartData.hellgate.length > 0}
 					<Chart
-						timestamps={data.timestamps}
-						values={data.hellgate}
+						timestamps={chartData.timestamps}
+						values={chartData.hellgate}
 						label="Hellgate PvE Fame"
 						height="h-40"
 					/>
@@ -144,10 +153,10 @@
 
 			<div>
 				<SubHeader title="Corrupted PvE Fame" classes="mb-4" />
-				{#if data.corrupted && data.corrupted.length > 0}
+				{#if chartData.corrupted && chartData.corrupted.length > 0}
 					<Chart
-						timestamps={data.timestamps}
-						values={data.corrupted}
+						timestamps={chartData.timestamps}
+						values={chartData.corrupted}
 						label="Corrupted PvE Fame"
 						height="h-40"
 					/>
@@ -160,10 +169,10 @@
 
 			<div>
 				<SubHeader title="Mists PvE Fame" classes="mb-4" />
-				{#if data.mists && data.mists.length > 0}
+				{#if chartData.mists && chartData.mists.length > 0}
 					<Chart
-						timestamps={data.timestamps}
-						values={data.mists}
+						timestamps={chartData.timestamps}
+						values={chartData.mists}
 						label="Mists PvE Fame"
 						height="h-40"
 					/>

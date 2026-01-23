@@ -13,13 +13,15 @@
 	import { resolve } from '$app/paths';
 	import { SvelteSet } from 'svelte/reactivity';
 
-	let searchQuery = $state(page.url.searchParams.get('q') || '');
-	let searchType = $state(page.url.searchParams.get('type') || 'alliance');
-	let minPlayers = $state(page.url.searchParams.get('p') || '10');
+	let { data } = $props();
+
+	let searchQuery = $state(data.q);
+	let searchType = $state(data.type);
+	let minPlayers = $state(data.p);
 	let offset = $state(0);
-	let hasMore = $state(true);
-	let loading = $state(true);
-	let hasResults = $state(false);
+	let hasMore = $state(data.initialHasMore);
+	let loading = $state(false);
+	let hasResults = $state(data.initialBattles.length > 0);
 	let selectedIds = new SvelteSet();
 
 	// "Snapshot" of search values to pass to BattleTable, updated only on submission or URL change
@@ -142,7 +144,19 @@
 		{/if}
 	</form>
 
-	<BattleTable q={activeQ} type={activeType} p={activeP} {offset} bind:hasMore bind:loading bind:selectedIds bind:hasResults />
+	<BattleTable
+		q={activeQ}
+		type={activeType}
+		p={activeP}
+		{offset}
+		initialBattles={data.initialBattles}
+		initialHasMore={data.initialHasMore}
+		initialError={data.initialError}
+		bind:hasMore
+		bind:loading
+		bind:selectedIds
+		bind:hasResults
+	/>
 
 	<div class="mt-8 flex justify-center gap-4">
 		{#if hasMore && !loading && searchQuery === activeQ && searchType === activeType && minPlayers === activeP}
