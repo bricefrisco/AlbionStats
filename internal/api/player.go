@@ -7,8 +7,17 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/sync/errgroup"
 	"gorm.io/gorm"
 )
+
+type PlayerStatsResponse struct {
+	Player    *postgres.PlayerStatsLatest    `json:"player"`
+	Pve       *postgres.PlayerPveStats       `json:"pve"`
+	Pvp       *postgres.PlayerPvpStats       `json:"pvp"`
+	Gathering *postgres.PlayerGatheringStats `json:"gathering"`
+	Crafting  *postgres.PlayerCraftingStats  `json:"crafting"`
+}
 
 func (s *Server) player(c *gin.Context) {
 	server := c.Param("server")
@@ -29,7 +38,8 @@ func (s *Server) player(c *gin.Context) {
 		return
 	}
 
-	player, err := s.postgres.GetPlayerByName(c.Request.Context(), postgres.Region(server), name)
+	region := postgres.Region(server)
+	player, err := s.postgres.GetPlayerByName(c.Request.Context(), region, name)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Player not found"})
@@ -39,5 +49,51 @@ func (s *Server) player(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, player)
+	var (
+		pveStats       *postgres.PlayerPveStats
+		pvpStats       *postgres.PlayerPvpStats
+		gatheringStats *postgres.PlayerGatheringStats
+		craftingStats  *postgres.PlayerCraftingStats
+	)
+
+	g, _ := errgroup.WithContext(c.Request.Context())
+
+	g.Go(func() error {
+		var err error
+		pveStats, err = s.postgres.GetPlayerPveStats(region, player.PlayerID)
+		return err
+	})
+
+	g.Go(func() error {
+		var err error
+		pvpStats, err = s.postgres.GetPlayerPvpStats(region, player.PlayerID)
+		return err
+	})
+
+	g.Go(func() error {
+		var err error
+		gatheringStats, err = s.postgres.GetPlayerGatheringStats(region, player.PlayerID)
+		return err
+	})
+
+	g.Go(func() error {
+		var err error
+		craftingStats, err = s.postgres.GetPlayerCraftingStats(region, player.PlayerID)
+		return err
+	})
+
+	if err := g.Wait(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch player stats"})
+		return
+	}
+
+	response := PlayerStatsResponse{
+		Player:    player,
+		Pve:       pveStats,
+		Pvp:       pvpStats,
+		Gathering: gatheringStats,
+		Crafting:  craftingStats,
+	}
+
+	c.JSON(http.StatusOK, response)
 }
