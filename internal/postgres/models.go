@@ -29,7 +29,6 @@ func (PlayerPoll) TableName() string {
 	return "player_polls"
 }
 
-
 type PlayerStatsLatest struct {
 	Region   Region    `gorm:"column:region;primaryKey;type:region_enum"`
 	PlayerID string    `gorm:"column:player_id;primaryKey"`
@@ -199,13 +198,13 @@ func (Metrics) TableName() string {
 }
 
 type BattleSummary struct {
-	Region       Region         `gorm:"column:region;primaryKey;type:region_enum"`
-	BattleID     int64          `gorm:"column:battle_id;primaryKey"`
-	StartTime    time.Time      `gorm:"column:start_time;not null"`
-	EndTime      time.Time     `gorm:"column:end_time"`
-	TotalPlayers int32          `gorm:"column:total_players;not null"`
-	TotalKills   int32          `gorm:"column:total_kills;not null"`
-	TotalFame    int64          `gorm:"column:total_fame;not null"`
+	Region        Region         `gorm:"column:region;primaryKey;type:region_enum"`
+	BattleID      int64          `gorm:"column:battle_id;primaryKey"`
+	StartTime     time.Time      `gorm:"column:start_time;not null"`
+	EndTime       time.Time      `gorm:"column:end_time"`
+	TotalPlayers  int32          `gorm:"column:total_players;not null"`
+	TotalKills    int32          `gorm:"column:total_kills;not null"`
+	TotalFame     int64          `gorm:"column:total_fame;not null"`
 	AllianceNames pq.StringArray `gorm:"column:alliance_names;type:text[]"`
 	GuildNames    pq.StringArray `gorm:"column:guild_names;type:text[]"`
 	PlayerNames   pq.StringArray `gorm:"column:player_names;type:text[]"`
@@ -216,15 +215,16 @@ func (BattleSummary) TableName() string {
 }
 
 type BattleAllianceStats struct {
-	Region       Region  `gorm:"column:region;primaryKey;type:region_enum"`
-	BattleID     int64   `gorm:"column:battle_id;primaryKey"`
-	AllianceName string  `gorm:"column:alliance_name;primaryKey"`
-	PlayerCount  int32   `gorm:"column:player_count"`
-	Kills        int32   `gorm:"column:kills"`
-	Deaths       int32   `gorm:"column:deaths"`
-	KillFame     int64   `gorm:"column:kill_fame"`
-	DeathFame    *int64  `gorm:"column:death_fame"`
-	IP           *int32  `gorm:"column:ip"`
+	Region       Region    `gorm:"column:region;primaryKey;type:region_enum"`
+	BattleID     int64     `gorm:"column:battle_id;primaryKey"`
+	AllianceName string    `gorm:"column:alliance_name;primaryKey"`
+	StartTime    time.Time `gorm:"column:start_time"`
+	PlayerCount  int32     `gorm:"column:player_count"`
+	Kills        int32     `gorm:"column:kills"`
+	Deaths       int32     `gorm:"column:deaths"`
+	KillFame     int64     `gorm:"column:kill_fame"`
+	DeathFame    *int64    `gorm:"column:death_fame"`
+	IP           *int32    `gorm:"column:ip"`
 }
 
 func (BattleAllianceStats) TableName() string {
@@ -232,16 +232,17 @@ func (BattleAllianceStats) TableName() string {
 }
 
 type BattleGuildStats struct {
-	Region       Region  `gorm:"column:region;primaryKey;type:region_enum"`
-	BattleID     int64   `gorm:"column:battle_id;primaryKey"`
-	GuildName    string  `gorm:"column:guild_name;primaryKey"`
-	AllianceName *string  `gorm:"column:alliance_name"`
-	PlayerCount  int32   `gorm:"column:player_count"`
-	Kills        int32   `gorm:"column:kills"`
-	Deaths       int32   `gorm:"column:deaths"`
-	KillFame     int64   `gorm:"column:kill_fame"`
-	DeathFame    *int64  `gorm:"column:death_fame"`
-	IP           *int32  `gorm:"column:ip"`
+	Region       Region    `gorm:"column:region;primaryKey;type:region_enum"`
+	BattleID     int64     `gorm:"column:battle_id;primaryKey"`
+	GuildName    string    `gorm:"column:guild_name;primaryKey"`
+	AllianceName *string   `gorm:"column:alliance_name"`
+	StartTime    time.Time `gorm:"column:start_time"`
+	PlayerCount  int32     `gorm:"column:player_count"`
+	Kills        int32     `gorm:"column:kills"`
+	Deaths       int32     `gorm:"column:deaths"`
+	KillFame     int64     `gorm:"column:kill_fame"`
+	DeathFame    *int64    `gorm:"column:death_fame"`
+	IP           *int32    `gorm:"column:ip"`
 }
 
 func (BattleGuildStats) TableName() string {
@@ -249,19 +250,20 @@ func (BattleGuildStats) TableName() string {
 }
 
 type BattlePlayerStats struct {
-	Region       Region  `gorm:"column:region;primaryKey;type:region_enum"`
-	BattleID     int64   `gorm:"column:battle_id;primaryKey"`
-	PlayerName   string  `gorm:"column:player_name;primaryKey"`
-	GuildName    *string  `gorm:"column:guild_name"`
-	AllianceName *string  `gorm:"column:alliance_name"`
-	Kills        int32   `gorm:"column:kills"`
-	Deaths       int32   `gorm:"column:deaths"`
-	KillFame     int64   `gorm:"column:kill_fame"`
-	DeathFame    *int64  `gorm:"column:death_fame"`
-	IP           *int32  `gorm:"column:ip"`
-	Weapon       *string `gorm:"column:weapon"`
-	Damage       *int64  `gorm:"column:damage"`
-	Heal         *int64  `gorm:"column:heal"`
+	Region       Region    `gorm:"column:region;primaryKey;type:region_enum"`
+	BattleID     int64     `gorm:"column:battle_id;primaryKey"`
+	PlayerName   string    `gorm:"column:player_name;primaryKey"`
+	GuildName    *string   `gorm:"column:guild_name"`
+	AllianceName *string   `gorm:"column:alliance_name"`
+	StartTime    time.Time `gorm:"column:start_time"`
+	Kills        int32     `gorm:"column:kills"`
+	Deaths       int32     `gorm:"column:deaths"`
+	KillFame     int64     `gorm:"column:kill_fame"`
+	DeathFame    *int64    `gorm:"column:death_fame"`
+	IP           *int32    `gorm:"column:ip"`
+	Weapon       *string   `gorm:"column:weapon"`
+	Damage       *int64    `gorm:"column:damage"`
+	Heal         *int64    `gorm:"column:heal"`
 }
 
 func (BattlePlayerStats) TableName() string {
@@ -269,16 +271,16 @@ func (BattlePlayerStats) TableName() string {
 }
 
 type BattleKills struct {
-	Region     Region    `gorm:"column:region;type:region_enum"`
-	BattleID   int64     `gorm:"column:battle_id"`
-	TS         time.Time `gorm:"column:ts"`
-	KillerName string   `gorm:"column:killer_name"`
-	KillerIP   int32    `gorm:"column:killer_ip"`
-	KillerWeapon string   `gorm:"column:killer_weapon"`
-	VictimName string   `gorm:"column:victim_name"`
-	VictimIP   int32    `gorm:"column:victim_ip"`
-	VictimWeapon string   `gorm:"column:victim_weapon"`
-	Fame       int64    `gorm:"column:fame"`
+	Region       Region    `gorm:"column:region;type:region_enum"`
+	BattleID     int64     `gorm:"column:battle_id"`
+	TS           time.Time `gorm:"column:ts"`
+	KillerName   string    `gorm:"column:killer_name"`
+	KillerIP     int32     `gorm:"column:killer_ip"`
+	KillerWeapon string    `gorm:"column:killer_weapon"`
+	VictimName   string    `gorm:"column:victim_name"`
+	VictimIP     int32     `gorm:"column:victim_ip"`
+	VictimWeapon string    `gorm:"column:victim_weapon"`
+	Fame         int64     `gorm:"column:fame"`
 }
 
 func (BattleKills) TableName() string {
@@ -286,11 +288,11 @@ func (BattleKills) TableName() string {
 }
 
 type BattleQueue struct {
-	Region      Region  `gorm:"column:region;primaryKey;type:region_enum"`
-	BattleID    int64   `gorm:"column:battle_id;primaryKey"`
-	TS          time.Time `gorm:"column:ts;not null"`
-	ErrorCount  int16   `gorm:"column:error_count;default:0"`
-	Processed   bool    `gorm:"column:processed;default:false"`
+	Region     Region    `gorm:"column:region;primaryKey;type:region_enum"`
+	BattleID   int64     `gorm:"column:battle_id;primaryKey"`
+	TS         time.Time `gorm:"column:ts;not null"`
+	ErrorCount int16     `gorm:"column:error_count;default:0"`
+	Processed  bool      `gorm:"column:processed;default:false"`
 }
 
 func (BattleQueue) TableName() string {

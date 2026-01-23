@@ -205,7 +205,7 @@ func (p *BattleboardPoller) collectBattleSummaries(battles []tasks.Battle) []pos
 			StartTime:     battle.StartTime,
 			EndTime:       battle.EndTime,
 			TotalPlayers:  int32(len(battle.Players)),
-			TotalKills:    int32(battle.TotalKills),
+			TotalKills:    battle.TotalKills,
 			TotalFame:     battle.TotalFame,
 			AllianceNames: allianceNames,
 			GuildNames:    guildNames,
@@ -231,10 +231,11 @@ func (p *BattleboardPoller) collectBattleAllianceStats(battles []tasks.Battle) [
 				Region:       postgres.Region(p.region),
 				BattleID:     battle.ID,
 				AllianceName: alliance.Name,
+				StartTime:    battle.StartTime,
 				PlayerCount:  int32(playerCount),
-				Kills:        int32(alliance.Kills),
-				Deaths:       int32(alliance.Deaths),
-				KillFame:     int64(alliance.KillFame),
+				Kills:        alliance.Kills,
+				Deaths:       alliance.Deaths,
+				KillFame:     alliance.KillFame,
 			})
 		}
 	}
@@ -257,10 +258,11 @@ func (p *BattleboardPoller) collectBattleGuildStats(battles []tasks.Battle) []po
 				BattleID:     battle.ID,
 				GuildName:    guild.Name,
 				AllianceName: guild.Alliance,
+				StartTime:    battle.StartTime,
 				PlayerCount:  int32(playerCount),
-				Kills:        int32(guild.Kills),
-				Deaths:       int32(guild.Deaths),
-				KillFame:     int64(guild.KillFame),
+				Kills:        guild.Kills,
+				Deaths:       guild.Deaths,
+				KillFame:     guild.KillFame,
 			})
 		}
 	}
@@ -277,9 +279,10 @@ func (p *BattleboardPoller) collectBattlePlayerStats(battles []tasks.Battle) []p
 				PlayerName:   player.Name,
 				GuildName:    player.GuildName,
 				AllianceName: player.AllianceName,
-				Kills:        int32(player.Kills),
-				Deaths:       int32(player.Deaths),
-				KillFame:     int64(player.KillFame),
+				StartTime:    battle.StartTime,
+				Kills:        player.Kills,
+				Deaths:       player.Deaths,
+				KillFame:     player.KillFame,
 			})
 		}
 	}

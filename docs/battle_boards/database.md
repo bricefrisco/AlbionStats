@@ -35,6 +35,7 @@ CREATE TABLE battle_alliance_stats (
   region         region_enum,
   battle_id      BIGINT,
   alliance_name  TEXT,
+  start_time     TIMESTAMPTZ,
   player_count   INT,
   kills          INT,
   deaths         INT,
@@ -49,6 +50,9 @@ CREATE TABLE battle_alliance_stats (
 
 CREATE INDEX idx_bas_alliance_players_battle
 ON battle_alliance_stats (region, alliance_name, player_count DESC, battle_id);
+
+CREATE INDEX idx_bgs_region_time_alliance
+ON battle_alliance_stats (region, start_time, alliance_name);
 ```
 
 ## Battle Guild Stats
@@ -59,6 +63,7 @@ CREATE TABLE battle_guild_stats (
   battle_id      BIGINT,
   guild_name     TEXT,
   alliance_name  TEXT,
+  start_time     TIMESTAMPTZ,
   player_count   INT,
   kills          INT,
   deaths         INT,
@@ -73,6 +78,9 @@ CREATE TABLE battle_guild_stats (
 
 CREATE INDEX idx_bas_guild_players_battle
 ON battle_guild_stats (region, guild_name, player_count DESC, battle_id);
+
+CREATE INDEX idx_bgs_region_time_guild
+ON battle_guild_stats (region, start_time, guild_name);
 ```
 
 ## Battle Player Stats
@@ -82,6 +90,7 @@ CREATE TABLE battle_player_stats (
   region         region_enum,
   battle_id      BIGINT,
   player_name    TEXT,
+  start_time     TIMESTAMPTZ,
   guild_name     TEXT,
   alliance_name  TEXT,
   kills          INT,
@@ -100,6 +109,9 @@ CREATE TABLE battle_player_stats (
 
 CREATE INDEX idx_bas_players_battle
 ON battle_player_stats (region, player_name, battle_id);
+
+CREATE INDEX idx_bgs_region_time_player
+ON battle_player_stats (region, start_time, player_name);
 ```
 
 ## Battle queue
