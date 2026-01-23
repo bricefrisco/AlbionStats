@@ -1,9 +1,9 @@
 <script>
-	let { children, header } = $props();
+	let { children, header, classes } = $props();
 </script>
 
 <div
-	class="overflow-hidden rounded-lg border border-gray-200/60 bg-transparent shadow-sm dark:border-gray-800/60 dark:bg-transparent"
+	class="overflow-hidden rounded-lg border border-gray-200/60 bg-transparent shadow-sm dark:border-gray-800/60 dark:bg-transparent {classes}"
 >
 	<table class="w-full table-fixed text-sm">
 		<thead class="bg-gray-50/60 dark:bg-gray-800/40">

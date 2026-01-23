@@ -2,14 +2,14 @@
 	import { SvelteSet } from 'svelte/reactivity';
 	import { regionState } from '$lib/regionState.svelte';
 	import { resolve } from '$app/paths';
+	import { formatNumber, formatFame } from '$lib/utils';
 	import Table from './Table.svelte';
 	import TableHeader from './TableHeader.svelte';
 	import TableRow from './TableRow.svelte';
 	import TableData from './TableData.svelte';
 
-	let { q = '', type = 'alliance', p = '10', offset = 0, hasMore = $bindable(true), selectedIds = $bindable(new SvelteSet()), hasResults = $bindable(false) } = $props();
+	let { q = '', type = 'alliance', p = '10', offset = 0, hasMore = $bindable(true), loading = $bindable(true), selectedIds = $bindable(new SvelteSet()), hasResults = $bindable(false) } = $props();
 	let battles = $state([]);
-	let loading = $state(true);
 	let error = $state(null);
 	let prevOffset = 0;
 	let prevParams = { q, type, p };
@@ -25,21 +25,6 @@
 		const hours = String(date.getUTCHours()).padStart(2, '0');
 		const minutes = String(date.getUTCMinutes()).padStart(2, '0');
 		return `${month}/${day} ${hours}:${minutes}`;
-	}
-
-	function formatNumber(num) {
-		return num.toLocaleString();
-	}
-
-	function formatFame(num) {
-		if (num === 0) return '-';
-		if (num >= 1000000) {
-			return (num / 1000000).toFixed(2) + 'm';
-		}
-		if (num >= 1000) {
-			return Math.round(num / 1000) + 'k';
-		}
-		return num.toLocaleString();
 	}
 
 	function mapEntries(list = []) {

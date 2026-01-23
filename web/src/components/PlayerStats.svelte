@@ -1,9 +1,6 @@
 <script>
+	import { formatNumber } from '$lib/utils';
 	let { playerData = null } = $props();
-
-	function formatNumber(num) {
-		return num ? num.toLocaleString() : '0';
-	}
 
 	function formatDate(dateString) {
 		if (!dateString) return 'Never';
