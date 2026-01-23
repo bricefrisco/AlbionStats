@@ -12,11 +12,11 @@ import (
 )
 
 type PlayerStatsResponse struct {
-	Player    *postgres.PlayerStatsLatest    `json:"player"`
-	Pve       *postgres.PlayerPveStats       `json:"pve"`
-	Pvp       *postgres.PlayerPvpStats       `json:"pvp"`
-	Gathering *postgres.PlayerGatheringStats `json:"gathering"`
-	Crafting  *postgres.PlayerCraftingStats  `json:"crafting"`
+	Player    *postgres.PlayerStatsLatest
+	Pve       *postgres.PlayerPveStats
+	Pvp       *postgres.PlayerPvpStats
+	Gathering *postgres.PlayerGatheringStats
+	Crafting  *postgres.PlayerCraftingStats
 }
 
 func (s *Server) player(c *gin.Context) {
