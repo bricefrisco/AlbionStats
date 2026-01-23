@@ -23,14 +23,14 @@ sudo -u postgres psql
 Allowing local connections:
 
 ```cmd
-sudo nano /etc/postgresql/17/main/postgresql.conf
-(Modify line) listen_addresses = 'localhost,192.168.1.192'
+sudo nano /etc/postgresql/18/main/postgresql.conf
+listen_addresses = '*'
 ```
 
 ```cmd
-sudo nano /etc/postgresql/17/main/pg_hba.conf
-host    all    all    192.168.1.0/24    md5
-(Add line)
+sudo nano /etc/postgresql/18/main/pg_hba.conf
+host    all             all             127.0.0.1/32            scram-sha-256
+host    all             all             X.X.X.X/32              scram-sha-256
 sudo systemctl restart postgresql
 ```
 
