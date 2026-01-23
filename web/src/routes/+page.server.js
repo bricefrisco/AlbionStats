@@ -1,4 +1,4 @@
-const apiBase = 'https://albionstats.bricefrisco.com/api';
+import { getApiBase } from '$lib/apiBase';
 
 async function fetchJson(fetch, url) {
 	const response = await fetch(url);
@@ -13,8 +13,8 @@ export const load = async ({ fetch }) => {
 	let totalDataPoints = { timestamps: [], values: [], error: null };
 
 	const [playersResult, snapshotsResult] = await Promise.allSettled([
-		fetchJson(fetch, `${apiBase}/metrics/players_total?granularity=1w`),
-		fetchJson(fetch, `${apiBase}/metrics/snapshots?granularity=1w`)
+		fetchJson(fetch, `${getApiBase()}/metrics/players_total?granularity=1w`),
+		fetchJson(fetch, `${getApiBase()}/metrics/snapshots?granularity=1w`)
 	]);
 
 	if (playersResult.status === 'fulfilled') {

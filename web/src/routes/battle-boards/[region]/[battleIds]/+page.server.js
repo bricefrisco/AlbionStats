@@ -1,4 +1,4 @@
-const apiBase = 'https://albionstats.bricefrisco.com/api';
+import { getApiBase } from '$lib/apiBase';
 const validRegions = new Set(['americas', 'europe', 'asia']);
 
 async function fetchJson(fetch, url) {
@@ -24,7 +24,7 @@ export const load = async ({ params, fetch }) => {
 		try {
 			battleData = await fetchJson(
 				fetch,
-				`${apiBase}/battles/${region}/${battleIds}`
+				`${getApiBase()}/battles/${region}/${battleIds}`
 			);
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Failed to load battle data';

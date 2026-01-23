@@ -1,4 +1,4 @@
-const apiBase = 'https://albionstats.bricefrisco.com/api';
+import { getApiBase } from '$lib/apiBase';
 const validTypes = new Set(['alliance', 'guild', 'player']);
 
 function mapEntries(list = []) {
@@ -32,16 +32,16 @@ export const load = async ({ url, fetch }) => {
 	try {
 		let apiUrl;
 		if (type === 'alliance' && q) {
-			apiUrl = new URL(`${apiBase}/boards/alliance/${region}/${encodeURIComponent(q)}`);
+			apiUrl = new URL(`${getApiBase()}/boards/alliance/${region}/${encodeURIComponent(q)}`);
 			apiUrl.searchParams.set('playerCount', p || '10');
 		} else if (type === 'guild' && q) {
-			apiUrl = new URL(`${apiBase}/boards/guild/${region}/${encodeURIComponent(q)}`);
+			apiUrl = new URL(`${getApiBase()}/boards/guild/${region}/${encodeURIComponent(q)}`);
 			apiUrl.searchParams.set('playerCount', p || '10');
 		} else if (type === 'player' && q) {
-			apiUrl = new URL(`${apiBase}/boards/player/${region}/${encodeURIComponent(q)}`);
+			apiUrl = new URL(`${getApiBase()}/boards/player/${region}/${encodeURIComponent(q)}`);
 			apiUrl.searchParams.set('playerCount', p || '10');
 		} else {
-			apiUrl = new URL(`${apiBase}/boards/${region}`);
+			apiUrl = new URL(`${getApiBase()}/boards/${region}`);
 			apiUrl.searchParams.set('totalPlayers', p || '10');
 		}
 

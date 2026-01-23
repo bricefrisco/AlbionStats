@@ -1,4 +1,4 @@
-const apiBase = 'https://albionstats.bricefrisco.com/api';
+import { getApiBase } from '$lib/apiBase';
 const validRegions = new Set(['americas', 'europe', 'asia']);
 
 async function fetchJson(fetch, url) {
@@ -11,7 +11,7 @@ async function fetchJson(fetch, url) {
 
 async function fetchMetric(fetch, path) {
 	try {
-		const data = await fetchJson(fetch, `${apiBase}${path}`);
+		const data = await fetchJson(fetch, `${getApiBase()}${path}`);
 		return { data, error: null };
 	} catch (err) {
 		return { data: null, error: err instanceof Error ? err.message : 'Failed to load metric' };
@@ -48,9 +48,9 @@ export const load = async ({ params, url, fetch }) => {
 		playerError = 'Player not found';
 	} else {
 		try {
-			const response = await fetch(
-				`${apiBase}/players/${region}/${encodeURIComponent(decodedName)}`
-			);
+	const response = await fetch(
+		`${getApiBase()}/players/${region}/${encodeURIComponent(decodedName)}`
+	);
 
 			if (response.status === 404) {
 				playerError = 'Player not found';
