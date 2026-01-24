@@ -29,6 +29,7 @@
 	let alliances = $derived(battleData?.Alliances || []);
 	let guilds = $derived(battleData?.Guilds || []);
 	let players = $derived(battleData?.Players || []);
+	let kills = $derived(battleData?.Kills || []);
 
 	const statRows = $derived.by(() => [
 		{
@@ -129,7 +130,7 @@
 			{:else if activeTab === 'players'}
 				<BBPlayers data={players} />
 			{:else if activeTab === 'kills'}
-				<BBKills />
+				<BBKills data={kills} />
 			{/if}
 		</div>
 	{/if}
