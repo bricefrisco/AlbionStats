@@ -2,6 +2,7 @@
 	import SearchBar from './SearchBar.svelte';
 	import { untrack } from 'svelte';
 	import { resolve } from '$app/paths';
+	import { goto } from '$app/navigation';
 	import { regionState } from '$lib/regionState.svelte';
 
 	let {
@@ -17,10 +18,12 @@
 	let players = $state([]);
 	let isSearching = $state(false);
 	let searchTimeout;
+	let activeIndex = $state(0);
 
 	let showNoResults = $derived(value.length >= 3 && players.length === 0);
 
 	$effect(() => {
+		activeIndex = 0;
 		// Include regionState.value to trigger re-search when region changes
 		const currentRegion = regionState.value;
 		const currentValue = value;
@@ -63,6 +66,22 @@
 		}
 		showDropdown = true;
 	}
+
+	function selectPlayer(index) {
+		const player = players[index];
+		if (!player?.name) return;
+
+		if (links) {
+			goto(resolve(`/players/${regionState.value}/${encodeURIComponent(player.name)}`), {
+				keepFocus: true,
+				noScroll: true
+			});
+		} else {
+			value = player.name;
+			onselect?.(player);
+		}
+		showDropdown = false;
+	}
 </script>
 
 <SearchBar
@@ -70,18 +89,21 @@
 	bind:showDropdown
 	oninput={handleInput}
 	onfocus={handleInput}
+	itemCount={players.length}
+	bind:activeIndex
+	onselectIndex={selectPlayer}
 	{isSearching}
 	{label}
 	{placeholder}
 >
 	{#snippet dropdownContent()}
 		{#if players.length > 0}
-			{#each players as player (player.name)}
+			{#each players as player, index (player.name)}
 				{#if links}
 					<a
 						href={resolve(`/players/${regionState.value}/${encodeURIComponent(player.name)}`)}
-						class="block w-full border-b border-gray-100 px-3 py-2 text-left text-sm text-gray-900 last:border-none hover:bg-gray-50 dark:border-neutral-800 dark:text-neutral-100 dark:hover:bg-neutral-800"
-						onclick={() => (showDropdown = false)}
+						class="block w-full border-b border-gray-100 px-3 py-2 text-left text-sm text-gray-900 last:border-none hover:bg-gray-50 dark:border-neutral-800 dark:text-neutral-100 dark:hover:bg-neutral-800 {index === activeIndex ? 'bg-gray-50 dark:bg-neutral-800' : ''}"
+						onclick={() => selectPlayer(index)}
 					>
 						<div class="font-medium">{player.name}</div>
 						<div class="text-xs text-gray-500 dark:text-neutral-400">
@@ -94,12 +116,8 @@
 					</a>
 				{:else}
 					<button
-						class="block w-full border-b border-gray-100 px-3 py-2 text-left text-sm text-gray-900 last:border-none hover:bg-gray-50 dark:border-neutral-800 dark:text-neutral-100 dark:hover:bg-neutral-800"
-						onclick={() => {
-							value = player.name;
-							showDropdown = false;
-							onselect?.(player);
-						}}
+						class="block w-full border-b border-gray-100 px-3 py-2 text-left text-sm text-gray-900 last:border-none hover:bg-gray-50 dark:border-neutral-800 dark:text-neutral-100 dark:hover:bg-neutral-800 {index === activeIndex ? 'bg-gray-50 dark:bg-neutral-800' : ''}"
+						onclick={() => selectPlayer(index)}
 					>
 						<div class="font-medium">{player.name}</div>
 						<div class="text-xs text-gray-500 dark:text-neutral-400">

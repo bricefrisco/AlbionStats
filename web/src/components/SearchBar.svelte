@@ -5,6 +5,10 @@
 		label = '',
 		oninput,
 		onfocus,
+		onkeydown,
+		itemCount = 0,
+		activeIndex = $bindable(0),
+		onselectIndex,
 		isSearching = false,
 		showDropdown = $bindable(false),
 		dropdownContent
@@ -17,6 +21,25 @@
 
 	const handleDocumentClick = (event) => {
 		if (container && !container.contains(event.target)) {
+			showDropdown = false;
+		}
+	};
+
+	const handleKeydown = (event) => {
+		onkeydown?.(event);
+		if (event.defaultPrevented) return;
+		if (!itemCount) return;
+
+		if (event.key === 'Tab') {
+			event.preventDefault();
+			activeIndex = (activeIndex + 1) % itemCount;
+			showDropdown = true;
+			return;
+		}
+
+		if (event.key === 'Enter') {
+			event.preventDefault();
+			onselectIndex?.(activeIndex);
 			showDropdown = false;
 		}
 	};
@@ -40,6 +63,7 @@
 				bind:value={value}
 				{oninput}
 				{onfocus}
+				onkeydown={handleKeydown}
 				{placeholder}
 				class="w-full rounded border border-gray-300 bg-gray-50 px-3 py-2 pl-9 text-sm text-gray-900 placeholder-gray-500 focus:border-gray-400 focus:outline-none dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-100 dark:placeholder-neutral-500 dark:focus:border-neutral-700"
 			/>
