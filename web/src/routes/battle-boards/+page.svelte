@@ -117,12 +117,14 @@
 				<GuildSearchBar
 					bind:value={searchQuery}
 					onselect={(g) => searchQuery = g}
+					links={false}
 					label="Name"
 				/>
 			{:else}
 				<AllianceSearchBar
 					bind:value={searchQuery}
 					onselect={(a) => searchQuery = a}
+					links={false}
 					label="Name"
 				/>
 			{/if}

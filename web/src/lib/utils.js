@@ -1,4 +1,5 @@
 export function formatNumber(num) {
+	if (num === 0) return '-';
 	return num?.toLocaleString() ?? '0';
 }
 

@@ -46,19 +46,14 @@
 		url.searchParams.set('tab', newTabId);
 		goto(resolve(url.pathname + url.search), { replaceState: true, noScroll: true });
 	}
-
-	function handleSelectPlayer(player) {
-		searchName = player.name;
-		goto(resolve(`/players/${region}/${encodeURIComponent(player.name)}`));
-	}
 </script>
 
 <Page>
 	<div class="mb-4">
 		<PlayerSearchBar
 			bind:value={searchName}
-			onselect={handleSelectPlayer}
 			placeholder="Player name"
+			links={true}
 		/>
 	</div>
 

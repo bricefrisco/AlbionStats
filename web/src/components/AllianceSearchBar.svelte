@@ -1,9 +1,11 @@
 <script>
 	import SearchBar from './SearchBar.svelte';
 	import { untrack } from 'svelte';
+	import { resolve } from '$app/paths';
 	import { regionState } from '$lib/regionState.svelte';
 
 	let {
+		links = true,
 		onselect,
 		oninput,
 		label = '',
@@ -75,16 +77,26 @@
 	{#snippet dropdownContent()}
 		{#if alliances.length > 0}
 			{#each alliances as alliance (alliance)}
-				<button
-					class="block w-full border-b border-gray-100 px-3 py-2 text-left text-sm text-gray-900 last:border-none hover:bg-gray-50 dark:border-neutral-800 dark:text-neutral-100 dark:hover:bg-neutral-800"
-					onclick={() => {
-						value = alliance;
-						showDropdown = false;
-						onselect?.(alliance);
-					}}
-				>
-					<div class="font-medium">{alliance}</div>
-				</button>
+				{#if links}
+					<a
+						href={resolve(`/alliances/${regionState.value}/${encodeURIComponent(alliance)}`)}
+						class="block w-full border-b border-gray-100 px-3 py-2 text-left text-sm text-gray-900 last:border-none hover:bg-gray-50 dark:border-neutral-800 dark:text-neutral-100 dark:hover:bg-neutral-800"
+						onclick={() => (showDropdown = false)}
+					>
+						<div class="font-medium">{alliance}</div>
+					</a>
+				{:else}
+					<button
+						class="block w-full border-b border-gray-100 px-3 py-2 text-left text-sm text-gray-900 last:border-none hover:bg-gray-50 dark:border-neutral-800 dark:text-neutral-100 dark:hover:bg-neutral-800"
+						onclick={() => {
+							value = alliance;
+							showDropdown = false;
+							onselect?.(alliance);
+						}}
+					>
+						<div class="font-medium">{alliance}</div>
+					</button>
+				{/if}
 			{/each}
 		{:else if showNoResults}
 			<div class="px-3 py-2 text-sm text-gray-500 dark:text-neutral-400">No alliances found</div>
