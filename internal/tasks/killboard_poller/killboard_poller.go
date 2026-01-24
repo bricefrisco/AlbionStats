@@ -108,6 +108,7 @@ func (p *KillboardPoller) collectPlayers(events []tasks.Event, acc map[string]po
 				PlayerID:              participant.ID,
 				NextPollAt:            now,
 				KillboardLastActivity: &ev.TimeStamp,
+				LastActivity:          &ev.TimeStamp,
 			}
 			acc[key] = playerPoll
 		}

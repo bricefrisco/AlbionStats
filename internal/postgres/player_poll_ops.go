@@ -38,6 +38,7 @@ func (s *Postgres) UpsertPlayerPolls(polls map[string]PlayerPoll) error {
 				")",
 		),
 		"killboard_last_activity": gorm.Expr("excluded.killboard_last_activity"),
+		"last_activity":           gorm.Expr("excluded.last_activity"),
 	}
 
 	return s.db.Clauses(clause.OnConflict{

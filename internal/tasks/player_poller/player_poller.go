@@ -5,7 +5,6 @@ import (
 	"albionstats/internal/tasks"
 	"albionstats/internal/util"
 	"errors"
-	"fmt"
 	"log/slog"
 	"time"
 
@@ -114,20 +113,8 @@ func (p *PlayerPoller) processPlayer(player postgres.PlayerPoll) processResult {
 		return processResult{shouldDeletePoll: true, poll: player}
 	}
 
-	nextPollAt, err := scheduleNextPoll(player.LastActivity, player.KillboardLastActivity, player.OtherLastActivity, now)
-	if err != nil {
-		p.log.Warn("schedule poll failed", "player_id", player.PlayerID, "err", err.Error())
-		return processResult{poll: postgres.PlayerPoll{
-			Region:                player.Region,
-			PlayerID:              player.PlayerID,
-			LastPollAt:            player.LastPollAt,
-			NextPollAt:            time.Now().UTC().Add(failureBackoff(int(player.ErrorCount) + 1)),
-			ErrorCount:            player.ErrorCount + 1,
-			LastActivity:          player.LastActivity,
-			KillboardLastActivity: player.KillboardLastActivity,
-			OtherLastActivity:     player.OtherLastActivity,
-		}, error: true}
-	}
+	lastActivity := getLastActivity(*player.KillboardLastActivity, *resp.LifetimeStatistics.Timestamp)
+	nextPollAt := scheduleNextPoll(now, lastActivity)
 
 	poll := postgres.PlayerPoll{
 		Region:                player.Region,
@@ -135,18 +122,18 @@ func (p *PlayerPoller) processPlayer(player postgres.PlayerPoll) processResult {
 		LastPollAt:            &now,
 		NextPollAt:            nextPollAt,
 		ErrorCount:            0,
-		OtherLastActivity:     resp.LifetimeStatistics.Timestamp,
-		LastActivity:          player.LastActivity,
 		KillboardLastActivity: player.KillboardLastActivity,
+		OtherLastActivity:     resp.LifetimeStatistics.Timestamp,
+		LastActivity:          &lastActivity,
 	}
 
 	stats := postgres.PlayerStatsLatest{
 		Region:                player.Region,
 		PlayerID:              player.PlayerID,
 		TS:                    now,
-		LastActivity:          player.LastActivity,
 		KillboardLastActivity: player.KillboardLastActivity,
 		OtherLastActivity:     resp.LifetimeStatistics.Timestamp,
+		LastActivity:          &lastActivity,
 		Name:                  resp.Name,
 		GuildID:               util.NullableString(resp.GuildId),
 		GuildName:             util.NullableString(resp.GuildName),
@@ -200,9 +187,9 @@ func (p *PlayerPoller) processPlayer(player postgres.PlayerPoll) processResult {
 		Region:                player.Region,
 		PlayerID:              player.PlayerID,
 		TS:                    now,
-		LastActivity:          player.LastActivity,
 		KillboardLastActivity: player.KillboardLastActivity,
 		OtherLastActivity:     resp.LifetimeStatistics.Timestamp,
+		LastActivity:          &lastActivity,
 		Name:                  resp.Name,
 		GuildID:               util.NullableString(resp.GuildId),
 		GuildName:             util.NullableString(resp.GuildName),
@@ -295,38 +282,28 @@ func (p *PlayerPoller) processResults(results []processResult) {
 	p.log.Info("processed results", "num_deletes", len(deletes), "num_polls", len(polls), "num_stats", len(stats))
 }
 
-func scheduleNextPoll(lastActivity, killboardLastActivity, otherLastActivity *time.Time, now time.Time) (time.Time, error) {
-	// Find the most recent activity timestamp among the three
-	var mostRecent *time.Time
-	if lastActivity != nil {
-		mostRecent = lastActivity
+func getLastActivity(killboardLastActivity, otherLastActivity time.Time) time.Time {
+	if killboardLastActivity.After(otherLastActivity) {
+		return killboardLastActivity
 	}
-	if killboardLastActivity != nil && (mostRecent == nil || killboardLastActivity.After(*mostRecent)) {
-		mostRecent = killboardLastActivity
-	}
-	if otherLastActivity != nil && (mostRecent == nil || otherLastActivity.After(*mostRecent)) {
-		mostRecent = otherLastActivity
-	}
+	return otherLastActivity
+}
 
-	// If no activity timestamps are available, this should never happen
-	if mostRecent == nil {
-		return time.Time{}, fmt.Errorf("no activity timestamps available for player")
-	}
-
-	staleness := now.Sub(*mostRecent)
+func scheduleNextPoll(now, lastActivity time.Time) time.Time {
+	staleness := now.Sub(lastActivity)
 	switch {
 	case staleness <= 24*time.Hour:
-		return now.Add(12 * time.Hour), nil
+		return now.Add(12 * time.Hour)
 	case staleness <= 2*24*time.Hour:
-		return now.Add(24 * time.Hour), nil
+		return now.Add(24 * time.Hour)
 	case staleness <= 4*24*time.Hour:
-		return now.Add(48 * time.Hour), nil
+		return now.Add(48 * time.Hour)
 	case staleness <= 8*24*time.Hour:
-		return now.Add(96 * time.Hour), nil
+		return now.Add(96 * time.Hour)
 	case staleness <= 16*24*time.Hour:
-		return now.Add(192 * time.Hour), nil
+		return now.Add(192 * time.Hour)
 	default:
-		return now.Add(30 * 24 * time.Hour), nil
+		return now.Add(30 * 24 * time.Hour)
 	}
 }
 
