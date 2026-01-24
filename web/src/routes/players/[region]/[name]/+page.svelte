@@ -1,7 +1,4 @@
 <script>
-	import { goto } from '$app/navigation';
-	import { resolve } from '$app/paths';
-	import { page } from '$app/state';
 	import Page from '$components/Page.svelte';
 	import PageHeader from '$components/PageHeader.svelte';
 	import SubHeader from '$components/SubHeader.svelte';
@@ -30,7 +27,7 @@
 	let error = $derived(data.playerError);
 
 	// Active tab state
-	let activeTab = $derived(data.activeTab || 'pvp');
+	let activeTab = $state('pvp');
 
 	// Tab configuration
 	const tabs = [
@@ -41,10 +38,7 @@
 	];
 
 	function handleTabChange(detail) {
-		const newTabId = detail.tabId;
-		const url = new URL(page.url);
-		url.searchParams.set('tab', newTabId);
-		goto(resolve(url.pathname + url.search), { replaceState: true, noScroll: true });
+		activeTab = detail.tabId;
 	}
 </script>
 
@@ -98,7 +92,7 @@
 			<div class="mt-4">
 				{#if activeTab === 'pvp'}
 					{#if playerData}
-						<PlayerPvPCharts {region} playerId={playerData.PlayerID} data={data.metrics?.pvp} />
+						<PlayerPvPCharts data={data.metrics?.pvp} />
 					{:else}
 						<div class="py-12 text-center text-gray-500 dark:text-gray-400">
 							<div class="mb-2 text-lg font-medium">Loading PvP Data...</div>
@@ -106,7 +100,7 @@
 					{/if}
 				{:else if activeTab === 'pve'}
 					{#if playerData}
-						<PlayerPvECharts {region} playerId={playerData.PlayerID} data={data.metrics?.pve} />
+						<PlayerPvECharts data={data.metrics?.pve} />
 					{:else}
 						<div class="py-12 text-center text-gray-500 dark:text-gray-400">
 							<div class="mb-2 text-lg font-medium">Loading PvE Data...</div>
@@ -114,7 +108,7 @@
 					{/if}
 				{:else if activeTab === 'gathering'}
 					{#if playerData}
-						<PlayerGatheringCharts {region} playerId={playerData.PlayerID} data={data.metrics?.gathering} />
+						<PlayerGatheringCharts data={data.metrics?.gathering} />
 					{:else}
 						<div class="py-12 text-center text-gray-500 dark:text-gray-400">
 							<div class="mb-2 text-lg font-medium">Loading Gathering Data...</div>
@@ -122,7 +116,7 @@
 					{/if}
 				{:else if activeTab === 'crafting'}
 					{#if playerData}
-						<PlayerCraftingCharts {region} playerId={playerData.PlayerID} data={data.metrics?.crafting} />
+						<PlayerCraftingCharts data={data.metrics?.crafting} />
 					{:else}
 						<div class="py-12 text-center text-gray-500 dark:text-gray-400">
 							<div class="mb-2 text-lg font-medium">Loading Crafting Data...</div>

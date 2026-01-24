@@ -1,7 +1,7 @@
 import { getApiBase } from '$lib/apiBase';
 const validRegions = new Set(['americas', 'europe', 'asia']);
 
-export const load = async ({ params, url, fetch }) => {
+export const load = async ({ params, fetch }) => {
 	const region = params.region;
 	const playerName = params.name;
 	let decodedName = '';
@@ -13,7 +13,6 @@ export const load = async ({ params, url, fetch }) => {
 		}
 	}
 	const validRegion = validRegions.has(region);
-	const activeTab = url.searchParams.get('tab') || 'pvp';
 
 	let playerData = null;
 	let playerError = null;
@@ -99,7 +98,6 @@ export const load = async ({ params, url, fetch }) => {
 		playerData,
 		playerError,
 		loading,
-		activeTab,
 		metrics
 	};
 };

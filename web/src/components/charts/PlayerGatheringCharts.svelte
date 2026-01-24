@@ -5,50 +5,12 @@
 	import SubHeader from '../SubHeader.svelte';
 
 	// Props
-	let { region = '', playerId = '', data = null } = $props();
+	let { data = null } = $props();
 
 	// Data state
-	let chartData = $state(data?.data || null);
-	let loading = $state(!data);
-	let error = $state(data?.error || null);
-	let lastKey = $state('');
-
-	async function fetchGatheringData() {
-		try {
-			loading = true;
-			error = null;
-
-			const response = await fetch(
-				`https://albionstats.bricefrisco.com/api/metrics/gathering/${region}/${playerId}`
-			);
-
-			if (!response.ok) {
-				throw new Error(`HTTP error! status: ${response.status}`);
-			}
-
-			chartData = await response.json();
-		} catch (err) {
-			error = err.message;
-			console.error('Failed to fetch gathering data:', err);
-		} finally {
-			loading = false;
-		}
-	}
-
-	$effect(() => {
-		if (data) {
-			chartData = data.data || null;
-			error = data.error || null;
-			loading = false;
-			return;
-		}
-
-		if (!region || !playerId) return;
-		const key = `${region}:${playerId}`;
-		if (key === lastKey) return;
-		lastKey = key;
-		fetchGatheringData();
-	});
+	let chartData = $derived(data?.data ?? null);
+	let loading = $derived(data == null);
+	let error = $derived(data?.error ?? null);
 </script>
 
 <div class="space-y-6">
