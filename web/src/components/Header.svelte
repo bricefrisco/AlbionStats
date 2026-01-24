@@ -4,6 +4,8 @@
 	import SunIcon from './icons/SunIcon.svelte';
 	import MoonIcon from './icons/MoonIcon.svelte';
 	import RegionSelect from './RegionSelect.svelte';
+	import { regionState } from '$lib/regionState.svelte';
+	import { routes } from '$lib/regionRoutes';
 
 	let { isDarkMode, toggleDarkMode } = $props();
 </script>
@@ -20,30 +22,14 @@
 				>
 					AlbionStats
 				</a>
-				<a
-					href={resolve('/battle-boards')}
-					class="text-sm text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100"
-				>
-					Battle Boards
-				</a>
-				<a
-					href={resolve('/alliances')}
-					class="text-sm text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100"
-				>
-					Alliances
-				</a>
-				<a
-					href={resolve('/guilds')}
-					class="text-sm text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100"
-				>
-					Guilds
-				</a>
-				<a
-					href={resolve('/players')}
-					class="text-sm text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100"
-				>
-					Players
-				</a>
+				{#each routes as route (route.base)}
+					<a
+						href={resolve(`/${route.base}/${regionState.value}`)}
+						class="text-sm text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100"
+					>
+						{route.label}
+					</a>
+				{/each}
 			</nav>
 			<div class="flex items-center gap-3">
 				<RegionSelect />

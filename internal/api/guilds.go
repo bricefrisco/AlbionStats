@@ -50,6 +50,11 @@ func (s *Server) guildOverview(c *gin.Context) {
 		return
 	}
 
+	if roster.RosterSize == 0 && summary.Battles == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Guild not found"})
+		return
+	}
+
 	c.JSON(http.StatusOK, GuildOverviewResponse{
 		RosterStats:   roster,
 		BattleSummary: summary,

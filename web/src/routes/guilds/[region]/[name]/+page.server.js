@@ -1,6 +1,5 @@
 import { getApiBase } from '$lib/apiBase';
-
-const validRegions = new Set(['americas', 'europe', 'asia']);
+import { validRegions } from '$lib/utils';
 
 async function fetchJson(fetch, url) {
 	const response = await fetch(url);

@@ -37,6 +37,10 @@ func (s *Server) battleSummaries(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get battle summaries"})
 		return
 	}
+	if len(summaries) == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Battle summaries not found"})
+		return
+	}
 
 	c.JSON(http.StatusOK, summaries)
 }
@@ -70,6 +74,10 @@ func (s *Server) battleAllianceSummaries(c *gin.Context) {
 	summaries, err := s.postgres.GetBattleSummariesByAlliance(region, allianceName, playerCount, limit, offset)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get battle summaries"})
+		return
+	}
+	if len(summaries) == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Battle summaries not found"})
 		return
 	}
 
@@ -107,6 +115,10 @@ func (s *Server) battleGuildSummaries(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get battle summaries"})
 		return
 	}
+	if len(summaries) == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Battle summaries not found"})
+		return
+	}
 
 	c.JSON(http.StatusOK, summaries)
 }
@@ -140,6 +152,10 @@ func (s *Server) battlePlayerSummaries(c *gin.Context) {
 	summaries, err := s.postgres.GetBattleSummariesByPlayer(region, playerName, playerCount, limit, offset)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get battle summaries"})
+		return
+	}
+	if len(summaries) == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Battle summaries not found"})
 		return
 	}
 

@@ -7,7 +7,7 @@
 	import TableHeader from '$components/TableHeader.svelte';
 	import TableRow from '$components/TableRow.svelte';
 	import TableData from '$components/TableData.svelte';
-	import { formatFame, formatNumber, formatRatio, getRatioColor } from '$lib/utils';
+	import { formatFame, formatNumber, formatRatio, getRatioColor } from '$lib/utils.js';
 
 	let { data } = $props();
 	let searchQuery = $state('');
@@ -16,7 +16,8 @@
 <Page>
 	<PageHeader title="Alliances" />
 	<Typography>
-		<p>Search for an alliance to view its stats.</p>
+		<h2>Albion Online Alliances. Search for an alliance to view it's statistics. Below are top 100 alliances
+			based on statistics pulled from battle board data based over the past 30 days.</h2>
 	</Typography>
 
 	<div class="mb-4">

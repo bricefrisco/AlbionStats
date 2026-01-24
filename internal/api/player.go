@@ -54,6 +54,10 @@ func (s *Server) player(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch player stats"})
 		return
 	}
+	if len(statsSeries.Timestamps) == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Player stats not found"})
+		return
+	}
 
 	response := PlayerStatsResponse{
 		Player:     player,

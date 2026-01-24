@@ -54,3 +54,6 @@ export function formatDateUTC(dateString) {
 	const minutes = String(date.getUTCMinutes()).padStart(2, '0');
 	return `${month}/${day} ${hours}:${minutes}`;
 }
+
+export const regionList = ['americas', 'europe', 'asia'];
+export const validRegions = new Set(regionList);

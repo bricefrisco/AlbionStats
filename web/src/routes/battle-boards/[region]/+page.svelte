@@ -8,7 +8,7 @@
 	import BackToTopButton from '$components/BackToTopButton.svelte';
 	import GuildSearchBar from '$components/GuildSearchBar.svelte';
 	import PlayerSearchBar from '$components/PlayerSearchBar.svelte';
-	import { regionState } from '$lib/regionState.svelte';
+	import { regionState } from '$lib/regionState.svelte.js';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
@@ -79,7 +79,7 @@
 <Page>
 	<PageHeader title="Battle Boards" />
 	<Typography>
-		<p>Recent battles on the {regionState.label} server.</p>
+		<h2>Recent battles on the {regionState.label} server.</h2>
 	</Typography>
 
 	<form class="mb-4 flex items-end gap-2" onsubmit={(e) => { e.preventDefault(); updateUrl(searchQuery); }}>
