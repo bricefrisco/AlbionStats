@@ -129,6 +129,10 @@ WHERE guild_name IS NOT NULL;
 CREATE INDEX idx_psl_region_guild
 ON player_stats_latest (region, guild_name)
 WHERE guild_name IS NOT NULL;
+
+CREATE INDEX idx_psl_region_alliance
+ON player_stats_latest (region, alliance_name)
+WHERE alliance_name IS NOT NULL;
 ```
 
 ## Player Stats (Snapshots)
