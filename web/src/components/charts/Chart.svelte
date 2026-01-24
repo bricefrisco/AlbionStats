@@ -1,12 +1,15 @@
 <script>
 	import { onMount } from 'svelte';
+	import { formatCompactDate } from '$lib/utils';
 
 	let {
 		timestamps = [],
 		values = [],
 		label = 'Metric',
 		height = 'h-80',
-		color = 'rgb(75, 192, 192)'
+		color = 'rgb(75, 192, 192)',
+		datasets = null,
+		showLegend = false
 	} = $props();
 
 	let canvas = $state();
@@ -19,24 +22,6 @@
 	const textColor = $derived(isDark ? 'rgb(209, 213, 219)' : 'rgb(55, 65, 81)'); // gray-300 : gray-700
 	const gridColor = $derived(isDark ? 'rgb(17, 24, 39)' : 'rgb(229, 231, 235)'); // gray-900 : gray-200
 
-	const compactDateFormatter =
-		typeof Intl !== 'undefined'
-			? new Intl.DateTimeFormat(undefined, { month: 'numeric', day: 'numeric' })
-			: null;
-	const compactTimeFormatter =
-		typeof Intl !== 'undefined'
-			? new Intl.DateTimeFormat(undefined, {
-					hour: 'numeric',
-					hour12: true
-				})
-			: null;
-
-	const formatCompactDate = (value) => {
-		if (!compactDateFormatter || !compactTimeFormatter) return '';
-		const date = new Date(value);
-		return `${compactDateFormatter.format(date)}, ${compactTimeFormatter.format(date)}`;
-	};
-
 	function updateTheme() {
 		const newIsDark =
 			typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
@@ -46,6 +31,16 @@
 	}
 
 	function buildData() {
+		if (Array.isArray(datasets) && datasets.length > 0) {
+			return {
+				labels: Array.from(timestamps || []),
+				datasets: datasets.map((dataset) => ({
+					tension: 0.4,
+					...dataset
+				}))
+			};
+		}
+
 		return {
 			labels: Array.from(timestamps || []),
 			datasets: [
@@ -65,7 +60,10 @@
 		maintainAspectRatio: false,
 		plugins: {
 			legend: {
-				display: false
+				display: showLegend,
+				labels: {
+					color: textColor
+				}
 			},
 			title: {
 				display: false
@@ -153,6 +151,9 @@
 		if (textColor) {
 			chart.options.scales.y.ticks.color = textColor;
 			chart.options.scales.x.ticks.color = textColor;
+			if (chart.options.plugins?.legend?.labels) {
+				chart.options.plugins.legend.labels.color = textColor;
+			}
 		}
 		if (gridColor) {
 			chart.options.scales.y.grid.color = gridColor;

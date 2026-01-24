@@ -5,6 +5,7 @@
 	import Typography from '$components/Typography.svelte';
 	import PlayersTracked from '$components/charts/PlayersTracked.svelte';
 	import TotalDataPoints from '$components/charts/TotalDataPoints.svelte';
+	import DailyActiveUsers from '$components/charts/DailyActiveUsers.svelte';
 	import SubHeader from '$components/SubHeader.svelte';
 
 	let { data } = $props();
@@ -68,6 +69,10 @@
 	<div class="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-2">
 		<PlayersTracked data={data.playersTracked} />
 		<TotalDataPoints data={data.totalDataPoints} />
+	</div>
+
+	<div class="mt-8">
+		<DailyActiveUsers data={data.dailyActiveUsers} />
 	</div>
 
 	<SubHeader title="About" classes="mt-8" />

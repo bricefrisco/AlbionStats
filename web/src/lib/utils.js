@@ -30,3 +30,18 @@ export function getRatioColor(numerator, denominator, min = 0.5, max = 1.5) {
 	const hue = Math.round(t * 120);
 	return `hsl(${hue} 70% 45%)`;
 }
+
+const compactDateFormatter =
+	typeof Intl !== 'undefined'
+		? new Intl.DateTimeFormat(undefined, { month: 'numeric', day: 'numeric' })
+		: null;
+const compactTimeFormatter =
+	typeof Intl !== 'undefined'
+		? new Intl.DateTimeFormat(undefined, { hour: 'numeric', hour12: true })
+		: null;
+
+export function formatCompactDate(value) {
+	if (!compactDateFormatter || !compactTimeFormatter) return '';
+	const date = new Date(value);
+	return `${compactDateFormatter.format(date)}, ${compactTimeFormatter.format(date)}`;
+}

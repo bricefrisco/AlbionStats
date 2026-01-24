@@ -11,10 +11,12 @@ async function fetchJson(fetch, url) {
 export const load = async ({ fetch }) => {
 	let playersTracked = { timestamps: [], values: [], error: null };
 	let totalDataPoints = { timestamps: [], values: [], error: null };
+	let dailyActiveUsers = { timestamps: [], americas: [], europe: [], asia: [], error: null };
 
-	const [playersResult, snapshotsResult] = await Promise.allSettled([
+	const [playersResult, snapshotsResult, dauResult] = await Promise.allSettled([
 		fetchJson(fetch, `${getApiBase()}/metrics/players_total?granularity=1w`),
-		fetchJson(fetch, `${getApiBase()}/metrics/snapshots?granularity=1w`)
+		fetchJson(fetch, `${getApiBase()}/metrics/snapshots?granularity=1w`),
+		fetchJson(fetch, `${getApiBase()}/metrics/dau`)
 	]);
 
 	if (playersResult.status === 'fulfilled') {
@@ -38,5 +40,17 @@ export const load = async ({ fetch }) => {
 			snapshotsResult.reason?.message || 'Failed to load snapshots metrics';
 	}
 
-	return { playersTracked, totalDataPoints };
+	if (dauResult.status === 'fulfilled') {
+		dailyActiveUsers = {
+			timestamps: dauResult.value.timestamps || [],
+			americas: dauResult.value.americas || [],
+			europe: dauResult.value.europe || [],
+			asia: dauResult.value.asia || [],
+			error: null
+		};
+	} else {
+		dailyActiveUsers.error = dauResult.reason?.message || 'Failed to load DAU metrics';
+	}
+
+	return { playersTracked, totalDataPoints, dailyActiveUsers };
 };
