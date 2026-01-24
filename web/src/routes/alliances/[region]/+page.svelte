@@ -8,6 +8,8 @@
 	import TableRow from '$components/TableRow.svelte';
 	import TableData from '$components/TableData.svelte';
 	import { formatFame, formatNumber, formatRatio, getRatioColor } from '$lib/utils.js';
+	import { regionState } from '$lib/regionState.svelte.js';
+	import { resolve } from '$app/paths';
 
 	let { data } = $props();
 	let searchQuery = $state('');
@@ -51,7 +53,12 @@
 						{index + 1}
 					</TableData>
 					<TableData class="font-medium text-gray-900 dark:text-white">
-						{alliance.AllianceName}
+						<a
+							href={resolve(`/alliances/${regionState.value}/${encodeURIComponent(alliance.AllianceName)}`)}
+							class="hover:underline hover:text-blue-600 dark:hover:text-blue-400"
+						>
+							{alliance.AllianceName}
+						</a>
 					</TableData>
 					<TableData class="text-right text-yellow-600 dark:text-yellow-400">
 						{formatFame(alliance.TotalKillFame)}

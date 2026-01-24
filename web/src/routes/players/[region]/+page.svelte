@@ -12,6 +12,7 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { formatFame, formatNumber, formatRatio, getRatioColor } from '$lib/utils.js';
+	import { regionState } from '$lib/regionState.svelte.js';
 
 	let { data } = $props();
 
@@ -66,7 +67,12 @@
 						{index + 1}
 					</TableData>
 					<TableData class="font-medium text-gray-900 dark:text-white">
-						{player.PlayerName}
+						<a
+							href={resolve(`/players/${regionState.value}/${encodeURIComponent(player.PlayerName)}`)}
+							class="hover:underline hover:text-blue-600 dark:hover:text-blue-400"
+						>
+							{player.PlayerName}
+						</a>
 					</TableData>
 					<TableData class="text-right text-yellow-600 dark:text-yellow-400">
 						{formatFame(player.TotalKillFame)}

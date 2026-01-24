@@ -9,6 +9,8 @@
 	import TableData from '$components/TableData.svelte';
 	import { page } from '$app/state';
 	import { formatFame, formatNumber, formatRatio, getRatioColor } from '$lib/utils.js';
+	import { regionState } from '$lib/regionState.svelte.js';
+	import { resolve } from '$app/paths';
 
 	let { data } = $props();
 
@@ -53,7 +55,12 @@
 						{index + 1}
 					</TableData>
 					<TableData class="font-medium text-gray-900 dark:text-white">
-						{guild.GuildName}
+						<a
+							href={resolve(`/guilds/${regionState.value}/${encodeURIComponent(guild.GuildName)}`)}
+							class="hover:underline hover:text-blue-600 dark:hover:text-blue-400"
+						>
+							{guild.GuildName}
+						</a>
 					</TableData>
 					<TableData class="text-right text-yellow-600 dark:text-yellow-400">
 						{formatFame(guild.TotalKillFame)}
