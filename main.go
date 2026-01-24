@@ -60,6 +60,7 @@ func main() {
 
 	server := api.NewServer(api.Config{
 		Postgres: postgres,
+		Logger:   appLogger,
 	})
 
 	go func() {
@@ -145,10 +146,10 @@ func main() {
 	// Start battle poller for all regions
 	for _, region := range regions {
 		battlePoller := battle_poller.NewBattlePoller(battle_poller.Config{
-			Region: region,
+			Region:    region,
 			APIClient: apiClient,
-			Postgres: postgres,
-			Logger: appLogger,
+			Postgres:  postgres,
+			Logger:    appLogger,
 		})
 
 		go func(poller *battle_poller.BattlePoller, regionName string) {

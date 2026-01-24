@@ -7,6 +7,14 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+type TopPlayerStats struct {
+	PlayerName     string `gorm:"column:player_name"`
+	TotalKillFame  int64  `gorm:"column:total_kill_fame"`
+	TotalDeathFame int64  `gorm:"column:total_death_fame"`
+	TotalKills     int64  `gorm:"column:total_kills"`
+	TotalDeaths    int64  `gorm:"column:total_deaths"`
+}
+
 func (p *Postgres) InsertBattlePlayerStats(stats []BattlePlayerStats) error {
 	if len(stats) == 0 {
 		return nil
@@ -72,6 +80,26 @@ func (p *Postgres) GetBattlePlayerStatsByIDs(ctx context.Context, region string,
 	err := p.db.WithContext(ctx).Where("region = ? AND battle_id IN ?", region, battleIDs).
 		Order("kills DESC").
 		Find(&stats).Error
+
+	return stats, err
+}
+
+func (p *Postgres) GetTopPlayers(region string, limit int, offset int) ([]TopPlayerStats, error) {
+	var stats []TopPlayerStats
+	err := p.db.Raw(`
+		SELECT
+			player_name,
+			SUM(kill_fame) AS total_kill_fame,
+			SUM(COALESCE(death_fame, 0)) AS total_death_fame,
+			SUM(kills) AS total_kills,
+			SUM(deaths) AS total_deaths
+		FROM battle_player_stats
+		WHERE region = ?
+			AND start_time >= NOW() - INTERVAL '30 days'
+		GROUP BY player_name
+		ORDER BY total_kill_fame DESC
+		LIMIT ? OFFSET ?
+	`, region, limit, offset).Scan(&stats).Error
 
 	return stats, err
 }

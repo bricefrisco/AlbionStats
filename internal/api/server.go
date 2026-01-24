@@ -2,6 +2,7 @@ package api
 
 import (
 	"albionstats/internal/postgres"
+	"log/slog"
 	"strconv"
 	"strings"
 
@@ -12,10 +13,13 @@ import (
 type Server struct {
 	postgres *postgres.Postgres
 	router   *gin.Engine
+	topCache *topCache
+	logger   *slog.Logger
 }
 
 type Config struct {
 	Postgres *postgres.Postgres
+	Logger   *slog.Logger
 }
 
 func NewServer(cfg Config) *Server {
@@ -27,9 +31,15 @@ func NewServer(cfg Config) *Server {
 	server := &Server{
 		postgres: cfg.Postgres,
 		router:   router,
+		topCache: newTopCache(),
+		logger:   cfg.Logger,
 	}
 
 	server.setupRoutes()
+	if err := server.refreshTopCache(); err != nil {
+		server.logger.Error("top cache refresh failed", "err", err)
+	}
+	server.startTopCacheRefresher()
 	return server
 }
 
@@ -67,6 +77,9 @@ func (s *Server) setupRoutes() {
 	v1.GET("/players/search/:server/:query", s.searchPlayers)
 	v1.GET("/guilds/search/:server/:query", s.searchGuilds)
 	v1.GET("/alliances/search/:server/:query", s.searchAlliances)
+	v1.GET("/alliances/:region/top", s.topAlliances)
+	v1.GET("/guilds/:region/top", s.topGuilds)
+	v1.GET("/players/:region/top", s.topPlayers)
 	v1.GET("/boards/:region", s.battleSummaries)
 	v1.GET("/boards/guild/:region/:guildName", s.battleGuildSummaries)
 	v1.GET("/boards/alliance/:region/:allianceName", s.battleAllianceSummaries)
