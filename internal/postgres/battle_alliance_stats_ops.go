@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"time"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -13,6 +14,16 @@ type TopAllianceStats struct {
 	TotalDeathFame int64  `gorm:"column:total_death_fame"`
 	TotalKills     int64  `gorm:"column:total_kills"`
 	TotalDeaths    int64  `gorm:"column:total_deaths"`
+}
+
+type AllianceBattleSummary struct {
+	Battles        int64     `gorm:"column:battles"`
+	TotalKills     int64     `gorm:"column:total_kills"`
+	TotalDeaths    int64     `gorm:"column:total_deaths"`
+	TotalKillFame  int64     `gorm:"column:total_kill_fame"`
+	TotalDeathFame int64     `gorm:"column:total_death_fame"`
+	MaxPlayers     int32     `gorm:"column:max_players"`
+	LastBattleAt   time.Time `gorm:"column:last_battle_at"`
 }
 
 func (p *Postgres) InsertBattleAllianceStats(stats []BattleAllianceStats) error {
@@ -101,4 +112,25 @@ func (p *Postgres) GetTopAlliances(region string, limit int, offset int) ([]TopA
 	`, region, limit, offset).Scan(&stats).Error
 
 	return stats, err
+}
+
+func (p *Postgres) GetAllianceBattleSummary(ctx context.Context, region string, allianceName string) (*AllianceBattleSummary, error) {
+	var summary AllianceBattleSummary
+	err := p.db.WithContext(ctx).Raw(`
+		SELECT
+			COUNT(DISTINCT battle_id) AS battles,
+			SUM(kills) AS total_kills,
+			SUM(deaths) AS total_deaths,
+			SUM(kill_fame) AS total_kill_fame,
+			SUM(death_fame) AS total_death_fame,
+			MAX(player_count) AS max_players,
+			MAX(start_time) AS last_battle_at
+		FROM battle_alliance_stats
+		WHERE region = ?
+			AND alliance_name = ?
+	`, region, allianceName).Scan(&summary).Error
+	if err != nil {
+		return nil, err
+	}
+	return &summary, nil
 }
