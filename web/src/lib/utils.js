@@ -45,3 +45,12 @@ export function formatCompactDate(value) {
 	const date = new Date(value);
 	return `${compactDateFormatter.format(date)}, ${compactTimeFormatter.format(date)}`;
 }
+
+export function formatDateUTC(dateString) {
+	const date = new Date(dateString);
+	const month = date.getUTCMonth() + 1;
+	const day = date.getUTCDate();
+	const hours = String(date.getUTCHours()).padStart(2, '0');
+	const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+	return `${month}/${day} ${hours}:${minutes}`;
+}

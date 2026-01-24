@@ -2,7 +2,7 @@
 	import { SvelteSet } from 'svelte/reactivity';
 	import { regionState } from '$lib/regionState.svelte';
 	import { resolve } from '$app/paths';
-	import { formatNumber, formatFame } from '$lib/utils';
+	import { formatNumber, formatFame, formatDateUTC } from '$lib/utils';
 	import { buildBattleBoardsUrl, mapBattleBoardsData } from '$lib/battleBoards';
 	import Table from './Table.svelte';
 	import TableHeader from './TableHeader.svelte';
@@ -39,15 +39,6 @@
 		extraBattles = [];
 		selectedIds.clear();
 	});
-
-	function formatDate(dateString) {
-		const date = new Date(dateString);
-		const month = date.getUTCMonth() + 1;
-		const day = date.getUTCDate();
-		const hours = String(date.getUTCHours()).padStart(2, '0');
-		const minutes = String(date.getUTCMinutes()).padStart(2, '0');
-		return `${month}/${day} ${hours}:${minutes}`;
-	}
 
 	function toggleSelection(id) {
 		if (selectedIds.has(id)) {
@@ -140,7 +131,7 @@
 						{battle.BattleID}
 					</a>
 				</TableData>
-				<TableData class="whitespace-nowrap">{formatDate(battle.StartTime)}</TableData>
+				<TableData class="whitespace-nowrap">{formatDateUTC(battle.StartTime)}</TableData>
 				<TableData class="text-right font-medium text-blue-600 dark:text-blue-400">
 					{formatNumber(battle.TotalPlayers)}
 				</TableData>
