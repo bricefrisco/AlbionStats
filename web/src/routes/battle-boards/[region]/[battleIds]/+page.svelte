@@ -56,13 +56,13 @@
 			leftLabel: '',
 			leftValue: '',
 			rightLabel: 'Total Kills',
-			rightValue: 'Coming Soon'
+			rightValue: data.battleData?.TotalKills ?? '-'
 		},
 		{
 			leftLabel: '',
 			leftValue: '',
 			rightLabel: 'Total Fame',
-			rightValue: 'Coming Soon'
+			rightValue: data.battleData?.TotalFame ? data.battleData.TotalFame.toLocaleString() : '-'
 		}
 	]);
 
