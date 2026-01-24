@@ -72,6 +72,7 @@ func (s *Server) setupRoutes() {
 	// API routes
 	v1 := s.router.Group("/api")
 	v1.GET("/metrics/admin", s.admin)
+	v1.GET("/metrics/dau", s.metricsDAU)
 	v1.GET("/metrics/:metricId", s.metrics)
 	v1.GET("/players/:server/:name", s.player)
 	v1.GET("/guilds/:server/:name", s.guildOverview)

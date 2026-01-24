@@ -14,7 +14,6 @@
 	let { data } = $props();
 
 	// Get parameters from URL
-	let region = $derived(data.region);
 	let decodedName = $derived(data.decodedName);
 
 	// Validate region

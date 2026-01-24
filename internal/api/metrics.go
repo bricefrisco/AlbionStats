@@ -31,3 +31,18 @@ func (s *Server) metrics(c *gin.Context) {
 		"values":     values,
 	})
 }
+
+func (s *Server) metricsDAU(c *gin.Context) {
+	timestamps, americas, europe, asia, err := s.postgres.GetDAUMetrics(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database query failed"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"timestamps": timestamps,
+		"americas":   americas,
+		"europe":     europe,
+		"asia":       asia,
+	})
+}
