@@ -1,4 +1,5 @@
 <script>
+	import { SvelteMap } from 'svelte/reactivity';
 	import Table from './Table.svelte';
 	import TableHeader from './TableHeader.svelte';
 	import TableRow from './TableRow.svelte';
@@ -15,7 +16,7 @@
 	let paginatedData = $derived(kills.slice((currentPage - 1) * pageSize, currentPage * pageSize));
 
 	const playersByName = $derived.by(() => {
-		const map = new Map();
+		const map = new SvelteMap();
 		for (const player of players || []) {
 			if (player?.PlayerName) {
 				map.set(player.PlayerName, player);

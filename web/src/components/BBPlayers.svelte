@@ -13,6 +13,17 @@
 
 	let totalPages = $derived(Math.ceil(data.length / pageSize));
 	let paginatedData = $derived(data.slice((currentPage - 1) * pageSize, currentPage * pageSize));
+
+	function formatAffiliation(player) {
+		if (!player) return '';
+		if (player.AllianceName && player.GuildName) {
+			return `[${player.AllianceName}] ${player.GuildName}`;
+		}
+		if (player.GuildName) {
+			return player.GuildName;
+		}
+		return '';
+	}
 </script>
 
 <Table>
@@ -41,13 +52,9 @@
 			</TableData>
 			<TableData class="font-medium text-gray-900 dark:text-white">
 				<div class="flex flex-col">
-					{#if player.AllianceName && player.GuildName}
+					{#if formatAffiliation(player)}
 						<span class="text-sm text-gray-600 dark:text-gray-400">
-							[{player.AllianceName}] {player.GuildName}
-						</span>
-					{:else if player.GuildName}
-						<span class="text-sm text-gray-600 dark:text-gray-400">
-							{player.GuildName}
+							{formatAffiliation(player)}
 						</span>
 					{/if}
 					<span>{player.PlayerName}</span>

@@ -8,7 +8,9 @@
 	import BBGuilds from '$components/BBGuilds.svelte';
 	import BBPlayers from '$components/BBPlayers.svelte';
 	import BBKills from '$components/BBKills.svelte';
+	import { formatFame, formatNumber } from '$lib/utils';
 	import { formatDateUTC } from '$lib/utils';
+	import { SvelteMap } from 'svelte/reactivity';
 
 	let { data } = $props();
 
@@ -64,13 +66,98 @@
 		}
 	]);
 
-	const highlightCards = [
-		{ title: 'Top Killer', value: 'Valkyr', subtitle: '39 kills' },
-		{ title: 'Highest IP', value: 'KaelStorm', subtitle: '1,642 IP' },
-		{ title: 'Most Death Fame', value: 'RivenDusk', subtitle: '2.1M fame' },
-		{ title: 'Top Damage', value: 'Hawke', subtitle: '1.3M damage' },
-		{ title: 'Top Heals', value: 'SerenVale', subtitle: '980K heals' }
-	];
+	const highlightCards = $derived.by(() => {
+		const kills = battleData?.Kills || [];
+		const playersList = battleData?.Players || [];
+
+		const playersByName = new Map(
+			playersList.filter((player) => player?.PlayerName).map((player) => [player.PlayerName, player])
+		);
+
+		function formatAffiliation(name) {
+			const player = playersByName.get(name);
+			if (!player) return '';
+			if (player.AllianceName && player.GuildName) {
+				return `[${player.AllianceName}] ${player.GuildName}`;
+			}
+			if (player.GuildName) {
+				return player.GuildName;
+			}
+			return '';
+		}
+
+		const killCounts = new SvelteMap();
+		for (const kill of kills) {
+			if (!kill?.KillerName) continue;
+			killCounts.set(kill.KillerName, (killCounts.get(kill.KillerName) || 0) + 1);
+		}
+
+		let topKiller = null;
+		for (const [name, count] of killCounts.entries()) {
+			if (!topKiller || count > topKiller.count) {
+				topKiller = { name, count };
+			}
+		}
+
+		let highestIP = null;
+		let mostDeathFame = null;
+		let topDamage = null;
+		let topHeals = null;
+
+		for (const player of playersList) {
+			if (!player?.PlayerName) continue;
+			if (!highestIP || player.IP > highestIP.value) {
+				highestIP = { name: player.PlayerName, value: player.IP };
+			}
+			if (!mostDeathFame || player.DeathFame > mostDeathFame.value) {
+				mostDeathFame = { name: player.PlayerName, value: player.DeathFame };
+			}
+			if (!topDamage || player.Damage > topDamage.value) {
+				topDamage = { name: player.PlayerName, value: player.Damage };
+			}
+			if (!topHeals || player.Heal > topHeals.value) {
+				topHeals = { name: player.PlayerName, value: player.Heal };
+			}
+		}
+
+		return [
+			{
+				title: 'Top Killer',
+				value: topKiller?.name || '-',
+				meta: topKiller ? formatAffiliation(topKiller.name) : '',
+				subtitle: topKiller ? formatNumber(topKiller.count) : '-',
+				subtitleClass: 'text-red-600 dark:text-red-400'
+			},
+			{
+				title: 'Highest IP',
+				value: highestIP?.name || '-',
+				meta: highestIP ? formatAffiliation(highestIP.name) : '',
+				subtitle: highestIP ? String(highestIP.value ?? '-') : '-',
+				subtitleClass: 'text-white'
+			},
+			{
+				title: 'Most Death Fame',
+				value: mostDeathFame?.name || '-',
+				meta: mostDeathFame ? formatAffiliation(mostDeathFame.name) : '',
+				subtitle: mostDeathFame ? formatFame(mostDeathFame.value) : '-',
+				subtitleClass: 'text-gray-600 dark:text-gray-400'
+			},
+			{
+				title: 'Top Damage',
+				value: topDamage?.name || '-',
+				meta: topDamage ? formatAffiliation(topDamage.name) : '',
+				subtitle: topDamage ? formatFame(topDamage.value) : '-',
+				subtitleClass: 'text-purple-600 dark:text-purple-400'
+			},
+			{
+				title: 'Top Heals',
+				value: topHeals?.name || '-',
+				meta: topHeals ? formatAffiliation(topHeals.name) : '',
+				subtitle: topHeals ? formatFame(topHeals.value) : '-',
+				subtitleClass: 'text-green-600 dark:text-green-400'
+			}
+		];
+	});
 </script>
 
 <Page>
@@ -114,7 +201,13 @@
 
 		<div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
 			{#each highlightCards as card (card.title)}
-				<Card title={card.title} value={card.value} subtitle={card.subtitle} />
+				<Card
+					title={card.title}
+					value={card.value}
+					subtitle={card.subtitle}
+					meta={card.meta}
+					subtitleClass={card.subtitleClass}
+				/>
 			{/each}
 		</div>
 
