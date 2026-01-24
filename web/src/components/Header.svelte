@@ -27,6 +27,18 @@
 					Battle Boards
 				</a>
 				<a
+					href={resolve('/alliances')}
+					class="text-sm text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100"
+				>
+					Alliances
+				</a>
+				<a
+					href={resolve('/guilds')}
+					class="text-sm text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100"
+				>
+					Guilds
+				</a>
+				<a
 					href={resolve('/players')}
 					class="text-sm text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100"
 				>
