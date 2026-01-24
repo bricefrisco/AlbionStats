@@ -13,13 +13,12 @@ CREATE TABLE player_polls (
     last_activity                   TIMESTAMPTZ,
     last_poll_at                    TIMESTAMPTZ,
 
-    PRIMARY KEY (region, player_id),
-
-    CHECK (
-        last_encountered IS NOT NULL OR     -- Added through the API
-        killboard_last_activity IS NOT NULL -- Added through killboard crawler
-    )
+    PRIMARY KEY (region, player_id)
 );
+
+ALTER TABLE player_polls
+ADD CONSTRAINT player_polls_killboard_check
+CHECK (killboard_last_activity IS NOT NULL);
 
 CREATE INDEX player_polls_poll_idx ON player_polls(next_poll_at DESC);
 CREATE INDEX player_polls_region_poll_idx ON player_polls(region, next_poll_at DESC);
