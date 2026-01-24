@@ -130,7 +130,7 @@
 			{:else if activeTab === 'players'}
 				<BBPlayers data={players} />
 			{:else if activeTab === 'kills'}
-				<BBKills data={kills} />
+				<BBKills kills={kills} players={players} />
 			{/if}
 		</div>
 	{/if}

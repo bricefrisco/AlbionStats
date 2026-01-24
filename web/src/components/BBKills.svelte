@@ -6,13 +6,36 @@
 	import Pagination from './Pagination.svelte';
 	import { formatNumber, formatFame, formatDateUTC } from '$lib/utils';
 
-	let { data = [] } = $props();
+	let { kills = [], players = [] } = $props();
 
 	let currentPage = $state(1);
 	const pageSize = 20;
 
-	let totalPages = $derived(Math.ceil(data.length / pageSize));
-	let paginatedData = $derived(data.slice((currentPage - 1) * pageSize, currentPage * pageSize));
+	let totalPages = $derived(Math.ceil(kills.length / pageSize));
+	let paginatedData = $derived(kills.slice((currentPage - 1) * pageSize, currentPage * pageSize));
+
+	const playersByName = $derived.by(() => {
+		const map = new Map();
+		for (const player of players || []) {
+			if (player?.PlayerName) {
+				map.set(player.PlayerName, player);
+			}
+		}
+		return map;
+	});
+
+	function formatAffiliation(name) {
+		const player = playersByName.get(name);
+		const alliance = player?.AllianceName;
+		const guild = player?.GuildName;
+		const parts = [];
+		if (alliance && guild) {
+			parts.push(`[${alliance}] ${guild}`);
+		} else if (guild) {
+			parts.push(guild);
+		}
+		return parts.join(' - ');
+	}
 </script>
 
 <Table>
@@ -20,6 +43,8 @@
 		<TableHeader class="w-32 text-left font-semibold whitespace-nowrap">Time</TableHeader>
 		<TableHeader class="text-left font-semibold">Killer</TableHeader>
 		<TableHeader class="text-left font-semibold">Victim</TableHeader>
+		<TableHeader class="w-24 text-right font-semibold whitespace-nowrap">Killer IP</TableHeader>
+		<TableHeader class="w-24 text-right font-semibold whitespace-nowrap">Victim IP</TableHeader>
 		<TableHeader class="text-right font-semibold whitespace-nowrap">Fame</TableHeader>
 	{/snippet}
 
@@ -37,7 +62,7 @@
 					{/if}
 					<div class="flex flex-col">
 						<span class="text-sm text-gray-600 dark:text-gray-400">
-							IP {formatNumber(kill.KillerIP)}
+							{formatAffiliation(kill.KillerName)}
 						</span>
 						<span class="font-medium text-gray-900 dark:text-white">
 							{kill.KillerName || '-'}
@@ -56,7 +81,7 @@
 					{/if}
 					<div class="flex flex-col">
 						<span class="text-sm text-gray-600 dark:text-gray-400">
-							IP {formatNumber(kill.VictimIP)}
+							{formatAffiliation(kill.VictimName)}
 						</span>
 						<span class="font-medium text-gray-900 dark:text-white">
 							{kill.VictimName || '-'}
@@ -64,6 +89,8 @@
 					</div>
 				</div>
 			</TableData>
+			<TableData class="text-right">{formatNumber(kill.KillerIP)}</TableData>
+			<TableData class="text-right">{formatNumber(kill.VictimIP)}</TableData>
 			<TableData class="text-right text-yellow-600 dark:text-yellow-400">
 				{formatFame(kill.Fame)}
 			</TableData>
