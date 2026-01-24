@@ -4,15 +4,31 @@
 	import TableRow from './TableRow.svelte';
 	import TableData from './TableData.svelte';
 	import Pagination from './Pagination.svelte';
+	import BBFilter from './BBFilter.svelte';
 	import { formatNumber, formatFame } from '$lib/utils';
 
 	let { data = [] } = $props();
 
 	let currentPage = $state(1);
-	const pageSize = 20;
+	const pageSize = 10;
+	let search = $state('');
 
-	let totalPages = $derived(Math.ceil(data.length / pageSize));
-	let paginatedData = $derived(data.slice((currentPage - 1) * pageSize, currentPage * pageSize));
+	const filteredData = $derived.by(() => {
+		const query = search.trim().toLowerCase();
+		if (!query) return data;
+		return data.filter((player) => {
+			const playerName = (player.PlayerName || '').toLowerCase();
+			const guildName = (player.GuildName || '').toLowerCase();
+			const allianceName = (player.AllianceName || '').toLowerCase();
+			return (
+				playerName.includes(query) || guildName.includes(query) || allianceName.includes(query)
+			);
+		});
+	});
+	let totalPages = $derived(Math.ceil(filteredData.length / pageSize));
+	let paginatedData = $derived(
+		filteredData.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+	);
 
 	function formatAffiliation(player) {
 		if (!player) return '';
@@ -24,7 +40,14 @@
 		}
 		return '';
 	}
+
+	$effect(() => {
+		search;
+		currentPage = 1;
+	});
 </script>
+
+<BBFilter bind:value={search} placeholder="Filter players, guilds, or alliances" />
 
 <Table>
 	{#snippet header()}

@@ -5,15 +5,28 @@
 	import TableRow from './TableRow.svelte';
 	import TableData from './TableData.svelte';
 	import Pagination from './Pagination.svelte';
+	import BBFilter from './BBFilter.svelte';
 	import { formatNumber, formatFame, formatDateUTC } from '$lib/utils';
 
 	let { kills = [], players = [] } = $props();
 
 	let currentPage = $state(1);
-	const pageSize = 20;
+	const pageSize = 10;
+	let search = $state('');
 
-	let totalPages = $derived(Math.ceil(kills.length / pageSize));
-	let paginatedData = $derived(kills.slice((currentPage - 1) * pageSize, currentPage * pageSize));
+	const filteredData = $derived.by(() => {
+		const query = search.trim().toLowerCase();
+		if (!query) return kills;
+		return kills.filter((kill) => {
+			const killer = (kill.KillerName || '').toLowerCase();
+			const victim = (kill.VictimName || '').toLowerCase();
+			return killer.includes(query) || victim.includes(query);
+		});
+	});
+	let totalPages = $derived(Math.ceil(filteredData.length / pageSize));
+	let paginatedData = $derived(
+		filteredData.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+	);
 
 	const playersByName = $derived.by(() => {
 		const map = new SvelteMap();
@@ -37,7 +50,14 @@
 		}
 		return parts.join(' - ');
 	}
+
+	$effect(() => {
+		search;
+		currentPage = 1;
+	});
 </script>
+
+<BBFilter bind:value={search} placeholder="Filter killer or victim" />
 
 <Table>
 	{#snippet header()}
