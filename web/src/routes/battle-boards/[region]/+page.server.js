@@ -39,7 +39,7 @@ export const load = async ({ params, url, fetch }) => {
 			initialBattles = mapBattleBoardsData(data);
 			initialHasMore = initialBattles.length >= 20;
 		} catch (err) {
-			initialError = err instanceof Error ? err.message : 'Failed to load battles';
+			initialError = 'No results found by that criteria.';
 		}
 	}
 
