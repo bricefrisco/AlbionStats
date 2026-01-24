@@ -223,7 +223,7 @@ func (s *Server) mergeAllianceStats(stats []postgres.BattleAllianceStats) []*Mer
 	}
 
 	sort.Slice(merged, func(i, j int) bool {
-		return merged[i].PlayerCount > merged[j].PlayerCount
+		return merged[i].KillFame > merged[j].KillFame
 	})
 
 	return merged
@@ -274,7 +274,7 @@ func (s *Server) mergeGuildStats(stats []postgres.BattleGuildStats) []*MergedGui
 	}
 
 	sort.Slice(merged, func(i, j int) bool {
-		return merged[i].PlayerCount > merged[j].PlayerCount
+		return merged[i].KillFame > merged[j].KillFame
 	})
 
 	return merged
