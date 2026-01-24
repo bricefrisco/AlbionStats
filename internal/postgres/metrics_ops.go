@@ -19,19 +19,16 @@ func (s *Postgres) InsertPlayersTotalAndSnapshotMetrics(ctx context.Context) err
 
 func (s *Postgres) InsertActivePlayersMetrics(ctx context.Context) error {
 	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+
 		// Insert regional active player counts
 		if err := tx.Exec(`
 			INSERT INTO metrics (metric, ts, value)
 			SELECT
-				'active_players_24h_' || region as metric,
-				now() as ts,
-				COUNT(DISTINCT player_id) AS value
-			FROM player_stats_snapshots
-			WHERE ts >= now() - interval '24 hours'
-				AND (
-					killboard_last_activity >= now() - interval '24 hours'
-					OR other_last_activity >= now() - interval '24 hours'
-				)
+				'active_players_24h_' || region AS metric,
+				now() AS ts,
+				COUNT(*) AS value
+			FROM player_stats_latest
+			WHERE last_activity >= now() - interval '24 hours'
 			GROUP BY region
 		`).Error; err != nil {
 			return err
@@ -40,16 +37,12 @@ func (s *Postgres) InsertActivePlayersMetrics(ctx context.Context) error {
 		// Insert total active players count
 		return tx.Exec(`
 			INSERT INTO metrics (metric, ts, value)
-			VALUES
-				('active_players_24h', now(), (
-					SELECT COUNT(DISTINCT player_id)
-					FROM player_stats_snapshots
-					WHERE ts >= now() - interval '24 hours'
-						AND (
-							killboard_last_activity >= now() - interval '24 hours'
-							OR other_last_activity >= now() - interval '24 hours'
-						)
-				))
+			SELECT
+				'active_players_24h',
+				now(),
+				COUNT(*)
+			FROM player_stats_latest
+			WHERE last_activity >= now() - interval '24 hours'
 		`).Error
 	})
 }
