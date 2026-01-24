@@ -46,7 +46,7 @@
 </script>
 
 <div>
-	<SubHeader title="Daily Active Users" classes="mb-4" />
+	<SubHeader title="Daily Active Players" classes="mb-4" />
 	{#if loading}
 		<ChartLoading />
 	{:else if error}
