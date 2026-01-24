@@ -13,7 +13,7 @@
 >
 	<div class="mx-auto max-w-5xl px-4 py-3 xl:px-0">
 		<div class="flex items-center justify-between">
-			<nav class="flex items-center gap-4">
+			<nav class="flex items-center gap-6">
 				<a
 					href={resolve('/')}
 					class="text-lg font-medium text-gray-900 hover:text-gray-700 dark:text-white dark:hover:text-gray-300 pr-4 border-r border-gray-300 dark:border-gray-600"
