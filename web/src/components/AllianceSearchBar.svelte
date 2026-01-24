@@ -92,6 +92,7 @@
 	itemCount={alliances.length}
 	bind:activeIndex
 	onselectIndex={selectAlliance}
+	allowSubmitOnEnter={!links}
 	{isSearching}
 	{label}
 	{placeholder}

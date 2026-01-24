@@ -92,6 +92,7 @@
 	itemCount={players.length}
 	bind:activeIndex
 	onselectIndex={selectPlayer}
+	allowSubmitOnEnter={!links}
 	{isSearching}
 	{label}
 	{placeholder}

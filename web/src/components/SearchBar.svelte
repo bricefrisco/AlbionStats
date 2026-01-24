@@ -9,6 +9,7 @@
 		itemCount = 0,
 		activeIndex = $bindable(0),
 		onselectIndex,
+		allowSubmitOnEnter = false,
 		isSearching = false,
 		showDropdown = $bindable(false),
 		dropdownContent
@@ -28,9 +29,8 @@
 	const handleKeydown = (event) => {
 		onkeydown?.(event);
 		if (event.defaultPrevented) return;
-		if (!itemCount) return;
-
 		if (event.key === 'Tab') {
+			if (!itemCount) return;
 			event.preventDefault();
 			activeIndex = (activeIndex + 1) % itemCount;
 			showDropdown = true;
@@ -38,7 +38,13 @@
 		}
 
 		if (event.key === 'Enter') {
-			event.preventDefault();
+			if (!itemCount) {
+				event.preventDefault();
+				return;
+			}
+			if (!allowSubmitOnEnter) {
+				event.preventDefault();
+			}
 			onselectIndex?.(activeIndex);
 			showDropdown = false;
 		}

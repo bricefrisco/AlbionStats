@@ -92,6 +92,7 @@
 	itemCount={guilds.length}
 	bind:activeIndex
 	onselectIndex={selectGuild}
+	allowSubmitOnEnter={!links}
 	{isSearching}
 	{label}
 	{placeholder}
