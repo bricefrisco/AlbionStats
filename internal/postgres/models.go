@@ -19,9 +19,9 @@ type PlayerPoll struct {
 	PlayerID              string     `gorm:"column:player_id;primaryKey"`
 	NextPollAt            time.Time  `gorm:"column:next_poll_at;not null"`
 	ErrorCount            int16      `gorm:"column:error_count;default:0"`
-	LastEncountered       *time.Time `gorm:"column:last_encountered"`
 	KillboardLastActivity *time.Time `gorm:"column:killboard_last_activity"`
 	OtherLastActivity     *time.Time `gorm:"column:other_last_activity"`
+	LastActivity          *time.Time `gorm:"column:last_activity"`
 	LastPollAt            *time.Time `gorm:"column:last_poll_at"`
 }
 
@@ -35,9 +35,9 @@ type PlayerStatsLatest struct {
 	TS       time.Time `gorm:"column:ts;not null"`
 
 	// Last seen timestamps
-	LastEncountered       *time.Time `gorm:"column:last_encountered"`
 	KillboardLastActivity *time.Time `gorm:"column:killboard_last_activity"`
 	OtherLastActivity     *time.Time `gorm:"column:other_last_activity"`
+	LastActivity          *time.Time `gorm:"column:last_activity"`
 
 	// Identity
 	Name         string  `gorm:"column:name;not null"`
@@ -114,9 +114,9 @@ type PlayerStatsSnapshot struct {
 	TS       time.Time `gorm:"column:ts;not null;primaryKey"`
 
 	// Last seen timestamps
-	LastEncountered       *time.Time `gorm:"column:last_encountered"`
 	KillboardLastActivity *time.Time `gorm:"column:killboard_last_activity"`
 	OtherLastActivity     *time.Time `gorm:"column:other_last_activity"`
+	LastActivity          *time.Time `gorm:"column:last_activity"`
 
 	// Identity
 	Name         string  `gorm:"column:name;not null"`

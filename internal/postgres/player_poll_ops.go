@@ -60,7 +60,7 @@ func (s *Postgres) UpdatePlayerPolls(polls []PlayerPoll) error {
 					"error_count":             p.ErrorCount,
 					"other_last_activity":     p.OtherLastActivity,
 					"last_poll_at":            p.LastPollAt,
-					"last_encountered":        p.LastEncountered,
+					"last_activity":           p.LastActivity,
 					"killboard_last_activity": p.KillboardLastActivity,
 				}).Error; err != nil {
 				return fmt.Errorf("update player poll: %w", err)

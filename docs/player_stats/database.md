@@ -8,9 +8,9 @@ CREATE TABLE player_polls (
     player_id                       TEXT NOT NULL,
     next_poll_at                    TIMESTAMPTZ NOT NULL,
     error_count                     SMALLINT NOT NULL DEFAULT 0,
-    last_encountered                TIMESTAMPTZ,
     killboard_last_activity         TIMESTAMPTZ,
     other_last_activity             TIMESTAMPTZ,
+    last_activity                   TIMESTAMPTZ,
     last_poll_at                    TIMESTAMPTZ,
 
     PRIMARY KEY (region, player_id),
@@ -35,9 +35,9 @@ CREATE TABLE player_stats_latest (
     ts                      TIMESTAMPTZ NOT NULL,
 
     -- Last seen timestamps
-    last_encountered        TIMESTAMPTZ,
     killboard_last_activity TIMESTAMPTZ,
     other_last_activity     TIMESTAMPTZ,
+    last_activity           TIMESTAMPTZ,
     
     -- Identity
     name                    TEXT NOT NULL,
@@ -144,9 +144,9 @@ CREATE TABLE player_stats_snapshots (
     ts                      TIMESTAMPTZ NOT NULL,
 
     -- Last seen timestamps
-    last_encountered        TIMESTAMPTZ,
     killboard_last_activity TIMESTAMPTZ,
     other_last_activity     TIMESTAMPTZ,
+    last_activity           TIMESTAMPTZ,
     
     -- Identity
     name                    TEXT NOT NULL,

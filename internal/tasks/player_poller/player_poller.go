@@ -104,7 +104,7 @@ func (p *PlayerPoller) processPlayer(player postgres.PlayerPoll) processResult {
 			LastPollAt:            player.LastPollAt,
 			NextPollAt:            time.Now().UTC().Add(failureBackoff(int(player.ErrorCount) + 1)),
 			ErrorCount:            player.ErrorCount + 1,
-			LastEncountered:       player.LastEncountered,
+			LastActivity:          player.LastActivity,
 			KillboardLastActivity: player.KillboardLastActivity,
 			OtherLastActivity:     player.OtherLastActivity,
 		}, error: true}
@@ -114,7 +114,7 @@ func (p *PlayerPoller) processPlayer(player postgres.PlayerPoll) processResult {
 		return processResult{shouldDeletePoll: true, poll: player}
 	}
 
-	nextPollAt, err := scheduleNextPoll(player.LastEncountered, player.KillboardLastActivity, player.OtherLastActivity, now)
+	nextPollAt, err := scheduleNextPoll(player.LastActivity, player.KillboardLastActivity, player.OtherLastActivity, now)
 	if err != nil {
 		p.log.Warn("schedule poll failed", "player_id", player.PlayerID, "err", err.Error())
 		return processResult{poll: postgres.PlayerPoll{
@@ -123,7 +123,7 @@ func (p *PlayerPoller) processPlayer(player postgres.PlayerPoll) processResult {
 			LastPollAt:            player.LastPollAt,
 			NextPollAt:            time.Now().UTC().Add(failureBackoff(int(player.ErrorCount) + 1)),
 			ErrorCount:            player.ErrorCount + 1,
-			LastEncountered:       player.LastEncountered,
+			LastActivity:          player.LastActivity,
 			KillboardLastActivity: player.KillboardLastActivity,
 			OtherLastActivity:     player.OtherLastActivity,
 		}, error: true}
@@ -136,7 +136,7 @@ func (p *PlayerPoller) processPlayer(player postgres.PlayerPoll) processResult {
 		NextPollAt:            nextPollAt,
 		ErrorCount:            0,
 		OtherLastActivity:     resp.LifetimeStatistics.Timestamp,
-		LastEncountered:       player.LastEncountered,
+		LastActivity:          player.LastActivity,
 		KillboardLastActivity: player.KillboardLastActivity,
 	}
 
@@ -144,7 +144,7 @@ func (p *PlayerPoller) processPlayer(player postgres.PlayerPoll) processResult {
 		Region:                player.Region,
 		PlayerID:              player.PlayerID,
 		TS:                    now,
-		LastEncountered:       player.LastEncountered,
+		LastActivity:          player.LastActivity,
 		KillboardLastActivity: player.KillboardLastActivity,
 		OtherLastActivity:     resp.LifetimeStatistics.Timestamp,
 		Name:                  resp.Name,
@@ -200,7 +200,7 @@ func (p *PlayerPoller) processPlayer(player postgres.PlayerPoll) processResult {
 		Region:                player.Region,
 		PlayerID:              player.PlayerID,
 		TS:                    now,
-		LastEncountered:       player.LastEncountered,
+		LastActivity:          player.LastActivity,
 		KillboardLastActivity: player.KillboardLastActivity,
 		OtherLastActivity:     resp.LifetimeStatistics.Timestamp,
 		Name:                  resp.Name,
@@ -295,11 +295,11 @@ func (p *PlayerPoller) processResults(results []processResult) {
 	p.log.Info("processed results", "num_deletes", len(deletes), "num_polls", len(polls), "num_stats", len(stats))
 }
 
-func scheduleNextPoll(lastEncountered, killboardLastActivity, otherLastActivity *time.Time, now time.Time) (time.Time, error) {
+func scheduleNextPoll(lastActivity, killboardLastActivity, otherLastActivity *time.Time, now time.Time) (time.Time, error) {
 	// Find the most recent activity timestamp among the three
 	var mostRecent *time.Time
-	if lastEncountered != nil {
-		mostRecent = lastEncountered
+	if lastActivity != nil {
+		mostRecent = lastActivity
 	}
 	if killboardLastActivity != nil && (mostRecent == nil || killboardLastActivity.After(*mostRecent)) {
 		mostRecent = killboardLastActivity
