@@ -8,6 +8,8 @@
 	import BackToTopButton from '$components/BackToTopButton.svelte';
 	import GuildSearchBar from '$components/GuildSearchBar.svelte';
 	import PlayerSearchBar from '$components/PlayerSearchBar.svelte';
+	import Tooltip from '$components/Tooltip.svelte';
+	import HelpIcon from '$components/icons/HelpIcon.svelte';
 	import { regionState } from '$lib/regionState.svelte.js';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
@@ -86,9 +88,20 @@
 
 	<form class="mb-4 flex items-end gap-2" onsubmit={(e) => { e.preventDefault(); updateUrl(searchQuery); }}>
 		<div class="flex flex-col gap-1">
-			<label for="min-players" class="text-xs font-medium text-gray-600 dark:text-gray-400">
-				Participants
-			</label>
+			<div class="flex w-full items-center justify-between">
+				<label for="min-players" class="text-xs font-medium text-gray-600 dark:text-gray-400">
+					Participants
+				</label>
+				<Tooltip content="If filtering by alliance or guild, the participant count is for that alliance or guild specifically. Otherwise, it is the total amount of players in the battle">
+					<button
+						type="button"
+						class="flex items-center text-gray-400 transition-colors hover:text-gray-600 dark:text-neutral-500 dark:hover:text-neutral-300"
+						aria-label="Participants info"
+					>
+						<HelpIcon size={14} />
+					</button>
+				</Tooltip>
+			</div>
 			<input
 				id="min-players"
 				type="number"
