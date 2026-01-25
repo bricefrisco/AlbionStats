@@ -65,7 +65,7 @@
 <Page>
 	<PageHeader title="Alliances" />
 	<Typography>
-		<h2>Albion Online Alliance Statistics. Search for an alliance to view their stats.</h2>
+		<h2>Albion Online Alliance Statistics. Search for any alliance to view their stats.</h2>
 		<p>Below are top 100 alliances based on statistics pulled from battle board data based
 			over the past 30 days.</p>
 		<p>Collection began on January 19th, 2026.</p>
@@ -75,7 +75,7 @@
 		<AllianceSearchBar
 			bind:value={searchQuery}
 			links={true}
-			placeholder="Alliance name"
+			placeholder="Search for any alliance..."
 		/>
 	</div>
 

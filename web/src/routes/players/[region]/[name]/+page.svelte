@@ -82,7 +82,7 @@
 	<div class="mb-4">
 		<PlayerSearchBar
 			bind:value={searchName}
-			placeholder="Player name"
+			placeholder="Search for any player..."
 			links={true}
 		/>
 	</div>

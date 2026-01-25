@@ -103,7 +103,7 @@
 	<div class="mb-4">
 		<GuildSearchBar
 			bind:value={searchName}
-			placeholder="Guild name"
+			placeholder="Search for any guild..."
 			links={true}
 		/>
 	</div>

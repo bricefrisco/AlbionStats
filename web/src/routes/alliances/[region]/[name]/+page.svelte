@@ -108,7 +108,7 @@
 	<div class="mb-4">
 		<AllianceSearchBar
 			bind:value={searchName}
-			placeholder="Alliance name"
+			placeholder="Search for any alliance..."
 			links={true}
 		/>
 	</div>
