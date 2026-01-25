@@ -1,5 +1,5 @@
 import { redirect } from '@sveltejs/kit';
 
 export const load = async ({ url }) => {
-	throw redirect(302, `/alliances/americas${url.search}`);
+	throw redirect(308, `/alliances/americas${url.search}`);
 };
