@@ -32,8 +32,11 @@
 		"vite": "^7.2.6"
 	},
 	"dependencies": {
+		"@fontsource/inter": "^5.2.8",
+		"@resvg/resvg-js": "^2.6.2",
 		"chart.js": "^4.5.1",
 		"chartjs-adapter-date-fns": "^3.0.0",
-		"nprogress": "^0.2.0"
+		"nprogress": "^0.2.0",
+		"satori": "^0.19.1"
 	}
 }

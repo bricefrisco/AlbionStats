@@ -42,6 +42,12 @@
 			]
 		});
 	});
+	let ogImageUrl = $derived.by(() => {
+		const origin = page.url.origin;
+		const region = page.params.region;
+		const battleIds = encodeURIComponent(data.battleIds || '');
+		return `${origin}/og/battle/${region}/${battleIds}`;
+	});
 
 	// Tabs state
 	const tabs = [
@@ -192,6 +198,15 @@
 		content={`Albion Online battle board results for ${battleTitle} in ${regionState.label}. View alliances, guilds, players, and kills.`}
 	/>
 	<link rel="canonical" href={`${page.url.origin}${page.url.pathname}`} />
+	<meta property="og:title" content={`${battleTitle} - AlbionStats - ${regionState.label}`} />
+	<meta
+		property="og:description"
+		content={`Albion Online battle board results for ${battleTitle} in ${regionState.label}.`}
+	/>
+	<meta property="og:image" content={ogImageUrl} />
+	<meta property="og:image:width" content="1200" />
+	<meta property="og:image:height" content="630" />
+	<meta name="twitter:card" content="summary_large_image" />
 	<script type="application/ld+json">{breadcrumbJsonLd}</script>
 </svelte:head>
 
