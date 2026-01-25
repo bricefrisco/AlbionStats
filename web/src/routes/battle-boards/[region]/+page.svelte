@@ -31,6 +31,7 @@
 	let activeQ = $state(searchQuery);
 	let activeType = $state(searchType);
 	let activeP = $state(minPlayers);
+	let hasSelected = $derived(selectedIds.size > 0);
 	let hasFilters = $derived.by(() => {
 		const params = page.url.searchParams;
 		return Boolean(params.get('q') || params.get('p') || params.get('type'));
@@ -122,13 +123,17 @@
 		<p>Collection began on January 19th, 2026.</p>
 	</Typography>
 
-	<form class="mb-4 flex items-end gap-2" onsubmit={(e) => { e.preventDefault(); updateUrl(searchQuery); }}>
-		<div class="flex flex-col gap-1">
-			<div class="flex w-full items-center justify-between">
-				<label for="min-players" class="text-xs font-medium text-gray-600 dark:text-gray-400">
-					Participants
-				</label>
-				<Tooltip content="If filtering by alliance or guild, the participant count is for that alliance or guild specifically. Otherwise, it is the total amount of players in the battle">
+	<form
+		class="mb-4 flex flex-col gap-3 lg:flex-row lg:items-end"
+		onsubmit={(e) => { e.preventDefault(); updateUrl(searchQuery); }}
+	>
+		<div class="grid gap-2 lg:flex lg:items-end lg:gap-2 grid-cols-2">
+			<div class="flex flex-col gap-1">
+				<div class="flex w-full items-center justify-between">
+					<label for="min-players" class="text-xs font-medium text-gray-600 dark:text-gray-400">
+						Participants
+					</label>
+					<Tooltip content="If filtering by alliance or guild, the participant count is for that alliance or guild specifically. Otherwise, it is the total amount of players in the battle">
 					<button
 						type="button"
 						class="flex items-center text-gray-400 transition-colors hover:text-gray-600 dark:text-neutral-500 dark:hover:text-neutral-300"
@@ -138,33 +143,34 @@
 					</button>
 				</Tooltip>
 			</div>
-			<input
-				id="min-players"
-				type="number"
-				bind:value={minPlayers}
-				min="1"
-				max="300"
-				onkeydown={(e) => {
-					if (e.key !== 'Enter') return;
-					e.preventDefault();
-					updateUrl(searchQuery);
-				}}
-				class="w-32 rounded border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder-gray-500 focus:border-gray-400 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-100 dark:placeholder-neutral-500 dark:focus:border-neutral-700"
+				<input
+					id="min-players"
+					type="number"
+					bind:value={minPlayers}
+					min="1"
+					max="300"
+					onkeydown={(e) => {
+						if (e.key !== 'Enter') return;
+						e.preventDefault();
+						updateUrl(searchQuery);
+					}}
+					class="w-full rounded border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder-gray-500 focus:border-gray-400 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-100 dark:placeholder-neutral-500 dark:focus:border-neutral-700 lg:w-32"
+				/>
+			</div>
+
+			<Select
+				bind:value={searchType}
+				classes="w-full lg:w-32"
+				label="Type"
+				options={[
+					{ label: 'Alliance', value: 'alliance' },
+					{ label: 'Guild', value: 'guild' },
+					{ label: 'Player', value: 'player' }
+				]}
 			/>
 		</div>
 
-		<Select
-			bind:value={searchType}
-			classes="w-32"
-			label="Type"
-			options={[
-				{ label: 'Alliance', value: 'alliance' },
-				{ label: 'Guild', value: 'guild' },
-				{ label: 'Player', value: 'player' }
-			]}
-		/>
-
-		<div class="flex-1">
+		<div class="w-full lg:flex-1">
 			{#if searchType === 'player'}
 				<PlayerSearchBar
 					bind:value={searchQuery}
@@ -189,21 +195,24 @@
 			{/if}
 		</div>
 
-		<button
-			type="submit"
-			class="h-[38px] cursor-pointer rounded border border-gray-300 bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 focus:border-gray-400 focus:outline-none dark:border-neutral-800 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:bg-neutral-700 dark:focus:border-neutral-700"
-		>
-			Apply filter
-		</button>
-
-		{#if selectedIds.size > 0}
-			<a
-				href={resolve(`/battle-boards/${regionState.value}/${Array.from(selectedIds).join(',')}`)}
-				class="inline-flex h-[38px] items-center cursor-pointer rounded border border-gray-300 bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 focus:border-gray-400 focus:outline-none dark:border-neutral-800 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:bg-neutral-700 dark:focus:border-neutral-700"
+		<div class="grid w-full grid-cols-2 gap-2 lg:w-auto lg:flex lg:flex-row">
+			<button
+				type="submit"
+				class="h-[38px] w-full cursor-pointer rounded border border-gray-300 bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 focus:border-gray-400 focus:outline-none dark:border-neutral-800 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:bg-neutral-700 dark:focus:border-neutral-700 lg:w-auto"
+				class:col-span-2={!hasSelected}
 			>
-				View battles
-			</a>
-		{/if}
+				Apply filter
+			</button>
+
+			{#if hasSelected}
+				<a
+					href={resolve(`/battle-boards/${regionState.value}/${Array.from(selectedIds).join(',')}`)}
+					class="inline-flex h-[38px] w-full items-center justify-center cursor-pointer rounded border border-gray-300 bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 focus:border-gray-400 focus:outline-none dark:border-neutral-800 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:bg-neutral-700 dark:focus:border-neutral-700 lg:w-auto"
+				>
+					View battles
+				</a>
+			{/if}
+		</div>
 	</form>
 
 	<BattleTable
