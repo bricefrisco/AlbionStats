@@ -10,6 +10,38 @@
 	import { page } from '$app/state';
 
 	let { data } = $props();
+	const overview = {
+		intro: 'AlbionStats helps you explore Albion Online statistics over time.',
+		gettingStarted: [
+			{
+				path: '/battle-boards',
+				label: 'Battle Boards',
+				description: 'See recent battles and filter by alliance, guild, or player'
+			},
+			{
+				path: '/alliances',
+				label: 'Alliances',
+				description: 'Compare alliance performance and rosters'
+			},
+			{
+				path: '/guilds',
+				label: 'Guilds',
+				description: 'Compare guild performance and rosters'
+			},
+			{
+				path: '/players',
+				label: 'Players',
+				description: 'Look up a player and view their history'
+			},
+		],
+		highlights: [],
+		about: [
+			'We have been tracking players since January 11th, 2026 and battle boards since January 19th, 2026.',
+			'When a player appears in combat activity, we start tracking them automatically. We use battle ' +
+			'board data to derive alliance and guild statistics.',
+			'The goal is a fast, clear way to explore Albion Online progress and rivalries.'
+		]
+	};
 	let websiteJsonLd = $derived.by(() => {
 		const origin = page.url.origin;
 		return JSON.stringify({
@@ -29,60 +61,37 @@
 	/>
 	<link rel="canonical" href={`${page.url.origin}${page.url.pathname}`} />
 	<script type="application/ld+json">{websiteJsonLd}</script>
-</svelte:head>
+	</svelte:head>
 
 <Page>
 	<PageHeader title="Welcome to AlbionStats" />
 	<Typography>
-		<p>We track Albion Online statistics over time, including:</p>
-		<div class="mt-3 grid grid-cols-2 gap-2 text-sm md:grid-cols-3">
-			<div class="flex items-center">
-				<span class="mr-2 h-1.5 w-1.5 rounded-full bg-gray-400"></span>
-				Kill fame
-			</div>
-			<div class="flex items-center">
-				<span class="mr-2 h-1.5 w-1.5 rounded-full bg-gray-400"></span>
-				Death fame
-			</div>
-			<div class="flex items-center">
-				<span class="mr-2 h-1.5 w-1.5 rounded-full bg-gray-400"></span>
-				PvE Fame
-			</div>
-			<div class="flex items-center">
-				<span class="mr-2 h-1.5 w-1.5 rounded-full bg-gray-400"></span>
-				Gathering Fame
-			</div>
-			<div class="flex items-center">
-				<span class="mr-2 h-1.5 w-1.5 rounded-full bg-gray-400"></span>
-				Crafting Fame
-			</div>
-			<div class="flex items-center">
-				<span class="mr-2 h-1.5 w-1.5 rounded-full bg-gray-400"></span>
-				Guild History
-			</div>
-		</div>
-
+		<p>{overview.intro}</p>
 		<div class="mt-6">
 			<p class="font-medium text-gray-900 dark:text-white">To get started:</p>
-			<ul class="mt-2 list-inside list-disc space-y-1 text-sm text-gray-600 dark:text-gray-400">
-				<li>
-					Head over to the
-					<a
-						href={resolve('/battle-boards')}
-						class="font-medium text-blue-600 hover:underline dark:text-blue-400"
-						>Battle Boards</a
+			<div class="mt-3 grid grid-cols-1 gap-3 text-sm text-gray-600 dark:text-gray-400 lg:grid-cols-2">
+				{#each overview.gettingStarted as item}
+					<div
+						class="rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-neutral-800 dark:bg-neutral-900"
 					>
-					to see recent battles.
-				</li>
-				<li>
-					Visit the
-					<a
-						href={resolve('/players')}
-						class="font-medium text-blue-600 hover:underline dark:text-blue-400">Players</a
-					>
-					page to search for specific player statistics.
-				</li>
-			</ul>
+						<a
+							href={resolve(item.path)}
+							class="font-medium text-blue-600 hover:underline dark:text-blue-400"
+							>{item.label}</a
+						>
+						<p class="mt-1 text-xs text-gray-600 dark:text-gray-400">{item.description}.</p>
+					</div>
+				{/each}
+			</div>
+		</div>
+		<div class="mt-6 grid grid-cols-1 gap-4 text-sm lg:grid-cols-2">
+			{#each overview.highlights as highlight}
+				<div
+					class="rounded-lg border border-gray-200 bg-gray-50 p-3 text-gray-700 dark:border-neutral-800 dark:bg-neutral-900 dark:text-gray-200"
+				>
+					<span>{highlight}</span>
+				</div>
+			{/each}
 		</div>
 	</Typography>
 
@@ -97,20 +106,10 @@
 
 	<SubHeader title="About" classes="mt-8" />
 	<Typography classes="leading-relaxed mt-2">
-		We've been tracking players since January 11th, 2026.
+		{overview.about[0]}
 		<br />
-		When a player shows up on the killboards, we automatically start tracking their statistics.
+		{overview.about[1]}
 		<br /><br />
-		The main motivation for this project is to be able to look players up <i>quickly</i> and
-		<i>easily</i>. Other projects like this exist and work, but they are often slow or have a clunky
-		UI. This site aims to be fast and easy to use. All of the code for this project is open source
-		and available on
-		<a
-			href="https://github.com/bricefrisco/AlbionStats"
-			target="_blank"
-			rel="noopener noreferrer"
-			class="text-blue-600 underline transition-colors duration-200 hover:text-blue-800 hover:no-underline dark:text-blue-400 dark:hover:text-blue-300"
-			>GitHub</a
-		>.
+		{overview.about[2]}
 	</Typography>
 </Page>
