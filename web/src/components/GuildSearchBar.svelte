@@ -46,7 +46,7 @@
 		searchTimeout = setTimeout(async () => {
 			try {
 				const response = await fetch(
-					`${getApiBase()}/guilds/search/${regionState.value}/${encodeURIComponent(value)}`
+					`https://albionstats.com/api/guilds/search/${regionState.value}/${encodeURIComponent(value)}`
 				);
 				const data = await response.json();
 				guilds = data.guilds || [];

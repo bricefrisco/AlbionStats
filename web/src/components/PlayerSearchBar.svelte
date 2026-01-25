@@ -46,7 +46,7 @@
 		searchTimeout = setTimeout(async () => {
 			try {
 				const response = await fetch(
-					`${getApiBase()}/players/search/${regionState.value}/${encodeURIComponent(value)}`
+					`https://albionstats.com/api/players/search/${regionState.value}/${encodeURIComponent(value)}`
 				);
 				const data = await response.json();
 				players = data.players || [];
