@@ -12,6 +12,7 @@
 	import { formatDateUTC } from '$lib/utils';
 	import { SvelteMap } from 'svelte/reactivity';
 	import { regionState } from '$lib/regionState.svelte.js';
+	import { page } from '$app/state';
 
 	let { data } = $props();
 
@@ -19,6 +20,28 @@
 	let loading = $derived(data.loading);
 	let error = $derived(data.error);
 	let battleTitle = $derived.by(() => (data.battleIds ? `Battle ${data.battleIds}` : 'Battle'));
+	let breadcrumbJsonLd = $derived.by(() => {
+		const origin = page.url.origin;
+		const region = page.params.region;
+		return JSON.stringify({
+			'@context': 'https://schema.org',
+			'@type': 'BreadcrumbList',
+			itemListElement: [
+				{
+					'@type': 'ListItem',
+					position: 1,
+					name: 'Battle Boards',
+					item: `${origin}/battle-boards/${region}`
+				},
+				{
+					'@type': 'ListItem',
+					position: 2,
+					name: battleTitle,
+					item: `${origin}/battle-boards/${region}/${encodeURIComponent(data.battleIds)}`
+				}
+			]
+		});
+	});
 
 	// Tabs state
 	const tabs = [
@@ -168,6 +191,8 @@
 		name="description"
 		content={`Albion Online battle board results for ${battleTitle} in ${regionState.label}. View alliances, guilds, players, and kills.`}
 	/>
+	<link rel="canonical" href={`${page.url.origin}${page.url.pathname}`} />
+	<script type="application/ld+json">{breadcrumbJsonLd}</script>
 </svelte:head>
 
 <Page>

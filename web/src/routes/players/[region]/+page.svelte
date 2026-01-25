@@ -8,6 +8,7 @@
 	import TableHeader from '$components/TableHeader.svelte';
 	import TableRow from '$components/TableRow.svelte';
 	import TableData from '$components/TableData.svelte';
+	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
 	import { formatFame, formatNumber, formatRatio, getRatioColor } from '$lib/utils.js';
 	import { regionState } from '$lib/regionState.svelte.js';
@@ -17,6 +18,38 @@
 	let { data } = $props();
 
 	let searchQuery = $derived('');
+	let websiteJsonLd = $derived.by(() => {
+		const origin = page.url.origin;
+		const region = page.params.region;
+		return JSON.stringify({
+			'@context': 'https://schema.org',
+			'@type': 'WebSite',
+			name: 'AlbionStats',
+			url: origin,
+			potentialAction: {
+				'@type': 'SearchAction',
+				target: `${origin}/players/${region}/{search_term_string}`,
+				'query-input': 'required name=search_term_string'
+			}
+		});
+	});
+	let itemListJsonLd = $derived.by(() => {
+		if (!data.topPlayers?.length) return '';
+		const origin = page.url.origin;
+		const region = page.params.region;
+		return JSON.stringify({
+			'@context': 'https://schema.org',
+			'@type': 'ItemList',
+			name: `Top Albion Online players in ${regionState.label}`,
+			itemListOrder: 'https://schema.org/ItemListOrderDescending',
+			itemListElement: data.topPlayers.map((player, index) => ({
+				'@type': 'ListItem',
+				position: index + 1,
+				name: player.PlayerName,
+				url: `${origin}/players/${region}/${encodeURIComponent(player.PlayerName)}`
+			}))
+		});
+	});
 </script>
 
 <svelte:head>
@@ -25,6 +58,11 @@
 		name="description"
 		content={`Top Albion Online players in ${regionState.label}. Search player stats, kills, deaths, and fame.`}
 	/>
+	<link rel="canonical" href={`${page.url.origin}${page.url.pathname}`} />
+	<script type="application/ld+json">{websiteJsonLd}</script>
+	{#if itemListJsonLd}
+		<script type="application/ld+json">{itemListJsonLd}</script>
+	{/if}
 </svelte:head>
 
 <Page>

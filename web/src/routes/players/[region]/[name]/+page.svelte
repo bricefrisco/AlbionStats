@@ -11,6 +11,7 @@
 	import PlayerGatheringCharts from '$components/charts/PlayerGatheringCharts.svelte';
 	import PlayerCraftingCharts from '$components/charts/PlayerCraftingCharts.svelte';
 	import { resolve } from '$app/paths';
+	import { page } from '$app/state';
 	import { regionState } from '$lib/regionState.svelte.js';
 
 	let { data } = $props();
@@ -31,6 +32,28 @@
 	let activeTab = $state('pvp');
 
 	let playerName = $derived.by(() => playerData?.Name || decodedName || 'Player');
+	let breadcrumbJsonLd = $derived.by(() => {
+		const origin = page.url.origin;
+		const region = page.params.region;
+		return JSON.stringify({
+			'@context': 'https://schema.org',
+			'@type': 'BreadcrumbList',
+			itemListElement: [
+				{
+					'@type': 'ListItem',
+					position: 1,
+					name: 'Players',
+					item: `${origin}/players/${region}`
+				},
+				{
+					'@type': 'ListItem',
+					position: 2,
+					name: playerName,
+					item: `${origin}/players/${region}/${encodeURIComponent(playerName)}`
+				}
+			]
+		});
+	});
 
 	// Tab configuration
 	const tabs = [
@@ -51,6 +74,8 @@
 		name="description"
 		content={`Albion Online stats for ${playerName} in ${regionState.label}. View kills, deaths, fame, and charts.`}
 	/>
+	<link rel="canonical" href={`${page.url.origin}${page.url.pathname}`} />
+	<script type="application/ld+json">{breadcrumbJsonLd}</script>
 </svelte:head>
 
 <Page>

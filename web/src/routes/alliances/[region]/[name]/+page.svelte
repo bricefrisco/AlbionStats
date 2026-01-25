@@ -8,6 +8,7 @@
 	import AllianceGuilds from '$components/AllianceGuilds.svelte';
 	import AllianceGuildPlayers from '$components/AllianceGuildPlayers.svelte';
 	import { formatNumber, formatRatio } from '$lib/utils';
+	import { page } from '$app/state';
 	import { regionState } from '$lib/regionState.svelte.js';
 
 	let { data } = $props();
@@ -17,6 +18,28 @@
 	let error = $derived(data.allianceError);
 	let searchName = $derived(allianceData.Name);
 	let allianceName = $derived.by(() => allianceData?.Name || 'Alliance');
+	let breadcrumbJsonLd = $derived.by(() => {
+		const origin = page.url.origin;
+		const region = page.params.region;
+		return JSON.stringify({
+			'@context': 'https://schema.org',
+			'@type': 'BreadcrumbList',
+			itemListElement: [
+				{
+					'@type': 'ListItem',
+					position: 1,
+					name: 'Alliances',
+					item: `${origin}/alliances/${region}`
+				},
+				{
+					'@type': 'ListItem',
+					position: 2,
+					name: allianceName,
+					item: `${origin}/alliances/${region}/${encodeURIComponent(allianceName)}`
+				}
+			]
+		});
+	});
 
 	function formatDate(dateString) {
 		if (!dateString) return 'Never';
@@ -77,6 +100,8 @@
 		name="description"
 		content={`Albion Online alliance stats for ${allianceName} in ${regionState.label}. View kills, deaths, fame, and roster activity.`}
 	/>
+	<link rel="canonical" href={`${page.url.origin}${page.url.pathname}`} />
+	<script type="application/ld+json">{breadcrumbJsonLd}</script>
 </svelte:head>
 
 <Page>

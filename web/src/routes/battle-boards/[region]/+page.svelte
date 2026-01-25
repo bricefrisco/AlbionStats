@@ -35,6 +35,23 @@
 		const params = page.url.searchParams;
 		return Boolean(params.get('q') || params.get('p') || params.get('type'));
 	});
+	let itemListJsonLd = $derived.by(() => {
+		if (!data.initialBattles?.length) return '';
+		const origin = page.url.origin;
+		const region = page.params.region;
+		return JSON.stringify({
+			'@context': 'https://schema.org',
+			'@type': 'ItemList',
+			name: `Recent Albion Online battles in ${regionState.label}`,
+			itemListOrder: 'https://schema.org/ItemListOrderDescending',
+			itemListElement: data.initialBattles.map((battle, index) => ({
+				'@type': 'ListItem',
+				position: index + 1,
+				name: `Battle ${battle.BattleID}`,
+				url: `${origin}/battle-boards/${region}/${battle.BattleID}`
+			}))
+		});
+	});
 
 	async function updateUrl(q = searchQuery, p = minPlayers) {
 		const url = new URL(page.url);
@@ -91,6 +108,9 @@
 	<link rel="canonical" href={`${page.url.origin}${page.url.pathname}`} />
 	{#if hasFilters}
 		<meta name="robots" content="noindex,follow" />
+	{/if}
+	{#if itemListJsonLd}
+		<script type="application/ld+json">{itemListJsonLd}</script>
 	{/if}
 </svelte:head>
 

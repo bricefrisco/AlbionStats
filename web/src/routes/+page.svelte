@@ -7,8 +7,18 @@
 	import TotalDataPoints from '$components/charts/TotalDataPoints.svelte';
 	import DailyActiveUsers from '$components/charts/DailyActiveUsers.svelte';
 	import SubHeader from '$components/SubHeader.svelte';
+	import { page } from '$app/state';
 
 	let { data } = $props();
+	let websiteJsonLd = $derived.by(() => {
+		const origin = page.url.origin;
+		return JSON.stringify({
+			'@context': 'https://schema.org',
+			'@type': 'WebSite',
+			name: 'AlbionStats',
+			url: origin
+		});
+	});
 </script>
 
 <svelte:head>
@@ -17,6 +27,8 @@
 		name="description"
 		content="Track Albion Online player, guild, and alliance statistics over time. Browse battle boards, charts, and activity trends."
 	/>
+	<link rel="canonical" href={`${page.url.origin}${page.url.pathname}`} />
+	<script type="application/ld+json">{websiteJsonLd}</script>
 </svelte:head>
 
 <Page>
