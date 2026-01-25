@@ -16,6 +16,7 @@ type GuildOverviewResponse struct {
 	Name          string                       `json:"Name"`
 	RosterStats   *postgres.PlayerRosterStats  `json:"RosterStats"`
 	BattleSummary *postgres.GuildBattleSummary `json:"BattleSummary"`
+	Players       []postgres.GuildPlayerStats  `json:"Players"`
 }
 
 func (s *Server) guildOverview(c *gin.Context) {
@@ -44,6 +45,7 @@ func (s *Server) guildOverview(c *gin.Context) {
 	var (
 		roster  *postgres.PlayerRosterStats
 		summary *postgres.GuildBattleSummary
+		players []postgres.GuildPlayerStats
 	)
 
 	g, ctx := errgroup.WithContext(c.Request.Context())
@@ -57,6 +59,11 @@ func (s *Server) guildOverview(c *gin.Context) {
 		summary, err = s.postgres.GetGuildBattleSummary(ctx, region, *player.GuildName)
 		return err
 	})
+	g.Go(func() error {
+		var err error
+		players, err = s.postgres.GetGuildPlayerStats(region, *player.GuildName)
+		return err
+	})
 
 	if err := g.Wait(); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get guild overview"})
@@ -67,5 +74,6 @@ func (s *Server) guildOverview(c *gin.Context) {
 		Name:          *player.GuildName,
 		RosterStats:   roster,
 		BattleSummary: summary,
+		Players:       players,
 	})
 }

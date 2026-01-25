@@ -118,6 +118,9 @@ ON battle_player_stats (region, start_time, player_name);
 
 CREATE INDEX idx_bps_alliance_time_player
 ON battle_player_stats (region, alliance_name, start_time, player_name);
+
+CREATE INDEX idx_bps_guild_time_player
+ON battle_player_stats (region, guild_name, start_time, player_name);
 ```
 
 ## Battle queue

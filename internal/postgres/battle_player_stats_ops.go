@@ -26,6 +26,16 @@ type AlliancePlayerStats struct {
 	DeathFame  int64     `gorm:"column:death_fame"`
 }
 
+type GuildPlayerStats struct {
+	Name       string    `gorm:"column:name"`
+	LastBattle time.Time `gorm:"column:last_battle"`
+	NumBattles int64     `gorm:"column:num_battles"`
+	Kills      int64     `gorm:"column:kills"`
+	Deaths     int64     `gorm:"column:deaths"`
+	KillFame   int64     `gorm:"column:kill_fame"`
+	DeathFame  int64     `gorm:"column:death_fame"`
+}
+
 func (p *Postgres) InsertBattlePlayerStats(stats []BattlePlayerStats) error {
 	if len(stats) == 0 {
 		return nil
@@ -113,6 +123,28 @@ func (p *Postgres) GetAlliancePlayerStats(region string, allianceName string) ([
 		GROUP BY bps.player_name
 		ORDER BY kill_fame DESC
 	`, region, allianceName).Scan(&stats).Error
+
+	return stats, err
+}
+
+func (p *Postgres) GetGuildPlayerStats(region string, guildName string) ([]GuildPlayerStats, error) {
+	var stats []GuildPlayerStats
+	err := p.db.Raw(`
+		SELECT
+			bps.player_name AS name,
+			MAX(bps.start_time) AS last_battle,
+			COUNT(DISTINCT bps.battle_id) AS num_battles,
+			SUM(bps.kills) AS kills,
+			SUM(bps.deaths) AS deaths,
+			SUM(bps.kill_fame) AS kill_fame,
+			SUM(bps.death_fame) AS death_fame
+		FROM battle_player_stats bps
+		WHERE bps.region = ?
+			AND bps.guild_name = ?
+			AND bps.start_time >= NOW() - INTERVAL '30 days'
+		GROUP BY bps.player_name
+		ORDER BY kill_fame DESC
+	`, region, guildName).Scan(&stats).Error
 
 	return stats, err
 }
