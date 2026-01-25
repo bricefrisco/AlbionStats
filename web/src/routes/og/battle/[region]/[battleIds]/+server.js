@@ -44,7 +44,7 @@ function buildMarkup({ alliances, guilds }) {
 						style: {
 							display: 'flex',
 							flexDirection: 'column',
-							gap: '25px',
+							gap: '40px',
 							alignItems: 'stretch',
 							width: '100%',
 							height: '100%',
@@ -69,7 +69,7 @@ function buildMarkup({ alliances, guilds }) {
 														style: {
 															display: 'flex',
 															justifyContent: 'space-between',
-															fontSize: '23px',
+															fontSize: '28px',
 															textTransform: 'uppercase',
 															letterSpacing: '0.08em',
 															color: '#94a3b8'
@@ -117,7 +117,7 @@ function buildMarkup({ alliances, guilds }) {
 															display: 'flex',
 															justifyContent: 'space-between',
 															alignItems: 'center',
-															fontSize: '31px',
+															fontSize: '36px',
 															color: '#e2e8f0'
 														},
 														children: [
@@ -181,7 +181,7 @@ function buildMarkup({ alliances, guilds }) {
 														style: {
 															display: 'flex',
 															justifyContent: 'space-between',
-															fontSize: '23px',
+															fontSize: '28px',
 															textTransform: 'uppercase',
 															letterSpacing: '0.08em',
 															color: '#94a3b8'
@@ -229,7 +229,7 @@ function buildMarkup({ alliances, guilds }) {
 															display: 'flex',
 															justifyContent: 'space-between',
 															alignItems: 'center',
-															fontSize: '31px',
+															fontSize: '36px',
 															color: '#e2e8f0'
 														},
 														children: [
@@ -352,11 +352,11 @@ export const GET = async ({ params, fetch }) => {
 			alliances = rawAlliances
 				.filter((alliance) => alliance?.AllianceName)
 				.sort((a, b) => (b.Kills || 0) - (a.Kills || 0))
-				.slice(0, 5);
+				.slice(0, 4);
 			guilds = rawGuilds
 				.filter((guild) => guild?.GuildName)
 				.sort((a, b) => (b.Kills || 0) - (a.Kills || 0))
-				.slice(0, 5);
+				.slice(0, 4);
 		}
 	} catch {
 		alliances = [];
