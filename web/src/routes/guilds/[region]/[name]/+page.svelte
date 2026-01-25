@@ -133,7 +133,7 @@
 						</td>
 						<td class="w-1/4 px-4 py-3 text-right font-semibold text-gray-900 dark:text-white"></td>
 						<td class="w-1/4 px-4 py-3 text-left font-semibold text-gray-900 dark:text-white">
-							Activity
+							Active Players
 						</td>
 						<td class="w-1/4 px-4 py-3 text-right font-semibold text-gray-900 dark:text-white"></td>
 					</tr>
