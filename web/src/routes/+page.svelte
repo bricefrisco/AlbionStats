@@ -11,6 +11,14 @@
 	let { data } = $props();
 </script>
 
+<svelte:head>
+	<title>Home - AlbionStats</title>
+	<meta
+		name="description"
+		content="Track Albion Online player, guild, and alliance statistics over time. Browse battle boards, charts, and activity trends."
+	/>
+</svelte:head>
+
 <Page>
 	<PageHeader title="Welcome to AlbionStats" />
 	<Typography>

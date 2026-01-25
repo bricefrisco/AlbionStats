@@ -35,6 +35,14 @@
 	}
 </script>
 
+<svelte:head>
+	<title>Players - AlbionStats - {regionState.label}</title>
+	<meta
+		name="description"
+		content={`Top Albion Online players in ${regionState.label}. Search player stats, kills, deaths, and fame.`}
+	/>
+</svelte:head>
+
 <Page>
 	<PageHeader title="Players" />
 	<Typography>

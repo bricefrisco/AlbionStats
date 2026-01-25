@@ -78,6 +78,14 @@
 	});
 </script>
 
+<svelte:head>
+	<title>Battle Boards - AlbionStats - {regionState.label}</title>
+	<meta
+		name="description"
+		content={`Recent Albion Online battles in ${regionState.label}. Filter by alliance, guild, or player and participants.`}
+	/>
+</svelte:head>
+
 <Page>
 	<PageHeader title="Battle Boards" />
 	<Typography>

@@ -8,6 +8,7 @@
 	import AllianceGuilds from '$components/AllianceGuilds.svelte';
 	import AllianceGuildPlayers from '$components/AllianceGuildPlayers.svelte';
 	import { formatNumber, formatRatio } from '$lib/utils';
+	import { regionState } from '$lib/regionState.svelte.js';
 
 	let { data } = $props();
 
@@ -15,6 +16,7 @@
 	let allianceData = $derived(data.allianceData);
 	let error = $derived(data.allianceError);
 	let searchName = $derived(allianceData.Name);
+	let allianceName = $derived.by(() => allianceData?.Name || 'Alliance');
 
 	function formatDate(dateString) {
 		if (!dateString) return 'Never';
@@ -68,6 +70,14 @@
 	const guilds = $derived(allianceData?.Guilds || []);
 	const players = $derived(allianceData?.Players || []);
 </script>
+
+<svelte:head>
+	<title>{allianceName} - AlbionStats - {regionState.label}</title>
+	<meta
+		name="description"
+		content={`Albion Online alliance stats for ${allianceName} in ${regionState.label}. View kills, deaths, fame, and roster activity.`}
+	/>
+</svelte:head>
 
 <Page>
 	<div class="mb-4">

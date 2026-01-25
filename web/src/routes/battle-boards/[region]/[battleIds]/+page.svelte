@@ -11,12 +11,14 @@
 	import { formatFame, formatNumber } from '$lib/utils';
 	import { formatDateUTC } from '$lib/utils';
 	import { SvelteMap } from 'svelte/reactivity';
+	import { regionState } from '$lib/regionState.svelte.js';
 
 	let { data } = $props();
 
 	let battleData = $derived(data.battleData);
 	let loading = $derived(data.loading);
 	let error = $derived(data.error);
+	let battleTitle = $derived.by(() => (data.battleIds ? `Battle ${data.battleIds}` : 'Battle'));
 
 	// Tabs state
 	const tabs = [
@@ -159,6 +161,14 @@
 		];
 	});
 </script>
+
+<svelte:head>
+	<title>{battleTitle} - AlbionStats - {regionState.label}</title>
+	<meta
+		name="description"
+		content={`Albion Online battle board results for ${battleTitle} in ${regionState.label}. View alliances, guilds, players, and kills.`}
+	/>
+</svelte:head>
 
 <Page>
 	<PageHeader title="Battle Boards" />

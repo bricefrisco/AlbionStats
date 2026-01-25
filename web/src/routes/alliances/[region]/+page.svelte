@@ -16,6 +16,14 @@
 	let searchQuery = $state('');
 </script>
 
+<svelte:head>
+	<title>Alliances - AlbionStats - {regionState.label}</title>
+	<meta
+		name="description"
+		content={`Top Albion Online alliances in ${regionState.label}. Search alliance stats, kills, deaths, and fame.`}
+	/>
+</svelte:head>
+
 <Page>
 	<PageHeader title="Alliances" />
 	<Typography>

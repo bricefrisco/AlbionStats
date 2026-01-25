@@ -18,6 +18,14 @@
 	let searchQuery = $derived(page.url.searchParams.get('q') || '');
 </script>
 
+<svelte:head>
+	<title>Guilds - AlbionStats - {regionState.label}</title>
+	<meta
+		name="description"
+		content={`Top Albion Online guilds in ${regionState.label}. Search guild stats, kills, deaths, and fame.`}
+	/>
+</svelte:head>
+
 <Page>
 	<PageHeader title="Guilds" />
 	<Typography>

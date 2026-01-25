@@ -30,6 +30,8 @@
 	// Active tab state
 	let activeTab = $state('pvp');
 
+	let playerName = $derived.by(() => playerData?.Name || decodedName || 'Player');
+
 	// Tab configuration
 	const tabs = [
 		{ id: 'pvp', label: 'PvP' },
@@ -42,6 +44,14 @@
 		activeTab = detail.tabId;
 	}
 </script>
+
+<svelte:head>
+	<title>{playerName} - AlbionStats - {regionState.label}</title>
+	<meta
+		name="description"
+		content={`Albion Online stats for ${playerName} in ${regionState.label}. View kills, deaths, fame, and charts.`}
+	/>
+</svelte:head>
 
 <Page>
 	<div class="mb-4">
