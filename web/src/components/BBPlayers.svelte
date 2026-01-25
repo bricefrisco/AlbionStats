@@ -61,12 +61,8 @@
 		<TableHeader class="text-right font-semibold">IP</TableHeader>
 		<TableHeader class="text-right font-semibold">Kills</TableHeader>
 		<TableHeader class="text-right font-semibold">Deaths</TableHeader>
-		<TableHeader class="hidden text-right font-semibold whitespace-nowrap lg:table-cell">
-			Kill Fame
-		</TableHeader>
-		<TableHeader class="hidden text-right font-semibold whitespace-nowrap lg:table-cell">
-			Death Fame
-		</TableHeader>
+		<TableHeader class="text-right font-semibold whitespace-nowrap">Kill Fame</TableHeader>
+		<TableHeader class="text-right font-semibold whitespace-nowrap">Death Fame</TableHeader>
 		<TableHeader class="hidden text-right font-semibold lg:table-cell">Damage</TableHeader>
 		<TableHeader class="hidden text-right font-semibold lg:table-cell">Heal</TableHeader>
 	{/snippet}
@@ -113,10 +109,10 @@
 			<TableData class="text-right text-gray-600 dark:text-gray-400">
 				{formatNumber(player.Deaths)}
 			</TableData>
-			<TableData class="hidden text-right text-yellow-600 dark:text-yellow-400 lg:table-cell">
+			<TableData class="text-right text-yellow-600 dark:text-yellow-400">
 				{formatFame(player.KillFame)}
 			</TableData>
-			<TableData class="hidden text-right text-gray-500 dark:text-gray-500 lg:table-cell">
+			<TableData class="text-right text-gray-500 dark:text-gray-500">
 				{formatFame(player.DeathFame)}
 			</TableData>
 			<TableData class="hidden text-right lg:table-cell">

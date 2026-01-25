@@ -238,7 +238,9 @@
 							<td class="w-1/6 py-2 pr-4 pl-4 text-gray-600 dark:text-gray-400">
 								{stat.leftLabel}
 							</td>
-							<td class="w-1/3 py-2 pr-4 text-right font-medium">{stat.leftValue}</td>
+							<td class="w-1/3 py-2 pr-4 text-right font-medium break-words whitespace-normal">
+								{stat.leftValue}
+							</td>
 							<td class="w-1/6 py-2 pr-4 pl-4 text-gray-600 dark:text-gray-400">
 								{stat.rightLabel}
 							</td>
