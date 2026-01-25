@@ -18,8 +18,10 @@
 <Page>
 	<PageHeader title="Alliances" />
 	<Typography>
-		<h2>Albion Online Alliances. Search for an alliance to view it's statistics. Below are top 100 alliances
-			based on statistics pulled from battle board data based over the past 30 days.</h2>
+		<h2>Albion Online Alliance Statistics. Search for an alliance to view their stats.</h2>
+		<p>Below are top 100 alliances based on statistics pulled from battle board data based
+			over the past 30 days.</p>
+		<p>Collection began on January 19th, 2026.</p>
 	</Typography>
 
 	<div class="mb-4">

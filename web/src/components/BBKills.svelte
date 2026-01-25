@@ -7,6 +7,8 @@
 	import Pagination from './Pagination.svelte';
 	import Filter from './Filter.svelte';
 	import { formatNumber, formatFame, formatDateUTC } from '$lib/utils';
+	import { resolve } from '$app/paths';
+	import { regionState } from '$lib/regionState.svelte';
 
 	let { kills = [], players = [] } = $props();
 
@@ -38,17 +40,13 @@
 		return map;
 	});
 
-	function formatAffiliation(name) {
+	function getAffiliation(name) {
 		const player = playersByName.get(name);
-		const alliance = player?.AllianceName;
-		const guild = player?.GuildName;
-		const parts = [];
-		if (alliance && guild) {
-			parts.push(`[${alliance}] ${guild}`);
-		} else if (guild) {
-			parts.push(guild);
-		}
-		return parts.join(' - ');
+		if (!player) return null;
+		return {
+			alliance: player.AllianceName,
+			guild: player.GuildName
+		};
 	}
 
 	$effect(() => {
@@ -62,14 +60,16 @@
 <Table>
 	{#snippet header()}
 		<TableHeader class="w-32 text-left font-semibold whitespace-nowrap">Time</TableHeader>
-		<TableHeader class="text-left font-semibold">Killer</TableHeader>
-		<TableHeader class="text-left font-semibold">Victim</TableHeader>
+		<TableHeader class="w-1/3 text-left font-semibold">Killer</TableHeader>
+		<TableHeader class="w-1/3 text-left font-semibold">Victim</TableHeader>
 		<TableHeader class="w-24 text-right font-semibold whitespace-nowrap">Killer IP</TableHeader>
 		<TableHeader class="w-24 text-right font-semibold whitespace-nowrap">Victim IP</TableHeader>
 		<TableHeader class="text-right font-semibold whitespace-nowrap">Fame</TableHeader>
 	{/snippet}
 
 	{#each paginatedData as kill, index (`${kill.BattleID}-${kill.TS}-${kill.KillerName}-${kill.VictimName}-${index}`)}
+		{@const killerAffiliation = getAffiliation(kill.KillerName)}
+		{@const victimAffiliation = getAffiliation(kill.VictimName)}
 		<TableRow>
 			<TableData class="whitespace-nowrap">{formatDateUTC(kill.TS)}</TableData>
 			<TableData>
@@ -83,10 +83,23 @@
 					{/if}
 					<div class="flex flex-col">
 						<span class="text-sm text-gray-600 dark:text-gray-400">
-							{formatAffiliation(kill.KillerName)}
+							{#if killerAffiliation?.alliance && killerAffiliation?.guild}
+								[{killerAffiliation.alliance}] {killerAffiliation.guild}
+							{:else if killerAffiliation?.guild}
+								{killerAffiliation.guild}
+							{/if}
 						</span>
 						<span class="font-medium text-gray-900 dark:text-white">
-							{kill.KillerName || '-'}
+							{#if kill.KillerName}
+								<a
+									href={resolve(`/players/${regionState.value}/${encodeURIComponent(kill.KillerName)}`)}
+									class="underline hover:text-blue-600 dark:hover:text-blue-400"
+								>
+									{kill.KillerName}
+								</a>
+							{:else}
+								-
+							{/if}
 						</span>
 					</div>
 				</div>
@@ -102,10 +115,23 @@
 					{/if}
 					<div class="flex flex-col">
 						<span class="text-sm text-gray-600 dark:text-gray-400">
-							{formatAffiliation(kill.VictimName)}
+							{#if victimAffiliation?.alliance && victimAffiliation?.guild}
+								[{victimAffiliation.alliance}] {victimAffiliation.guild}
+							{:else if victimAffiliation?.guild}
+								{victimAffiliation.guild}
+							{/if}
 						</span>
 						<span class="font-medium text-gray-900 dark:text-white">
-							{kill.VictimName || '-'}
+							{#if kill.VictimName}
+								<a
+									href={resolve(`/players/${regionState.value}/${encodeURIComponent(kill.VictimName)}`)}
+									class="underline hover:text-blue-600 dark:hover:text-blue-400"
+								>
+									{kill.VictimName}
+								</a>
+							{:else}
+								-
+							{/if}
 						</span>
 					</div>
 				</div>

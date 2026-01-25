@@ -89,6 +89,12 @@
 		<Typography>{error}</Typography>
 	{:else}
 		<PageHeader title={allianceData.Name} />
+		<Typography>
+			<h2 class="mb-1">Albion Online Alliance Statistics.</h2>
+
+			<p>Data is based on battle boards from the past 30 days. Collection began on January 19, 2026.
+			</p>
+		</Typography>
 		<div class="mt-4">
 			<table class="w-full text-sm">
 				<tbody class="divide-y divide-gray-200/50 dark:divide-gray-700/50">
@@ -119,10 +125,6 @@
 		<div class="mt-2 mb-6">
 			<Tabs {tabs} bind:activeTab />
 		</div>
-
-		<Typography>
-			<p>Data is based on the past 30 days and sorted by kill fame earned on battle boards.</p>
-		</Typography>
 
 		{#if activeTab === 'guilds'}
 			<AllianceGuilds data={guilds} />

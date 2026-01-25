@@ -50,7 +50,7 @@
 <Table>
 	{#snippet header()}
 		<TableHeader class="w-12 text-right font-semibold">Pos.</TableHeader>
-		<TableHeader class="text-left font-semibold">Player</TableHeader>
+		<TableHeader class="w-64 text-left font-semibold">Player</TableHeader>
 		<TableHeader class="w-48 text-left font-semibold whitespace-nowrap">Last Battle</TableHeader>
 		<TableHeader class="text-right font-semibold">Battles</TableHeader>
 		<TableHeader class="text-right font-semibold">Kills</TableHeader>

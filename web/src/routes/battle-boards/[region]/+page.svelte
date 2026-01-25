@@ -79,7 +79,9 @@
 <Page>
 	<PageHeader title="Battle Boards" />
 	<Typography>
-		<h2>Recent battles on the {regionState.label} server.</h2>
+		<h2>Albion Online Battle Boards. Filter by alliance, guild, and number of participants.</h2>
+		<p>Below are the most recent battles occurring over the past 30 days.</p>
+		<p>Collection began on January 19th, 2026.</p>
 	</Typography>
 
 	<form class="mb-4 flex items-end gap-2" onsubmit={(e) => { e.preventDefault(); updateUrl(searchQuery); }}>

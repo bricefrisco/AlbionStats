@@ -20,8 +20,10 @@
 <Page>
 	<PageHeader title="Guilds" />
 	<Typography>
-		<h2>Albion Online Guilds. Search for an guild to view it's statistics. Below are top 100 guilds
-			based on statistics pulled from battle board data based over the past 30 days.</h2>
+		<h2>Albion Online Guild Statistics. Search for a guild to view their stats.</h2>
+		<p>Below are top 100 guilds based on statistics pulled from battle board data based
+			over the past 30 days.</p>
+		<p>Collection began on January 19th, 2026.</p>
 	</Typography>
 
 	<div class="mb-4">

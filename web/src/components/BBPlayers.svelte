@@ -6,6 +6,8 @@
 	import Pagination from './Pagination.svelte';
 	import Filter from './Filter.svelte';
 	import { formatNumber, formatFame } from '$lib/utils';
+	import { resolve } from '$app/paths';
+	import { regionState } from '$lib/regionState.svelte';
 
 	let { data = [] } = $props();
 
@@ -30,15 +32,18 @@
 		filteredData.slice((currentPage - 1) * pageSize, currentPage * pageSize)
 	);
 
-	function formatAffiliation(player) {
-		if (!player) return '';
+	function buildAffiliation(player) {
 		if (player.AllianceName && player.GuildName) {
-			return `[${player.AllianceName}] ${player.GuildName}`;
+			return {
+				text: `[${player.AllianceName}] ${player.GuildName}`
+			};
 		}
 		if (player.GuildName) {
-			return player.GuildName;
+			return {
+				text: player.GuildName
+			};
 		}
-		return '';
+		return null;
 	}
 
 	$effect(() => {
@@ -63,6 +68,7 @@
 	{/snippet}
 
 	{#each paginatedData as player (player.PlayerName)}
+		{@const affiliation = buildAffiliation(player)}
 		<TableRow>
 			<TableData class="p-2 flex items-center justify-center">
 				{#if player.Weapon}
@@ -73,14 +79,25 @@
 					/>
 				{/if}
 			</TableData>
-			<TableData class="font-medium text-gray-900 dark:text-white">
+			<TableData class="text-gray-900 dark:text-white">
 				<div class="flex flex-col">
-					{#if formatAffiliation(player)}
+					{#if affiliation}
 						<span class="text-sm text-gray-600 dark:text-gray-400">
-							{formatAffiliation(player)}
+							{affiliation.text}
 						</span>
 					{/if}
-					<span>{player.PlayerName}</span>
+					<span>
+						{#if player.PlayerName}
+							<a
+								href={resolve(`/players/${regionState.value}/${encodeURIComponent(player.PlayerName)}`)}
+								class="font-medium underline hover:text-blue-600 dark:hover:text-blue-400"
+							>
+								{player.PlayerName}
+							</a>
+						{:else}
+							-
+						{/if}
+					</span>
 				</div>
 			</TableData>
 			<TableData class="text-right">

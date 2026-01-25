@@ -36,8 +36,10 @@
 <Page>
 	<PageHeader title="Players" />
 	<Typography>
-		<h2>Albion Online Players. Search for a player to view their statistics. Below are top 100 players
-			based on statistics pulled from battle board data based over the past 30 days.</h2>
+		<h2>Albion Online Player Statistics. Search for a player to view their stats.</h2>
+		<p>Below are top 100 players based on statistics pulled from battle board data based
+			over the past 30 days.</p>
+		<p>Collection began on January 19th, 2026.</p>
 	</Typography>
 
 	<div class="mb-4">

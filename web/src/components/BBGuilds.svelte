@@ -6,6 +6,8 @@
 	import Pagination from './Pagination.svelte';
 	import Filter from './Filter.svelte';
 	import { formatNumber, formatFame } from '$lib/utils';
+	import { resolve } from '$app/paths';
+	import { regionState } from '$lib/regionState.svelte';
 
 	let { data = [] } = $props();
 
@@ -50,10 +52,23 @@
 	{#each paginatedData as guild (guild.GuildName)}
 		<TableRow>
 			<TableData class="font-medium text-gray-900 dark:text-white">
-				{guild.GuildName || '-'}
+				{#if guild.GuildName}
+					<a
+						href={resolve(`/guilds/${regionState.value}/${encodeURIComponent(guild.GuildName)}`)}
+						class="underline hover:text-blue-600 dark:hover:text-blue-400"
+					>
+						{guild.GuildName}
+					</a>
+				{:else}
+					-
+				{/if}
 			</TableData>
 			<TableData class="text-gray-600 dark:text-gray-400">
-				{guild.AllianceName ? `${guild.AllianceName}` : '-'}
+				{#if guild.AllianceName}
+					{guild.AllianceName}
+				{:else}
+					-
+				{/if}
 			</TableData>
 			<TableData class="text-right text-blue-600 dark:text-blue-400">
 				{formatNumber(guild.PlayerCount)}

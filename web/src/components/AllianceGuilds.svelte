@@ -43,7 +43,7 @@
 <Table>
 	{#snippet header()}
 		<TableHeader class="w-12 text-right font-semibold">Pos.</TableHeader>
-		<TableHeader class="text-left font-semibold">Guild</TableHeader>
+		<TableHeader class="w-64 text-left font-semibold">Guild</TableHeader>
 		<TableHeader class="text-right font-semibold whitespace-nowrap">Battles</TableHeader>
 		<TableHeader class="text-right font-semibold whitespace-nowrap">Max Players</TableHeader>
 		<TableHeader class="text-right font-semibold">Kills</TableHeader>
