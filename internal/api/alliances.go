@@ -3,9 +3,11 @@ package api
 import (
 	"albionstats/internal/postgres"
 	"albionstats/internal/util"
+	"errors"
 	"net/http"
 
 	"golang.org/x/sync/errgroup"
+	"gorm.io/gorm"
 
 	"github.com/gin-gonic/gin"
 )
@@ -28,6 +30,14 @@ func (s *Server) allianceOverview(c *gin.Context) {
 		return
 	}
 
+	player, err := s.postgres.GetPlayerStatsByAllianceName(c.Request.Context(), postgres.Region(region), name)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Alliance not found"})
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get alliance overview"})
+	}
+
 	var (
 		roster  *postgres.PlayerRosterStats
 		summary *postgres.AllianceBattleSummary
@@ -36,22 +46,17 @@ func (s *Server) allianceOverview(c *gin.Context) {
 	g, ctx := errgroup.WithContext(c.Request.Context())
 	g.Go(func() error {
 		var err error
-		roster, err = s.postgres.GetAllianceRosterStats(ctx, postgres.Region(region), name)
+		roster, err = s.postgres.GetAllianceRosterStats(ctx, postgres.Region(region), *player.AllianceName)
 		return err
 	})
 	g.Go(func() error {
 		var err error
-		summary, err = s.postgres.GetAllianceBattleSummary(ctx, region, name)
+		summary, err = s.postgres.GetAllianceBattleSummary(ctx, region, *player.AllianceName)
 		return err
 	})
 
 	if err := g.Wait(); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get alliance overview"})
-		return
-	}
-
-	if roster.RosterSize == 0 && summary.Battles == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Alliance not found"})
 		return
 	}
 

@@ -37,6 +37,12 @@ func (s *Postgres) SearchGuilds(ctx context.Context, region Region, prefix strin
 	return guilds, err
 }
 
+func (s *Postgres) GetPlayerStatsByGuildName(ctx context.Context, region Region, guildName string) (*PlayerStatsLatest, error) {
+	var guild PlayerStatsLatest
+	err := s.db.WithContext(ctx).Where("region = ? AND LOWER(guild_name) = ?", region, strings.ToLower(guildName)).First(&guild).Error
+	return &guild, err
+}
+
 func (s *Postgres) SearchAlliances(ctx context.Context, region Region, prefix string) ([]string, error) {
 	var alliances []string
 	err := s.db.WithContext(ctx).
@@ -47,6 +53,12 @@ func (s *Postgres) SearchAlliances(ctx context.Context, region Region, prefix st
 		Limit(6).
 		Pluck("alliance_name", &alliances).Error
 	return alliances, err
+}
+
+func (s *Postgres) GetPlayerStatsByAllianceName(ctx context.Context, region Region, allianceName string) (*PlayerStatsLatest, error) {
+	var alliance PlayerStatsLatest
+	err := s.db.WithContext(ctx).Where("region = ? AND LOWER(alliance_name) = ?", region, strings.ToLower(allianceName)).First(&alliance).Error
+	return &alliance, err
 }
 
 func (s *Postgres) UpsertPlayerStatsLatest(stats []PlayerStatsLatest) error {
