@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"time"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -13,6 +14,16 @@ type TopPlayerStats struct {
 	TotalDeathFame int64  `gorm:"column:total_death_fame"`
 	TotalKills     int64  `gorm:"column:total_kills"`
 	TotalDeaths    int64  `gorm:"column:total_deaths"`
+}
+
+type AlliancePlayerStats struct {
+	PlayerName string    `gorm:"column:player_name"`
+	LastBattle time.Time `gorm:"column:last_battle"`
+	Attendance int64     `gorm:"column:attendance"`
+	Kills      int64     `gorm:"column:kills"`
+	Deaths     int64     `gorm:"column:deaths"`
+	KillFame   int64     `gorm:"column:kill_fame"`
+	DeathFame  int64     `gorm:"column:death_fame"`
 }
 
 func (p *Postgres) InsertBattlePlayerStats(stats []BattlePlayerStats) error {
@@ -80,6 +91,28 @@ func (p *Postgres) GetBattlePlayerStatsByIDs(ctx context.Context, region string,
 	err := p.db.WithContext(ctx).Where("region = ? AND battle_id IN ?", region, battleIDs).
 		Order("kills DESC").
 		Find(&stats).Error
+
+	return stats, err
+}
+
+func (p *Postgres) GetAlliancePlayerStats(region string, allianceName string) ([]AlliancePlayerStats, error) {
+	var stats []AlliancePlayerStats
+	err := p.db.Raw(`
+		SELECT
+			bps.player_name,
+			MAX(bps.start_time) AS last_battle,
+			COUNT(DISTINCT bps.battle_id) AS attendance,
+			SUM(bps.kills) AS kills,
+			SUM(bps.deaths) AS deaths,
+			SUM(bps.kill_fame) AS kill_fame,
+			SUM(bps.death_fame) AS death_fame
+		FROM battle_player_stats bps
+		WHERE bps.region = ?
+			AND bps.alliance_name = ?
+			AND bps.start_time >= NOW() - INTERVAL '30 days'
+		GROUP BY bps.player_name
+		ORDER BY kill_fame DESC
+	`, region, allianceName).Scan(&stats).Error
 
 	return stats, err
 }

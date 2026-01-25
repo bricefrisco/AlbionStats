@@ -18,6 +18,7 @@ type AllianceOverviewResponse struct {
 	RosterStats   *postgres.PlayerRosterStats     `json:"RosterStats"`
 	BattleSummary *postgres.AllianceBattleSummary `json:"BattleSummary"`
 	Guilds        []postgres.AllianceGuildStats   `json:"Guilds"`
+	Players       []postgres.AlliancePlayerStats  `json:"Players"`
 }
 
 func (s *Server) allianceOverview(c *gin.Context) {
@@ -54,6 +55,7 @@ func (s *Server) allianceOverview(c *gin.Context) {
 		roster  *postgres.PlayerRosterStats
 		summary *postgres.AllianceBattleSummary
 		guilds  []postgres.AllianceGuildStats
+		players []postgres.AlliancePlayerStats
 	)
 
 	g, ctx := errgroup.WithContext(c.Request.Context())
@@ -72,6 +74,11 @@ func (s *Server) allianceOverview(c *gin.Context) {
 		guilds, err = s.postgres.GetAllianceGuildStats(region, *player.AllianceName, playerCount)
 		return err
 	})
+	g.Go(func() error {
+		var err error
+		players, err = s.postgres.GetAlliancePlayerStats(region, *player.AllianceName)
+		return err
+	})
 
 	if err := g.Wait(); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get alliance overview"})
@@ -83,5 +90,6 @@ func (s *Server) allianceOverview(c *gin.Context) {
 		RosterStats:   roster,
 		BattleSummary: summary,
 		Guilds:        guilds,
+		Players:       players,
 	})
 }
