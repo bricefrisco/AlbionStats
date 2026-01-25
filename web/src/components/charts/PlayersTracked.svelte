@@ -1,5 +1,4 @@
 <script>
-	import { onMount } from 'svelte';
 	import Chart from './Chart.svelte';
 	import ChartLoading from './ChartLoading.svelte';
 	import ChartError from './ChartError.svelte';
@@ -12,25 +11,6 @@
 	let loading = $state(!data);
 	let error = $state(data?.error || null);
 
-	async function fetchData() {
-		try {
-			const response = await fetch(
-				'https://albionstats.bricefrisco.com/api/metrics/players_total?granularity=1w'
-			);
-			if (!response.ok) {
-				throw new Error(`HTTP error! status: ${response.status}`);
-			}
-			const data = await response.json();
-			timestamps = data.timestamps || [];
-			values = data.values || [];
-		} catch (err) {
-			error = err.message;
-			console.error('Failed to fetch players data:', err);
-		} finally {
-			loading = false;
-		}
-	}
-
 	$effect(() => {
 		if (!data) return;
 		timestamps = data.timestamps || [];
@@ -39,11 +19,6 @@
 		loading = false;
 	});
 
-	onMount(() => {
-		if (!data) {
-			fetchData();
-		}
-	});
 </script>
 
 <div>

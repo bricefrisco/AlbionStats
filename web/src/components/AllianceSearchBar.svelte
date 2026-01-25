@@ -4,6 +4,7 @@
 	import { resolve } from '$app/paths';
 	import { goto } from '$app/navigation';
 	import { regionState } from '$lib/regionState.svelte';
+	import { getApiBase } from '$lib/apiBase.js';
 
 	let {
 		links = true,
@@ -45,7 +46,7 @@
 		searchTimeout = setTimeout(async () => {
 			try {
 				const response = await fetch(
-					`https://albionstats.bricefrisco.com/api/alliances/search/${regionState.value}/${encodeURIComponent(value)}`
+					`${getApiBase()}/alliances/search/${regionState.value}/${encodeURIComponent(value)}`
 				);
 				const data = await response.json();
 				alliances = data.alliances || [];
