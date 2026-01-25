@@ -39,7 +39,9 @@
 
 <Table>
 	{#snippet header()}
-		<TableHeader class="w-64 text-left font-semibold">Guild</TableHeader>
+		<TableHeader class="min-w-56 text-left font-semibold lg:min-w-0 lg:w-64">
+			Guild
+		</TableHeader>
 		<TableHeader class="w-32 text-left font-semibold">Alliance</TableHeader>
 		<TableHeader class="text-right font-semibold">Players</TableHeader>
 		<TableHeader class="text-right font-semibold">Kills</TableHeader>
