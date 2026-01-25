@@ -3,6 +3,7 @@
 	import PageHeader from '$components/PageHeader.svelte';
 	import Typography from '$components/Typography.svelte';
 	import GuildSearchBar from '$components/GuildSearchBar.svelte';
+	import BackToTopButton from '$components/BackToTopButton.svelte';
 	import Table from '$components/Table.svelte';
 	import TableHeader from '$components/TableHeader.svelte';
 	import TableRow from '$components/TableRow.svelte';
@@ -50,8 +51,8 @@
 				<TableHeader class="text-right font-semibold">Deaths</TableHeader>
 			{/snippet}
 
-			{#each data.topGuilds as guild, index (guild.GuildName)}
-				{@const ratioColor = getRatioColor(guild.TotalKillFame, guild.TotalDeathFame)}
+		{#each data.topGuilds as guild, index (guild.GuildName)}
+			{@const ratioColor = getRatioColor(guild.TotalKillFame, guild.TotalDeathFame)}
 				<TableRow>
 					<TableData class="text-right text-gray-500 dark:text-gray-400">
 						{index + 1}
@@ -84,6 +85,9 @@
 				</TableRow>
 			{/each}
 		</Table>
+		<div class="mt-6 flex justify-center">
+			<BackToTopButton />
+		</div>
 	{:else}
 		<Typography>
 			<p>No top guilds found.</p>

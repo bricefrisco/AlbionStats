@@ -10,6 +10,8 @@
 	import PlayerPvECharts from '$components/charts/PlayerPvECharts.svelte';
 	import PlayerGatheringCharts from '$components/charts/PlayerGatheringCharts.svelte';
 	import PlayerCraftingCharts from '$components/charts/PlayerCraftingCharts.svelte';
+	import { resolve } from '$app/paths';
+	import { regionState } from '$lib/regionState.svelte.js';
 
 	let { data } = $props();
 
@@ -64,19 +66,43 @@
 			<Typography>{error}</Typography>
 		{:else if playerData}
 			<PageHeader title={playerData.Name} />
-
-			<!-- Guild and Alliance Info -->
 			{#if playerData.GuildName || playerData.AllianceName}
 				<Typography classes="mb-2 text-sm text-gray-600 dark:text-gray-400 mt-[-15px] font-medium">
 					{#if playerData.AllianceName && playerData.GuildName}
-						[{playerData.AllianceName}] {playerData.GuildName}
+						<a
+							href={resolve(`/alliances/${regionState.value}/${encodeURIComponent(playerData.AllianceName)}`)}
+							class="underline text-current"
+						>
+							[{playerData.AllianceName}]
+						</a>
+						{' '}
+						<a
+							href={resolve(`/guilds/${regionState.value}/${encodeURIComponent(playerData.GuildName)}`)}
+							class="underline text-current"
+						>
+							{playerData.GuildName}
+						</a>
 					{:else if playerData.AllianceName}
-						[{playerData.AllianceName}]
+						<a
+							href={resolve(`/alliances/${regionState.value}/${encodeURIComponent(playerData.AllianceName)}`)}
+							class="underline text-current"
+						>
+							[{playerData.AllianceName}]
+						</a>
 					{:else if playerData.GuildName}
-						{playerData.GuildName}
+						<a
+							href={resolve(`/guilds/${regionState.value}/${encodeURIComponent(playerData.GuildName)}`)}
+							class="underline text-current"
+						>
+							{playerData.GuildName}
+						</a>
 					{/if}
 				</Typography>
 			{/if}
+			<Typography>
+				<h2 class="mb-1">Albion Online Player Statistics.</h2>
+			</Typography>
+			<!-- Guild and Alliance Info -->
 
 			<PlayerStats {playerData} />
 
@@ -86,6 +112,10 @@
 			<div class="mt-2 mb-6">
 				<Tabs {tabs} {activeTab} ontabChange={handleTabChange} />
 			</div>
+
+			<Typography>
+				<p>Data from the past year. Data collection for charts began on January 11, 2026.</p>
+			</Typography>
 
 			<!-- Tab Content -->
 			<div class="mt-4">

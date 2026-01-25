@@ -13,6 +13,8 @@
 	import { resolve } from '$app/paths';
 	import { formatFame, formatNumber, formatRatio, getRatioColor } from '$lib/utils.js';
 	import { regionState } from '$lib/regionState.svelte.js';
+	import Tooltip from '$components/Tooltip.svelte';
+	import HelpIcon from '$components/icons/HelpIcon.svelte';
 
 	let { data } = $props();
 
@@ -37,9 +39,19 @@
 	<PageHeader title="Players" />
 	<Typography>
 		<h2>Albion Online Player Statistics. Search for a player to view their stats.</h2>
-		<p>Below are top 100 players based on statistics pulled from battle board data based
-			over the past 30 days.</p>
-		<p>Collection began on January 19th, 2026.</p>
+		<p>Below are top 100 players based on statistics pulled from battle board data
+			based over the past 30 days.</p>
+		<p>Collection began on January 19th, 2026.
+			<Tooltip content="Small fights (1v1's) not show up on the battle boards, so some kills from hellgates or mists do not count on this leaderboard at this time.">
+				<button
+					type="button"
+					class="flex items-center text-gray-400 transition-colors hover:text-gray-600 dark:text-neutral-500 dark:hover:text-neutral-300"
+					aria-label="Participants info"
+				>
+					<HelpIcon size={14} />
+				</button>
+			</Tooltip>
+		</p>
 	</Typography>
 
 	<div class="mb-4">

@@ -3,6 +3,7 @@
 	import PageHeader from '$components/PageHeader.svelte';
 	import Typography from '$components/Typography.svelte';
 	import AllianceSearchBar from '$components/AllianceSearchBar.svelte';
+	import BackToTopButton from '$components/BackToTopButton.svelte';
 	import Table from '$components/Table.svelte';
 	import TableHeader from '$components/TableHeader.svelte';
 	import TableRow from '$components/TableRow.svelte';
@@ -48,8 +49,8 @@
 				<TableHeader class="text-right font-semibold">Deaths</TableHeader>
 			{/snippet}
 
-			{#each data.topAlliances as alliance, index (alliance.AllianceName)}
-				{@const ratioColor = getRatioColor(alliance.TotalKillFame, alliance.TotalDeathFame)}
+		{#each data.topAlliances as alliance, index (alliance.AllianceName)}
+			{@const ratioColor = getRatioColor(alliance.TotalKillFame, alliance.TotalDeathFame)}
 				<TableRow>
 					<TableData class="text-right text-gray-500 dark:text-gray-400">
 						{index + 1}
@@ -82,6 +83,9 @@
 				</TableRow>
 			{/each}
 		</Table>
+		<div class="mt-6 flex justify-center">
+			<BackToTopButton />
+		</div>
 	{:else}
 		<Typography>
 			<p>No top alliances found.</p>
