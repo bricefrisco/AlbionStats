@@ -18,7 +18,7 @@ type TopGuildStats struct {
 
 type AllianceGuildStats struct {
 	Name           string `gorm:"column:name"`
-	Attendance     int64  `gorm:"column:attendance"`
+	NumBattles     int64  `gorm:"column:num_battles"`
 	PlayersInGuild int32  `gorm:"column:players_in_guild"`
 	Kills          int64  `gorm:"column:kills"`
 	Deaths         int64  `gorm:"column:deaths"`
@@ -108,7 +108,7 @@ func (p *Postgres) GetAllianceGuildStats(region string, allianceName string, min
 	err := p.db.Raw(`
 		SELECT
 			bgs.guild_name AS name,
-			COUNT(DISTINCT bgs.battle_id) AS attendance,
+			COUNT(DISTINCT bgs.battle_id) AS num_battles,
 			MAX(bgs.player_count) AS players_in_guild,
 			SUM(bgs.kills) AS kills,
 			SUM(bgs.deaths) AS deaths,
@@ -120,7 +120,7 @@ func (p *Postgres) GetAllianceGuildStats(region string, allianceName string, min
 			AND bgs.player_count >= ?
 			AND bgs.start_time >= NOW() - INTERVAL '30 days'
 		GROUP BY bgs.guild_name
-		ORDER BY attendance DESC
+		ORDER BY num_battles DESC
 	`, region, allianceName, minPlayerCount).Scan(&stats).Error
 
 	return stats, err
