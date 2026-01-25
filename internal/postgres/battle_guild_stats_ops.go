@@ -120,7 +120,7 @@ func (p *Postgres) GetAllianceGuildStats(region string, allianceName string, min
 			AND bgs.player_count >= ?
 			AND bgs.start_time >= NOW() - INTERVAL '30 days'
 		GROUP BY bgs.guild_name
-		ORDER BY num_battles DESC
+		ORDER BY kill_fame DESC
 	`, region, allianceName, minPlayerCount).Scan(&stats).Error
 
 	return stats, err
