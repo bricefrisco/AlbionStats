@@ -1,5 +1,6 @@
 <script>
 	import Header from './Header.svelte';
+	import Footer from './Footer.svelte';
 	import { page } from '$app/state';
 	import { browser } from '$app/environment';
 	import { regionState } from '$lib/regionState.svelte';
@@ -32,4 +33,5 @@
 	<div class="mx-auto max-w-5xl px-4 py-8 xl:px-0">
 		{@render children()}
 	</div>
+	<Footer />
 </div>
