@@ -185,6 +185,7 @@ func (s *Server) mergeAllianceStats(stats []postgres.BattleAllianceStats) []*Mer
 		totalWeightedIP int64
 		ipCount         int64
 		battleCount     int32
+		maxPlayerCount  int32
 	}
 	calcMap := make(map[string]*groupCalc)
 
@@ -208,6 +209,9 @@ func (s *Server) mergeAllianceStats(stats []postgres.BattleAllianceStats) []*Mer
 			calcMap[stat.AllianceName].totalWeightedIP += int64(*stat.IP) * int64(stat.PlayerCount)
 			calcMap[stat.AllianceName].ipCount += int64(stat.PlayerCount)
 		}
+		if stat.PlayerCount > calcMap[stat.AllianceName].maxPlayerCount {
+			calcMap[stat.AllianceName].maxPlayerCount = stat.PlayerCount
+		}
 		calcMap[stat.AllianceName].battleCount++
 	}
 
@@ -216,8 +220,8 @@ func (s *Server) mergeAllianceStats(stats []postgres.BattleAllianceStats) []*Mer
 		if calcMap[name].ipCount > 0 {
 			v.IP = int32(calcMap[name].totalWeightedIP / calcMap[name].ipCount)
 		}
-		if calcMap[name].battleCount > 0 {
-			v.PlayerCount = v.PlayerCount / calcMap[name].battleCount
+		if calcMap[name].battleCount > 1 {
+			v.PlayerCount = calcMap[name].maxPlayerCount
 		}
 		merged = append(merged, v)
 	}
@@ -235,6 +239,7 @@ func (s *Server) mergeGuildStats(stats []postgres.BattleGuildStats) []*MergedGui
 		totalWeightedIP int64
 		ipCount         int64
 		battleCount     int32
+		maxPlayerCount  int32
 	}
 	calcMap := make(map[string]*groupCalc)
 
@@ -259,6 +264,9 @@ func (s *Server) mergeGuildStats(stats []postgres.BattleGuildStats) []*MergedGui
 			calcMap[stat.GuildName].totalWeightedIP += int64(*stat.IP) * int64(stat.PlayerCount)
 			calcMap[stat.GuildName].ipCount += int64(stat.PlayerCount)
 		}
+		if stat.PlayerCount > calcMap[stat.GuildName].maxPlayerCount {
+			calcMap[stat.GuildName].maxPlayerCount = stat.PlayerCount
+		}
 		calcMap[stat.GuildName].battleCount++
 	}
 
@@ -267,8 +275,8 @@ func (s *Server) mergeGuildStats(stats []postgres.BattleGuildStats) []*MergedGui
 		if calcMap[name].ipCount > 0 {
 			v.IP = int32(calcMap[name].totalWeightedIP / calcMap[name].ipCount)
 		}
-		if calcMap[name].battleCount > 0 {
-			v.PlayerCount = v.PlayerCount / calcMap[name].battleCount
+		if calcMap[name].battleCount > 1 {
+			v.PlayerCount = calcMap[name].maxPlayerCount
 		}
 		merged = append(merged, v)
 	}
