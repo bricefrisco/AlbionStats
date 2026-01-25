@@ -4,7 +4,7 @@
 	import TableRow from './TableRow.svelte';
 	import TableData from './TableData.svelte';
 	import Pagination from './Pagination.svelte';
-	import BBFilter from './BBFilter.svelte';
+	import Filter from './Filter.svelte';
 	import { formatNumber, formatFame } from '$lib/utils';
 
 	let { data = [] } = $props();
@@ -31,7 +31,7 @@
 	});
 </script>
 
-<BBFilter bind:value={search} placeholder="Filter alliances" />
+<Filter bind:value={search} placeholder="Filter alliances" />
 
 <Table>
 	{#snippet header()}

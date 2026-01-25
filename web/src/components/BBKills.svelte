@@ -5,7 +5,7 @@
 	import TableRow from './TableRow.svelte';
 	import TableData from './TableData.svelte';
 	import Pagination from './Pagination.svelte';
-	import BBFilter from './BBFilter.svelte';
+	import Filter from './Filter.svelte';
 	import { formatNumber, formatFame, formatDateUTC } from '$lib/utils';
 
 	let { kills = [], players = [] } = $props();
@@ -57,7 +57,7 @@
 	});
 </script>
 
-<BBFilter bind:value={search} placeholder="Filter killer or victim" />
+<Filter bind:value={search} placeholder="Filter killer or victim" />
 
 <Table>
 	{#snippet header()}
