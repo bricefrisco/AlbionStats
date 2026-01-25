@@ -19,7 +19,7 @@ type TopPlayerStats struct {
 type AlliancePlayerStats struct {
 	PlayerName string    `gorm:"column:player_name"`
 	LastBattle time.Time `gorm:"column:last_battle"`
-	Attendance int64     `gorm:"column:attendance"`
+	NumBattles int64     `gorm:"column:num_battles"`
 	Kills      int64     `gorm:"column:kills"`
 	Deaths     int64     `gorm:"column:deaths"`
 	KillFame   int64     `gorm:"column:kill_fame"`
@@ -101,7 +101,7 @@ func (p *Postgres) GetAlliancePlayerStats(region string, allianceName string) ([
 		SELECT
 			bps.player_name,
 			MAX(bps.start_time) AS last_battle,
-			COUNT(DISTINCT bps.battle_id) AS attendance,
+			COUNT(DISTINCT bps.battle_id) AS num_battles,
 			SUM(bps.kills) AS kills,
 			SUM(bps.deaths) AS deaths,
 			SUM(bps.kill_fame) AS kill_fame,
