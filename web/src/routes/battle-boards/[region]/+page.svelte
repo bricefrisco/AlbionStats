@@ -31,6 +31,10 @@
 	let activeQ = $state(searchQuery);
 	let activeType = $state(searchType);
 	let activeP = $state(minPlayers);
+	let hasFilters = $derived.by(() => {
+		const params = page.url.searchParams;
+		return Boolean(params.get('q') || params.get('p') || params.get('type'));
+	});
 
 	async function updateUrl(q = searchQuery, p = minPlayers) {
 		const url = new URL(page.url);
@@ -84,6 +88,10 @@
 		name="description"
 		content={`Recent Albion Online battles in ${regionState.label}. Filter by alliance, guild, or player and participants.`}
 	/>
+	<link rel="canonical" href={`${page.url.origin}${page.url.pathname}`} />
+	{#if hasFilters}
+		<meta name="robots" content="noindex,follow" />
+	{/if}
 </svelte:head>
 
 <Page>
