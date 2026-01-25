@@ -56,12 +56,16 @@
 	{#snippet header()}
 		<TableHeader class="w-12 text-right font-semibold">Pos.</TableHeader>
 		<TableHeader class="w-64 text-left font-semibold">Player</TableHeader>
-		<TableHeader class="w-48 text-left font-semibold whitespace-nowrap">Last Battle</TableHeader>
+		<TableHeader class="min-w-56 text-left font-semibold whitespace-nowrap lg:min-w-0 lg:w-48">
+			Last Battle
+		</TableHeader>
 		<TableHeader class="text-right font-semibold">Battles</TableHeader>
 		<TableHeader class="text-right font-semibold">Kills</TableHeader>
-		<TableHeader class="text-right font-semibold">Deaths</TableHeader>
+		<TableHeader class="hidden text-right font-semibold lg:table-cell">Deaths</TableHeader>
 		<TableHeader class="text-right font-semibold whitespace-nowrap">Kill Fame</TableHeader>
-		<TableHeader class="text-right font-semibold whitespace-nowrap">Death Fame</TableHeader>
+		<TableHeader class="hidden text-right font-semibold whitespace-nowrap lg:table-cell">
+			Death Fame
+		</TableHeader>
 	{/snippet}
 
 	{#each paginatedData as player (getPlayerName(player))}
@@ -90,13 +94,13 @@
 			<TableData class="text-right text-red-600 dark:text-red-400">
 				{formatNumber(player.Kills)}
 			</TableData>
-			<TableData class="text-right text-gray-600 dark:text-gray-400">
+			<TableData class="hidden text-right text-gray-600 dark:text-gray-400 lg:table-cell">
 				{formatNumber(player.Deaths)}
 			</TableData>
 			<TableData class="text-right text-yellow-600 dark:text-yellow-400">
 				{formatNumber(player.KillFame)}
 			</TableData>
-			<TableData class="text-right text-gray-500 dark:text-gray-500">
+			<TableData class="hidden text-right text-gray-500 dark:text-gray-500 lg:table-cell">
 				{formatNumber(player.DeathFame)}
 			</TableData>
 		</TableRow>

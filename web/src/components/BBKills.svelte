@@ -59,11 +59,17 @@
 
 <Table>
 	{#snippet header()}
-		<TableHeader class="w-32 text-left font-semibold whitespace-nowrap">Time</TableHeader>
-		<TableHeader class="w-1/3 text-left font-semibold">Killer</TableHeader>
-		<TableHeader class="w-1/3 text-left font-semibold">Victim</TableHeader>
-		<TableHeader class="w-24 text-right font-semibold whitespace-nowrap">Killer IP</TableHeader>
-		<TableHeader class="w-24 text-right font-semibold whitespace-nowrap">Victim IP</TableHeader>
+		<TableHeader class="hidden w-32 text-left font-semibold whitespace-nowrap lg:table-cell">
+			Time
+		</TableHeader>
+		<TableHeader class="w-72 text-left font-semibold">Killer</TableHeader>
+		<TableHeader class="w-72 text-left font-semibold">Victim</TableHeader>
+		<TableHeader class="hidden w-24 text-right font-semibold whitespace-nowrap lg:table-cell">
+			Killer IP
+		</TableHeader>
+		<TableHeader class="hidden w-24 text-right font-semibold whitespace-nowrap lg:table-cell">
+			Victim IP
+		</TableHeader>
 		<TableHeader class="text-right font-semibold whitespace-nowrap">Fame</TableHeader>
 	{/snippet}
 
@@ -71,7 +77,9 @@
 		{@const killerAffiliation = getAffiliation(kill.KillerName)}
 		{@const victimAffiliation = getAffiliation(kill.VictimName)}
 		<TableRow>
-			<TableData class="whitespace-nowrap">{formatDateUTC(kill.TS)}</TableData>
+			<TableData class="hidden whitespace-nowrap lg:table-cell">
+				{formatDateUTC(kill.TS)}
+			</TableData>
 			<TableData>
 				<div class="flex items-center gap-3">
 					{#if kill.KillerWeapon}
@@ -136,8 +144,12 @@
 					</div>
 				</div>
 			</TableData>
-			<TableData class="text-right">{formatNumber(kill.KillerIP)}</TableData>
-			<TableData class="text-right">{formatNumber(kill.VictimIP)}</TableData>
+			<TableData class="hidden text-right lg:table-cell">
+				{formatNumber(kill.KillerIP)}
+			</TableData>
+			<TableData class="hidden text-right lg:table-cell">
+				{formatNumber(kill.VictimIP)}
+			</TableData>
 			<TableData class="text-right text-yellow-600 dark:text-yellow-400">
 				{formatFame(kill.Fame)}
 			</TableData>

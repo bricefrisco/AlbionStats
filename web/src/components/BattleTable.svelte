@@ -104,13 +104,17 @@
 	<Table>
 		{#snippet header()}
 			<TableHeader class="w-12 text-left" />
-			<TableHeader class="w-1/6 text-left font-semibold">Battle ID</TableHeader>
+			<TableHeader class="hidden w-1/6 text-left font-semibold lg:table-cell">Battle ID</TableHeader>
 			<TableHeader class="w-1/6 text-left font-semibold">Start Time</TableHeader>
 			<TableHeader class="w-1/12 text-right font-semibold">Players</TableHeader>
-			<TableHeader class="w-1/12 text-right font-semibold">Kills</TableHeader>
-			<TableHeader class="w-1/4 text-left font-semibold">Alliances</TableHeader>
-			<TableHeader class="w-1/4 text-left font-semibold">Guilds</TableHeader>
-			<TableHeader class="w-1/12 text-right font-semibold">Fame</TableHeader>
+			<TableHeader class="hidden w-1/12 text-right font-semibold lg:table-cell">Kills</TableHeader>
+			<TableHeader class="min-w-[12rem] text-left font-semibold lg:min-w-0 lg:w-1/4">
+				Alliances
+			</TableHeader>
+			<TableHeader class="min-w-[12rem] text-left font-semibold lg:min-w-0 lg:w-1/4">
+				Guilds
+			</TableHeader>
+			<TableHeader class="hidden w-1/12 text-right font-semibold lg:table-cell">Fame</TableHeader>
 		{/snippet}
 
 		{#each battles as battle (battle.BattleID)}
@@ -123,7 +127,7 @@
 						class="mt-[1.75px] h-[18px] w-[18px] rounded border-gray-300 bg-gray-100 text-blue-600 focus:ring-blue-500 dark:border-neutral-800 dark:bg-neutral-900"
 					/>
 				</TableData>
-				<TableData class="font-medium text-gray-900 dark:text-white break-words">
+				<TableData class="hidden font-medium text-gray-900 dark:text-white break-words lg:table-cell">
 					<a
 						href={resolve(`/battle-boards/${regionState.value}/${battle.BattleID}`)}
 						class="underline hover:text-blue-600 dark:hover:text-blue-400"
@@ -135,7 +139,7 @@
 				<TableData class="text-right font-medium text-blue-600 dark:text-blue-400">
 					{formatNumber(battle.TotalPlayers)}
 				</TableData>
-				<TableData class="text-right font-medium text-red-600 dark:text-red-400">
+				<TableData class="hidden text-right font-medium text-red-600 dark:text-red-400 lg:table-cell">
 					{formatNumber(battle.TotalKills)}
 				</TableData>
 				<TableData>
@@ -180,7 +184,7 @@
 						{/if}
 					</div>
 				</TableData>
-				<TableData class="text-right font-medium text-yellow-600 dark:text-yellow-400">
+				<TableData class="hidden text-right font-medium text-yellow-600 dark:text-yellow-400 lg:table-cell">
 					{formatFame(battle.TotalFame)}
 				</TableData>
 			</TableRow>
