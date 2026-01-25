@@ -1,3 +1,4 @@
+import { error } from '@sveltejs/kit';
 import { getApiBase } from '$lib/apiBase.js';
 import { validRegions } from '$lib/utils';
 
@@ -17,7 +18,7 @@ export const load = async ({ fetch, params }) => {
 	let topAlliancesError = null;
 
 	if (!validRegion) {
-		topAlliancesError = 'Invalid region';
+		throw error(404, 'Invalid region');
 	} else {
 		try {
 			const apiUrl = `${getApiBase()}/alliances/top/${region}`;

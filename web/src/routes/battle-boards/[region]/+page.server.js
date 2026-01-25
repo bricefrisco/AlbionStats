@@ -1,3 +1,4 @@
+import { error } from '@sveltejs/kit';
 import { getApiBase } from '$lib/apiBase';
 import { buildBattleBoardsUrl, mapBattleBoardsData } from '$lib/battleBoards';
 import { validRegions } from '$lib/utils';
@@ -23,7 +24,7 @@ export const load = async ({ params, url, fetch }) => {
 	let initialError = null;
 
 	if (!validRegions.has(region)) {
-		initialError = 'Invalid region';
+		throw error(404, 'Invalid region');
 	} else {
 		try {
 			const apiUrl = buildBattleBoardsUrl({

@@ -1,3 +1,4 @@
+import { error } from '@sveltejs/kit';
 import { getApiBase } from '$lib/apiBase';
 import { validRegions } from '$lib/utils';
 
@@ -15,11 +16,11 @@ export const load = async ({ params, fetch }) => {
 	const validRegion = validRegions.has(region);
 
 	let battleData = null;
-	let error = null;
+	let pageError = null;
 	let loading = false;
 
 	if (!validRegion || !battleIds) {
-		error = 'Invalid region or battle IDs';
+		throw error(404, 'Invalid region or battle IDs');
 	} else {
 		try {
 			battleData = await fetchJson(
@@ -27,7 +28,8 @@ export const load = async ({ params, fetch }) => {
 				`${getApiBase()}/battles/${region}/${battleIds}`
 			);
 		} catch (err) {
-			error = err instanceof Error ? err.message : 'Failed to load battle data';
+			const message = err instanceof Error ? err.message : 'Failed to load battle data';
+			throw error(404, message);
 		}
 	}
 
@@ -35,7 +37,7 @@ export const load = async ({ params, fetch }) => {
 		region,
 		battleIds,
 		battleData,
-		error,
+		error: pageError,
 		loading
 	};
 };

@@ -1,3 +1,4 @@
+import { error } from '@sveltejs/kit';
 import { getApiBase } from '$lib/apiBase.js';
 import { validRegions } from '$lib/utils';
 
@@ -17,7 +18,7 @@ export const load = async ({ fetch, params }) => {
 	let topPlayersError = null;
 
 	if (!validRegion) {
-		topPlayersError = 'Invalid region';
+		throw error(404, 'Invalid region');
 	} else {
 		try {
 			const apiUrl = `${getApiBase()}/players/top/${region}`;

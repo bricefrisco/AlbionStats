@@ -1,3 +1,4 @@
+import { error } from '@sveltejs/kit';
 import { getApiBase } from '$lib/apiBase';
 import { validRegions } from '$lib/utils';
 
@@ -25,9 +26,9 @@ export const load = async ({ params, fetch }) => {
 	};
 
 	if (!validRegion) {
-		playerError = 'Invalid region';
+		throw error(404, 'Invalid region');
 	} else if (!decodedName) {
-		playerError = 'Player not found';
+		throw error(404, 'Player not found');
 	} else {
 		try {
 			const response = await fetch(
@@ -35,9 +36,9 @@ export const load = async ({ params, fetch }) => {
 			);
 
 			if (response.status === 404) {
-				playerError = 'Player not found';
+				throw error(404, 'Player not found');
 			} else if (!response.ok) {
-				throw new Error(`HTTP error! status: ${response.status}`);
+				throw error(500, `HTTP error! status: ${response.status}`);
 			} else {
 				const payload = await response.json();
 				playerData = payload?.Player || null;
@@ -87,6 +88,9 @@ export const load = async ({ params, fetch }) => {
 				}
 			}
 		} catch (err) {
+			if (err?.status === 404) {
+				throw err;
+			}
 			playerError = err instanceof Error ? err.message : 'Failed to load player data';
 		}
 	}

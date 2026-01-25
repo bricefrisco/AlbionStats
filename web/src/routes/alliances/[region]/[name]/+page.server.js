@@ -1,3 +1,4 @@
+import { error } from '@sveltejs/kit';
 import { getApiBase } from '$lib/apiBase';
 import { validRegions } from '$lib/utils';
 
@@ -26,15 +27,19 @@ export const load = async ({ params, fetch }) => {
 	let allianceError = null;
 
 	if (!validRegion) {
-		allianceError = 'Invalid region';
+		throw error(404, 'Invalid region');
 	} else if (!decodedName) {
-		allianceError = 'Alliance not found';
+		throw error(404, 'Alliance not found');
 	} else {
 		try {
 			const apiUrl = `${getApiBase()}/alliances/${region}/${encodeURIComponent(decodedName)}`;
 			allianceData = await fetchJson(fetch, apiUrl);
 		} catch (err) {
-			allianceError = err instanceof Error ? err.message : 'Failed to load alliance data';
+			const message = err instanceof Error ? err.message : 'Failed to load alliance data';
+			if (message.includes('status: 404')) {
+				throw error(404, 'Alliance not found');
+			}
+			allianceError = message;
 		}
 	}
 
