@@ -8,11 +8,6 @@ import { formatFame } from '$lib/utils.js';
 const OG_WIDTH = 1200;
 const OG_HEIGHT = 630;
 
-function formatRegion(region) {
-	if (!region) return 'Unknown';
-	return region[0].toUpperCase() + region.slice(1);
-}
-
 function truncateName(value, maxLength = 22) {
 	if (!value) return '-';
 	if (value.length <= maxLength) return value;
@@ -24,8 +19,7 @@ function formatValue(value) {
 	return value ?? '-';
 }
 
-function buildMarkup({ region, battleIds, alliances, guilds }) {
-	const regionLabel = formatRegion(region);
+function buildMarkup({ alliances, guilds }) {
 	const hasAlliances = alliances.length > 0;
 	const hasGuilds = guilds.length > 0;
 	const showFallback = !hasAlliances && !hasGuilds;
@@ -37,8 +31,8 @@ function buildMarkup({ region, battleIds, alliances, guilds }) {
 				height: '100%',
 				display: 'flex',
 				flexDirection: 'column',
-				justifyContent: 'space-between',
-				padding: '40px',
+				justifyContent: 'flex-start',
+				padding: '0px',
 				backgroundColor: '#0f172a',
 				color: '#e2e8f0',
 				fontFamily: 'Inter'
@@ -49,56 +43,12 @@ function buildMarkup({ region, battleIds, alliances, guilds }) {
 					props: {
 						style: {
 							display: 'flex',
-							justifyContent: 'space-between',
-							alignItems: 'baseline'
-						},
-						children: [
-							{
-								type: 'div',
-								props: {
-									style: {
-										fontSize: '30px',
-										fontWeight: 700,
-										lineHeight: '1.05'
-									},
-									children: 'Battle Boards'
-								}
-							},
-							{
-								type: 'div',
-								props: {
-									style: {
-										fontSize: '24px',
-										letterSpacing: '0.12em',
-										textTransform: 'uppercase',
-										color: '#93c5fd'
-									},
-									children: 'AlbionStats'
-								}
-							},
-							{
-								type: 'div',
-								props: {
-									style: {
-										fontSize: '20px',
-										color: '#e2e8f0'
-									},
-									children: regionLabel
-								}
-							}
-						]
-					}
-				},
-				{
-					type: 'div',
-					props: {
-						style: {
-							marginTop: '24px',
-							display: 'flex',
 							flexDirection: 'column',
-							gap: '16px',
+							gap: '25px',
 							alignItems: 'stretch',
-							flex: 1
+							width: '100%',
+							height: '100%',
+							padding: '20px'
 						},
 						children: [
 							hasAlliances
@@ -108,32 +58,18 @@ function buildMarkup({ region, battleIds, alliances, guilds }) {
 											style: {
 												display: 'flex',
 												flexDirection: 'column',
-												gap: '10px',
-												backgroundColor: '#111827',
-												borderRadius: '16px',
-												padding: '16px 6px',
-												width: '100%',
-												flex: 1
+												gap: '12px',
+												backgroundColor: '#0f172a',
+												width: '100%'
 											},
 											children: [
 												{
 													type: 'div',
 													props: {
 														style: {
-															fontSize: '22px',
-															fontWeight: 600,
-															color: '#e2e8f0'
-														},
-														children: 'Alliances'
-													}
-												},
-												{
-													type: 'div',
-													props: {
-														style: {
 															display: 'flex',
 															justifyContent: 'space-between',
-															fontSize: '14px',
+															fontSize: '23px',
 															textTransform: 'uppercase',
 															letterSpacing: '0.08em',
 															color: '#94a3b8'
@@ -146,28 +82,28 @@ function buildMarkup({ region, battleIds, alliances, guilds }) {
 															{
 																type: 'div',
 																props: {
-																	style: { width: '16%', textAlign: 'right', color: '#93c5fd' },
+																	style: { width: '16%', textAlign: 'right', color: '#94a3b8' },
 																	children: 'Players'
 																}
 															},
 															{
 																type: 'div',
 																props: {
-																	style: { width: '16%', textAlign: 'right', color: '#fca5a5' },
+																	style: { width: '16%', textAlign: 'right', color: '#94a3b8' },
 																	children: 'Kills'
 																}
 															},
 															{
 																type: 'div',
 																props: {
-																	style: { width: '16%', textAlign: 'right', color: '#f0abfc' },
+																	style: { width: '16%', textAlign: 'right', color: '#94a3b8' },
 																	children: 'Deaths'
 																}
 															},
 															{
 																type: 'div',
 																props: {
-																	style: { width: '16%', textAlign: 'right', color: '#facc15' },
+																	style: { width: '16%', textAlign: 'right', color: '#94a3b8' },
 																	children: 'Kill Fame'
 																}
 															}
@@ -181,7 +117,7 @@ function buildMarkup({ region, battleIds, alliances, guilds }) {
 															display: 'flex',
 															justifyContent: 'space-between',
 															alignItems: 'center',
-															fontSize: '18px',
+															fontSize: '31px',
 															color: '#e2e8f0'
 														},
 														children: [
@@ -234,32 +170,18 @@ function buildMarkup({ region, battleIds, alliances, guilds }) {
 											style: {
 												display: 'flex',
 												flexDirection: 'column',
-												gap: '10px',
-												backgroundColor: '#111827',
-												borderRadius: '16px',
-												padding: '16px 6px',
-												width: '100%',
-												flex: 1
+												gap: '12px',
+												backgroundColor: '#0f172a',
+												width: '100%'
 											},
 											children: [
 												{
 													type: 'div',
 													props: {
 														style: {
-															fontSize: '22px',
-															fontWeight: 600,
-															color: '#e2e8f0'
-														},
-														children: 'Guilds'
-													}
-												},
-												{
-													type: 'div',
-													props: {
-														style: {
 															display: 'flex',
 															justifyContent: 'space-between',
-															fontSize: '14px',
+															fontSize: '23px',
 															textTransform: 'uppercase',
 															letterSpacing: '0.08em',
 															color: '#94a3b8'
@@ -272,28 +194,28 @@ function buildMarkup({ region, battleIds, alliances, guilds }) {
 															{
 																type: 'div',
 																props: {
-																	style: { width: '16%', textAlign: 'right', color: '#93c5fd' },
+																	style: { width: '16%', textAlign: 'right', color: '#94a3b8' },
 																	children: 'Players'
 																}
 															},
 															{
 																type: 'div',
 																props: {
-																	style: { width: '16%', textAlign: 'right', color: '#fca5a5' },
+																	style: { width: '16%', textAlign: 'right', color: '#94a3b8' },
 																	children: 'Kills'
 																}
 															},
 															{
 																type: 'div',
 																props: {
-																	style: { width: '16%', textAlign: 'right', color: '#f0abfc' },
+																	style: { width: '16%', textAlign: 'right', color: '#94a3b8' },
 																	children: 'Deaths'
 																}
 															},
 															{
 																type: 'div',
 																props: {
-																	style: { width: '16%', textAlign: 'right', color: '#facc15' },
+																	style: { width: '16%', textAlign: 'right', color: '#94a3b8' },
 																	children: 'Kill Fame'
 																}
 															}
@@ -307,7 +229,7 @@ function buildMarkup({ region, battleIds, alliances, guilds }) {
 															display: 'flex',
 															justifyContent: 'space-between',
 															alignItems: 'center',
-															fontSize: '18px',
+															fontSize: '31px',
 															color: '#e2e8f0'
 														},
 														children: [
@@ -358,11 +280,10 @@ function buildMarkup({ region, battleIds, alliances, guilds }) {
 										type: 'div',
 										props: {
 											style: {
-												padding: '24px',
-												borderRadius: '16px',
-												backgroundColor: '#111827',
+												padding: '32px',
+												backgroundColor: '#0f172a',
 												textAlign: 'center',
-												fontSize: '22px',
+												fontSize: '28px',
 												color: '#e2e8f0',
 												width: '100%'
 											},
@@ -443,7 +364,7 @@ export const GET = async ({ params, fetch }) => {
 	}
 
 	const fonts = await loadFonts();
-	const svg = await satori(buildMarkup({ ...params, alliances, guilds }), {
+	const svg = await satori(buildMarkup({ alliances, guilds }), {
 		width: OG_WIDTH,
 		height: OG_HEIGHT,
 		fonts
