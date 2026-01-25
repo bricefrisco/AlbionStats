@@ -5,6 +5,7 @@ import (
 	"albionstats/internal/util"
 	"errors"
 	"net/http"
+	"strconv"
 
 	"golang.org/x/sync/errgroup"
 	"gorm.io/gorm"
@@ -66,4 +67,52 @@ func (s *Server) allianceOverview(c *gin.Context) {
 		RosterStats:   roster,
 		BattleSummary: summary,
 	})
+}
+
+func (s *Server) allianceGuilds(c *gin.Context) {
+	region := c.Param("server")
+	if !util.IsValidServer(region) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid region"})
+		return
+	}
+
+	name := c.Param("name")
+	if name == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Alliance name is required"})
+		return
+	}
+
+	player, err := s.postgres.GetPlayerStatsByAllianceName(c.Request.Context(), postgres.Region(region), name)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Alliance not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get alliance guilds"})
+		return
+	}
+
+	if player.AllianceName == nil || *player.AllianceName == "" {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Alliance not found"})
+		return
+	}
+
+	playerCountStr := c.DefaultQuery("playerCount", "10")
+	playerCount, err := strconv.Atoi(playerCountStr)
+	if err != nil || playerCount < 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid playerCount parameter"})
+		return
+	}
+
+	stats, err := s.postgres.GetAllianceGuildStats(region, *player.AllianceName, playerCount)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get alliance guilds"})
+		return
+	}
+	if len(stats) == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Alliance guilds not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, stats)
 }

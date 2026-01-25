@@ -80,6 +80,7 @@ func (s *Server) setupRoutes() {
 	v1.GET("/guilds/search/:server/:query", s.searchGuilds)
 	v1.GET("/alliances/search/:server/:query", s.searchAlliances)
 	v1.GET("/alliances/:server/:name", s.allianceOverview)
+	v1.GET("/alliances/:server/:name/guilds", s.allianceGuilds)
 	v1.GET("/alliances/top/:region", s.topAlliances)
 	v1.GET("/guilds/top/:region", s.topGuilds)
 	v1.GET("/players/top/:region", s.topPlayers)

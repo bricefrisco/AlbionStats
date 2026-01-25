@@ -16,6 +16,16 @@ type TopGuildStats struct {
 	TotalDeaths    int64  `gorm:"column:total_deaths"`
 }
 
+type AllianceGuildStats struct {
+	Name           string `gorm:"column:name"`
+	Attendance     int64  `gorm:"column:attendance"`
+	PlayersInGuild int32  `gorm:"column:players_in_guild"`
+	Kills          int64  `gorm:"column:kills"`
+	Deaths         int64  `gorm:"column:deaths"`
+	KillFame       int64  `gorm:"column:kill_fame"`
+	DeathFame      int64  `gorm:"column:death_fame"`
+}
+
 type GuildBattleSummary struct {
 	Battles        int64     `gorm:"column:battles"`
 	TotalKills     int64     `gorm:"column:total_kills"`
@@ -89,6 +99,29 @@ func (p *Postgres) GetBattleGuildStatsByIDs(ctx context.Context, region string, 
 	err := p.db.WithContext(ctx).Where("region = ? AND battle_id IN ?", region, battleIDs).
 		Order("player_count DESC").
 		Find(&stats).Error
+
+	return stats, err
+}
+
+func (p *Postgres) GetAllianceGuildStats(region string, allianceName string, minPlayerCount int) ([]AllianceGuildStats, error) {
+	var stats []AllianceGuildStats
+	err := p.db.Raw(`
+		SELECT
+			bgs.guild_name AS name,
+			COUNT(DISTINCT bgs.battle_id) AS attendance,
+			MAX(bgs.player_count) AS players_in_guild,
+			SUM(bgs.kills) AS kills,
+			SUM(bgs.deaths) AS deaths,
+			SUM(bgs.kill_fame) AS kill_fame,
+			SUM(bgs.death_fame) AS death_fame
+		FROM battle_guild_stats bgs
+		WHERE bgs.region = ?
+			AND bgs.alliance_name = ?
+			AND bgs.player_count >= ?
+			AND bgs.start_time >= NOW() - INTERVAL '30 days'
+		GROUP BY bgs.guild_name
+		ORDER BY attendance DESC
+	`, region, allianceName, minPlayerCount).Scan(&stats).Error
 
 	return stats, err
 }

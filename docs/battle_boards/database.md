@@ -81,6 +81,9 @@ ON battle_guild_stats (region, guild_name, player_count DESC, battle_id);
 
 CREATE INDEX idx_bgs_region_time_guild
 ON battle_guild_stats (region, start_time, guild_name);
+
+CREATE INDEX idx_bgs_alliance_time_guild
+ON battle_guild_stats (region, alliance_name, start_time, guild_name);
 ```
 
 ## Battle Player Stats
