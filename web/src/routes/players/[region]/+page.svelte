@@ -8,8 +8,6 @@
 	import TableHeader from '$components/TableHeader.svelte';
 	import TableRow from '$components/TableRow.svelte';
 	import TableData from '$components/TableData.svelte';
-	import { page } from '$app/state';
-	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { formatFame, formatNumber, formatRatio, getRatioColor } from '$lib/utils.js';
 	import { regionState } from '$lib/regionState.svelte.js';
@@ -18,21 +16,7 @@
 
 	let { data } = $props();
 
-	let searchQuery = $derived(page.url.searchParams.get('q') || '');
-
-	function updateUrl(q) {
-		searchQuery = q;
-		const url = new URL(page.url);
-		if (q) {
-			url.searchParams.set('q', q);
-		} else {
-			url.searchParams.delete('q');
-		}
-		goto(resolve(url.pathname + url.search), {
-			keepFocus: true,
-			noScroll: true
-		});
-	}
+	let searchQuery = $derived('');
 </script>
 
 <svelte:head>
@@ -63,7 +47,7 @@
 	</Typography>
 
 	<div class="mb-4">
-		<PlayerSearchBar bind:value={searchQuery} onselect={updateUrl} placeholder="Player name" />
+		<PlayerSearchBar links={true} bind:value={searchQuery} placeholder="Player name" />
 	</div>
 
 	{#if data.topPlayersError}

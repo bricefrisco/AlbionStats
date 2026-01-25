@@ -8,14 +8,13 @@
 	import TableHeader from '$components/TableHeader.svelte';
 	import TableRow from '$components/TableRow.svelte';
 	import TableData from '$components/TableData.svelte';
-	import { page } from '$app/state';
 	import { formatFame, formatNumber, formatRatio, getRatioColor } from '$lib/utils.js';
 	import { regionState } from '$lib/regionState.svelte.js';
 	import { resolve } from '$app/paths';
 
 	let { data } = $props();
 
-	let searchQuery = $derived(page.url.searchParams.get('q') || '');
+	let searchQuery = $derived('');
 </script>
 
 <svelte:head>
