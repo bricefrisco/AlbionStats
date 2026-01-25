@@ -19,7 +19,7 @@ type TopGuildStats struct {
 type AllianceGuildStats struct {
 	Name           string `gorm:"column:name"`
 	NumBattles     int64  `gorm:"column:num_battles"`
-	PlayersInGuild int32  `gorm:"column:players_in_guild"`
+	MaxPlayerCount int32  `gorm:"column:max_player_count"`
 	Kills          int64  `gorm:"column:kills"`
 	Deaths         int64  `gorm:"column:deaths"`
 	KillFame       int64  `gorm:"column:kill_fame"`
@@ -109,7 +109,7 @@ func (p *Postgres) GetAllianceGuildStats(region string, allianceName string, min
 		SELECT
 			bgs.guild_name AS name,
 			COUNT(DISTINCT bgs.battle_id) AS num_battles,
-			MAX(bgs.player_count) AS players_in_guild,
+			MAX(bgs.player_count) AS max_player_count,
 			SUM(bgs.kills) AS kills,
 			SUM(bgs.deaths) AS deaths,
 			SUM(bgs.kill_fame) AS kill_fame,
