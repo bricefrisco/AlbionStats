@@ -5,7 +5,7 @@
 <footer class="border-t border-gray-200 bg-white dark:border-neutral-800 dark:bg-neutral-950">
 	<div class="mx-auto max-w-5xl px-4 py-8 text-sm text-gray-600 dark:text-neutral-400 xl:px-0">
 		<p class="text-base font-medium text-gray-900 dark:text-white">AlbionStats</p>
-		<p class="mt-1">Copyright (c) {currentYear}.</p>
+		<p class="mt-1">Copyright &copy; {currentYear}.</p>
 		<div class="mt-4 space-y-2">
 			<p>
 				Open source. Like this project?
