@@ -40,7 +40,6 @@ export const load = async ({ params, fetch }) => {
 
 	return {
 		region,
-		decodedName,
 		validRegion,
 		guildData,
 		guildError

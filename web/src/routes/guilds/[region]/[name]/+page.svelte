@@ -9,11 +9,10 @@
 
 	let { data } = $props();
 
-	let decodedName = $derived(data.decodedName);
-	let searchName = $derived(decodedName);
 	let validRegion = $derived(data.validRegion);
 	let guildData = $derived(data.guildData);
 	let error = $derived(data.guildError);
+	let searchName = $derived(guildData.Name);
 
 	function formatDate(dateString) {
 		if (!dateString) return 'Never';
@@ -74,14 +73,14 @@
 	{#if !validRegion}
 		<PageHeader title="Invalid Region" />
 		<Typography>Valid regions are: americas, europe, asia</Typography>
-	{:else if !decodedName}
+	{:else if !guildData.Name}
 		<PageHeader title="Guild Not Found" />
 		<Typography>Please provide a valid guild name</Typography>
 	{:else if error}
 		<PageHeader title="Error" />
 		<Typography>{error}</Typography>
 	{:else}
-		<PageHeader title={decodedName} />
+		<PageHeader title={guildData.Name} />
 		<div class="mt-4">
 			<table class="w-full text-sm">
 				<tbody class="divide-y divide-gray-200/50 dark:divide-gray-700/50">
