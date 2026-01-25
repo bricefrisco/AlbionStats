@@ -149,17 +149,18 @@ func (p *Postgres) GetTopGuilds(region string, limit int, offset int) ([]TopGuil
 func (p *Postgres) GetGuildBattleSummary(ctx context.Context, region string, guildName string) (*GuildBattleSummary, error) {
 	var summary GuildBattleSummary
 	err := p.db.WithContext(ctx).Raw(`
-		SELECT
-			COUNT(DISTINCT battle_id) AS battles,
-			SUM(kills) AS total_kills,
-			SUM(deaths) AS total_deaths,
-			SUM(kill_fame) AS total_kill_fame,
-			SUM(death_fame) AS total_death_fame,
-			MAX(player_count) AS max_players,
-			MAX(start_time) AS last_battle_at
-		FROM battle_guild_stats
-		WHERE region = ?
-			AND guild_name = ?
+SELECT
+    COUNT(DISTINCT battle_id) AS battles,
+    SUM(kills) AS total_kills,
+    SUM(deaths) AS total_deaths,
+    SUM(kill_fame) AS total_kill_fame,
+    SUM(death_fame) AS total_death_fame,
+    MAX(player_count) AS max_players,
+    MAX(start_time) AS last_battle_at
+FROM battle_guild_stats
+WHERE region = ?
+  AND guild_name = ?
+  AND start_time >= now() - INTERVAL '30 days';
 	`, region, guildName).Scan(&summary).Error
 	if err != nil {
 		return nil, err

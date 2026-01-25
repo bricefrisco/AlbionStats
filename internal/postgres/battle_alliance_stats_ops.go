@@ -117,17 +117,18 @@ func (p *Postgres) GetTopAlliances(region string, limit int, offset int) ([]TopA
 func (p *Postgres) GetAllianceBattleSummary(ctx context.Context, region string, allianceName string) (*AllianceBattleSummary, error) {
 	var summary AllianceBattleSummary
 	err := p.db.WithContext(ctx).Raw(`
-		SELECT
-			COUNT(DISTINCT battle_id) AS battles,
-			SUM(kills) AS total_kills,
-			SUM(deaths) AS total_deaths,
-			SUM(kill_fame) AS total_kill_fame,
-			SUM(death_fame) AS total_death_fame,
-			MAX(player_count) AS max_players,
-			MAX(start_time) AS last_battle_at
-		FROM battle_alliance_stats
-		WHERE region = ?
-			AND alliance_name = ?
+SELECT
+    COUNT(DISTINCT battle_id) AS battles,
+    SUM(kills) AS total_kills,
+    SUM(deaths) AS total_deaths,
+    SUM(kill_fame) AS total_kill_fame,
+    SUM(death_fame) AS total_death_fame,
+    MAX(player_count) AS max_players,
+    MAX(start_time) AS last_battle_at
+FROM battle_alliance_stats
+WHERE region = ?
+  AND alliance_name = ?
+  AND start_time >= now() - INTERVAL '30 days';
 	`, region, allianceName).Scan(&summary).Error
 	if err != nil {
 		return nil, err
