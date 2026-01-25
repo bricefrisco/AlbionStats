@@ -105,7 +105,7 @@
 					<TableData class="font-medium text-gray-900 dark:text-white">
 						<a
 							href={resolve(`/guilds/${regionState.value}/${encodeURIComponent(guild.GuildName)}`)}
-							class="hover:underline hover:text-blue-600 dark:hover:text-blue-400"
+							class="underline hover:text-blue-600 dark:hover:text-blue-400"
 						>
 							{guild.GuildName}
 						</a>
