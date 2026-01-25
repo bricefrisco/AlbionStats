@@ -1,13 +1,9 @@
 <script>
 	import { resolve } from '$app/paths';
 	import GithubIcon from './icons/GithubIcon.svelte';
-	import SunIcon from './icons/SunIcon.svelte';
-	import MoonIcon from './icons/MoonIcon.svelte';
 	import RegionSelect from './RegionSelect.svelte';
 	import { regionState } from '$lib/regionState.svelte';
 	import { routes } from '$lib/regionRoutes';
-
-	let { isDarkMode, toggleDarkMode } = $props();
 </script>
 
 <header
@@ -33,17 +29,6 @@
 			</nav>
 			<div class="flex items-center gap-3">
 				<RegionSelect />
-				<button
-					onclick={toggleDarkMode}
-					class="flex items-center text-gray-600 transition-colors hover:text-gray-900 dark:text-neutral-400 dark:hover:text-neutral-100"
-					aria-label="Toggle dark mode"
-				>
-					{#if isDarkMode}
-						<SunIcon size={20} />
-					{:else}
-						<MoonIcon size={20} />
-					{/if}
-				</button>
 				<a
 					href="https://github.com/bricefrisco/AlbionStats"
 					target="_blank"
