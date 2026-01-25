@@ -226,6 +226,11 @@ SET (
     timescaledb.compress_orderby = 'ts DESC'
 );
 
+SELECT add_retention_policy(
+    'player_stats_snapshots',
+    INTERVAL '1 year'
+);
+
 SELECT add_compression_policy('player_stats_snapshots', INTERVAL '1 day');
 ```
 
@@ -246,6 +251,11 @@ SET (
     timescaledb.compress,
     timescaledb.compress_segmentby = 'metric',
     timescaledb.compress_orderby = 'ts DESC'
+);
+
+SELECT add_retention_policy(
+    'metrics',
+    INTERVAL '1 year'
 );
 
 SELECT add_compression_policy('metrics', INTERVAL '1 day');

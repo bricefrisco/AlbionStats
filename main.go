@@ -17,6 +17,7 @@ import (
 	"albionstats/internal/tasks"
 	"albionstats/internal/tasks/battle_poller"
 	"albionstats/internal/tasks/battleboard_poller"
+	"albionstats/internal/tasks/data_purger"
 	"albionstats/internal/tasks/killboard_poller"
 	"albionstats/internal/tasks/metrics_collector"
 	"albionstats/internal/tasks/player_poller"
@@ -81,6 +82,18 @@ func main() {
 
 	go func() {
 		metricsCollector.Run(ctx)
+	}()
+
+	// Start data purger
+	dataPurger, err := data_purger.NewPurger(postgres, appLogger, data_purger.Config{
+		Interval: time.Hour,
+	})
+	if err != nil {
+		log.Fatalf("data purger init: %v", err)
+	}
+
+	go func() {
+		dataPurger.Run(ctx)
 	}()
 
 	// Start player pollers for all regions

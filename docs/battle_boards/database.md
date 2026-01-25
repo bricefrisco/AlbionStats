@@ -26,6 +26,9 @@ INCLUDE (total_players); -- Used for join with battle_player_stats
 
 CREATE INDEX idx_bs_region_start_time_battle
 ON battle_summary (region, start_time DESC, battle_id);
+
+CREATE INDEX idx_battle_summary_start_time
+ON battle_summary (start_time);
 ```
 
 ## Battle Alliance Stats
@@ -53,6 +56,9 @@ ON battle_alliance_stats (region, alliance_name, player_count DESC, battle_id);
 
 CREATE INDEX idx_bgs_region_time_alliance
 ON battle_alliance_stats (region, start_time, alliance_name);
+
+CREATE INDEX idx_battle_alliance_stats_start_time
+ON battle_alliance_stats (start_time);
 ```
 
 ## Battle Guild Stats
@@ -84,6 +90,9 @@ ON battle_guild_stats (region, start_time, guild_name);
 
 CREATE INDEX idx_bgs_alliance_time_guild
 ON battle_guild_stats (region, alliance_name, start_time, guild_name);
+
+CREATE INDEX idx_battle_guild_stats_start_time
+ON battle_guild_stats (start_time);
 ```
 
 ## Battle Player Stats
@@ -121,6 +130,9 @@ ON battle_player_stats (region, alliance_name, start_time, player_name);
 
 CREATE INDEX idx_bps_guild_time_player
 ON battle_player_stats (region, guild_name, start_time, player_name);
+
+CREATE INDEX idx_battle_player_stats_start_time
+ON battle_player_stats (start_time);
 ```
 
 ## Battle queue
@@ -139,6 +151,9 @@ CREATE TABLE battle_queue (
 CREATE INDEX idx_battle_queue_unprocessed_ts
 ON battle_queue (ts)
 WHERE processed = FALSE;
+
+CREATE INDEX idx_battle_queue_ts
+ON battle_queue (ts);
 ```
 
 ## Battle Kills
@@ -159,4 +174,7 @@ CREATE TABLE battle_kills (
 
 CREATE INDEX idx_battle_kills_region_battle_ts_desc
 ON battle_kills (region, battle_id, ts DESC);
+
+CREATE INDEX idx_battle_kills_ts
+ON battle_kills (ts);
 ```
