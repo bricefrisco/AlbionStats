@@ -143,8 +143,8 @@ func (s *Server) battle(c *gin.Context) {
 	}
 
 	resp := s.mergeBattleSummaries(region, summaries)
-	resp.AllianceStats = s.mergeAllianceStats(allianceStats)
-	resp.GuildStats = s.mergeGuildStats(guildStats)
+	resp.AllianceStats = s.mergeAllianceStats(allianceStats, playerStats)
+	resp.GuildStats = s.mergeGuildStats(guildStats, playerStats)
 	resp.PlayerStats = s.mergePlayerStats(playerStats)
 	resp.Kills = battleKills
 
@@ -179,15 +179,14 @@ func (s *Server) mergeBattleSummaries(region string, summaries []postgres.Battle
 	return resp
 }
 
-func (s *Server) mergeAllianceStats(stats []postgres.BattleAllianceStats) []*MergedAllianceStat {
+func (s *Server) mergeAllianceStats(stats []postgres.BattleAllianceStats, playerStats []postgres.BattlePlayerStats) []*MergedAllianceStat {
 	mergedMap := make(map[string]*MergedAllianceStat)
 	type groupCalc struct {
 		totalWeightedIP int64
 		ipCount         int64
-		battleCount     int32
-		maxPlayerCount  int32
 	}
 	calcMap := make(map[string]*groupCalc)
+	playerCounts := buildAlliancePlayerCounts(playerStats)
 
 	for _, stat := range stats {
 		m, ok := mergedMap[stat.AllianceName]
@@ -209,10 +208,6 @@ func (s *Server) mergeAllianceStats(stats []postgres.BattleAllianceStats) []*Mer
 			calcMap[stat.AllianceName].totalWeightedIP += int64(*stat.IP) * int64(stat.PlayerCount)
 			calcMap[stat.AllianceName].ipCount += int64(stat.PlayerCount)
 		}
-		if stat.PlayerCount > calcMap[stat.AllianceName].maxPlayerCount {
-			calcMap[stat.AllianceName].maxPlayerCount = stat.PlayerCount
-		}
-		calcMap[stat.AllianceName].battleCount++
 	}
 
 	merged := make([]*MergedAllianceStat, 0, len(mergedMap))
@@ -220,8 +215,8 @@ func (s *Server) mergeAllianceStats(stats []postgres.BattleAllianceStats) []*Mer
 		if calcMap[name].ipCount > 0 {
 			v.IP = int32(calcMap[name].totalWeightedIP / calcMap[name].ipCount)
 		}
-		if calcMap[name].battleCount > 1 {
-			v.PlayerCount = calcMap[name].maxPlayerCount
+		if count, ok := playerCounts[name]; ok {
+			v.PlayerCount = count
 		}
 		merged = append(merged, v)
 	}
@@ -233,15 +228,14 @@ func (s *Server) mergeAllianceStats(stats []postgres.BattleAllianceStats) []*Mer
 	return merged
 }
 
-func (s *Server) mergeGuildStats(stats []postgres.BattleGuildStats) []*MergedGuildStat {
+func (s *Server) mergeGuildStats(stats []postgres.BattleGuildStats, playerStats []postgres.BattlePlayerStats) []*MergedGuildStat {
 	mergedMap := make(map[string]*MergedGuildStat)
 	type groupCalc struct {
 		totalWeightedIP int64
 		ipCount         int64
-		battleCount     int32
-		maxPlayerCount  int32
 	}
 	calcMap := make(map[string]*groupCalc)
+	playerCounts := buildGuildPlayerCounts(playerStats)
 
 	for _, stat := range stats {
 		m, ok := mergedMap[stat.GuildName]
@@ -264,10 +258,6 @@ func (s *Server) mergeGuildStats(stats []postgres.BattleGuildStats) []*MergedGui
 			calcMap[stat.GuildName].totalWeightedIP += int64(*stat.IP) * int64(stat.PlayerCount)
 			calcMap[stat.GuildName].ipCount += int64(stat.PlayerCount)
 		}
-		if stat.PlayerCount > calcMap[stat.GuildName].maxPlayerCount {
-			calcMap[stat.GuildName].maxPlayerCount = stat.PlayerCount
-		}
-		calcMap[stat.GuildName].battleCount++
 	}
 
 	merged := make([]*MergedGuildStat, 0, len(mergedMap))
@@ -275,8 +265,8 @@ func (s *Server) mergeGuildStats(stats []postgres.BattleGuildStats) []*MergedGui
 		if calcMap[name].ipCount > 0 {
 			v.IP = int32(calcMap[name].totalWeightedIP / calcMap[name].ipCount)
 		}
-		if calcMap[name].battleCount > 1 {
-			v.PlayerCount = calcMap[name].maxPlayerCount
+		if count, ok := playerCounts[name]; ok {
+			v.PlayerCount = count
 		}
 		merged = append(merged, v)
 	}
@@ -286,6 +276,48 @@ func (s *Server) mergeGuildStats(stats []postgres.BattleGuildStats) []*MergedGui
 	})
 
 	return merged
+}
+
+func buildAlliancePlayerCounts(stats []postgres.BattlePlayerStats) map[string]int32 {
+	playerSets := make(map[string]map[string]struct{})
+	for _, stat := range stats {
+		if stat.AllianceName == nil || *stat.AllianceName == "" {
+			continue
+		}
+		players := playerSets[*stat.AllianceName]
+		if players == nil {
+			players = make(map[string]struct{})
+			playerSets[*stat.AllianceName] = players
+		}
+		players[stat.PlayerName] = struct{}{}
+	}
+
+	counts := make(map[string]int32, len(playerSets))
+	for alliance, players := range playerSets {
+		counts[alliance] = int32(len(players))
+	}
+	return counts
+}
+
+func buildGuildPlayerCounts(stats []postgres.BattlePlayerStats) map[string]int32 {
+	playerSets := make(map[string]map[string]struct{})
+	for _, stat := range stats {
+		if stat.GuildName == nil || *stat.GuildName == "" {
+			continue
+		}
+		players := playerSets[*stat.GuildName]
+		if players == nil {
+			players = make(map[string]struct{})
+			playerSets[*stat.GuildName] = players
+		}
+		players[stat.PlayerName] = struct{}{}
+	}
+
+	counts := make(map[string]int32, len(playerSets))
+	for guild, players := range playerSets {
+		counts[guild] = int32(len(players))
+	}
+	return counts
 }
 
 func (s *Server) mergePlayerStats(stats []postgres.BattlePlayerStats) []*MergedPlayerStat {
