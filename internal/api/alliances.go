@@ -43,7 +43,7 @@ func (s *Server) allianceOverview(c *gin.Context) {
 		return
 	}
 
-	playerCountStr := c.DefaultQuery("playerCount", "5")
+	playerCountStr := c.DefaultQuery("playerCount", "1")
 	playerCount, err := strconv.Atoi(playerCountStr)
 	if err != nil || playerCount < 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid playerCount parameter"})
