@@ -13,6 +13,7 @@ import (
 )
 
 type GuildOverviewResponse struct {
+	Name          string                       `json:"Name"`
 	RosterStats   *postgres.PlayerRosterStats  `json:"RosterStats"`
 	BattleSummary *postgres.GuildBattleSummary `json:"BattleSummary"`
 }
@@ -63,6 +64,7 @@ func (s *Server) guildOverview(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, GuildOverviewResponse{
+		Name:          *player.GuildName,
 		RosterStats:   roster,
 		BattleSummary: summary,
 	})
