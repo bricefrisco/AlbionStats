@@ -5,9 +5,11 @@ import (
 	"log/slog"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
+	"golang.org/x/time/rate"
 )
 
 type Server struct {
@@ -26,6 +28,7 @@ func NewServer(cfg Config) *Server {
 	gin.SetMode(gin.ReleaseMode)
 
 	router := gin.Default()
+	router.Use(rateLimitMiddleware())
 	router.Use(corsMiddleware())
 
 	server := &Server{
@@ -108,6 +111,47 @@ func corsMiddleware() gin.HandlerFunc {
 
 		if c.Request.Method == "OPTIONS" {
 			c.AbortWithStatus(204)
+			return
+		}
+
+		c.Next()
+	}
+}
+
+type rateLimiter struct {
+	mu       sync.Mutex
+	visitors map[string]*rate.Limiter
+}
+
+func (r *rateLimiter) get(ip string) *rate.Limiter {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if r.visitors == nil {
+		r.visitors = make(map[string]*rate.Limiter)
+	}
+
+	limiter, exists := r.visitors[ip]
+	if !exists {
+		limiter = rate.NewLimiter(rate.Limit(4), 4)
+		r.visitors[ip] = limiter
+	}
+
+	return limiter
+}
+
+func rateLimitMiddleware() gin.HandlerFunc {
+	limiter := &rateLimiter{}
+
+	return func(c *gin.Context) {
+		ip := c.ClientIP()
+		if ip == "localhost" || ip == "127.0.0.1" {
+			c.Next()
+			return
+		}
+
+		if !limiter.get(ip).Allow() {
+			c.AbortWithStatus(429)
 			return
 		}
 
