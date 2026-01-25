@@ -25,9 +25,10 @@
 	const filteredData = $derived.by(() => {
 		const query = search.trim().toLowerCase();
 		if (!query) return indexedData;
-		return indexedData.filter((player) =>
-			(player.PlayerName || '').toLowerCase().includes(query)
-		);
+		return indexedData.filter((player) => {
+			const name = player.PlayerName || player.Name || '';
+			return name.toLowerCase().includes(query);
+		});
 	});
 	let totalPages = $derived(Math.ceil(filteredData.length / pageSize));
 	let paginatedData = $derived(
@@ -42,6 +43,10 @@
 	function formatDate(dateString) {
 		if (!dateString) return '-';
 		return new Date(dateString).toLocaleString();
+	}
+
+	function getPlayerName(player) {
+		return player.PlayerName || player.Name || '';
 	}
 </script>
 
@@ -59,18 +64,18 @@
 		<TableHeader class="text-right font-semibold whitespace-nowrap">Death Fame</TableHeader>
 	{/snippet}
 
-	{#each paginatedData as player (player.PlayerName)}
+	{#each paginatedData as player (getPlayerName(player))}
 		<TableRow>
 			<TableData class="text-right text-gray-500 dark:text-gray-400">
 				{player.pos}
 			</TableData>
-			<TableData class="font-medium text-gray-900 dark:text-white">
-				{#if player.PlayerName}
+			<TableData class="text-gray-900 dark:text-white">
+				{#if getPlayerName(player)}
 					<a
-						href={resolve(`/players/${regionState.value}/${encodeURIComponent(player.PlayerName)}`)}
-						class="underline hover:text-blue-600 dark:hover:text-blue-400"
+						href={resolve(`/players/${regionState.value}/${encodeURIComponent(getPlayerName(player))}`)}
+						class="font-medium underline hover:text-blue-600 dark:hover:text-blue-400"
 					>
-						{player.PlayerName}
+						{getPlayerName(player)}
 					</a>
 				{:else}
 					-

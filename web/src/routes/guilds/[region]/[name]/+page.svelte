@@ -5,6 +5,7 @@
 	import Typography from '$components/Typography.svelte';
 	import Tabs from '$components/Tabs.svelte';
 	import GuildSearchBar from '$components/GuildSearchBar.svelte';
+	import AllianceGuildPlayers from '$components/AllianceGuildPlayers.svelte';
 	import { formatNumber, formatRatio } from '$lib/utils';
 
 	let { data } = $props();
@@ -59,6 +60,8 @@
 
 	const tabs = [{ id: 'players', label: 'Players' }];
 	let activeTab = $state('players');
+
+	const players = $derived(guildData?.Players || []);
 </script>
 
 <Page>
@@ -81,6 +84,11 @@
 		<Typography>{error}</Typography>
 	{:else}
 		<PageHeader title={guildData.Name} />
+		<Typography>
+			<h2 class="mb-1">Albion Online Guild Statistics.</h2>
+			<p>Data is based on battle boards from the past 30 days. Collection began on January 19, 2026.
+			</p>
+		</Typography>
 		<div class="mt-4">
 			<table class="w-full text-sm">
 				<tbody class="divide-y divide-gray-200/50 dark:divide-gray-700/50">
@@ -109,11 +117,11 @@
 		<SubHeader title="Guild Details" classes="mt-6" />
 
 		<div class="mt-2 mb-6">
-			<Tabs {tabs} {activeTab} />
+			<Tabs {tabs} bind:activeTab />
 		</div>
 
-		<div class="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600 dark:border-neutral-800 dark:bg-neutral-900 dark:text-gray-300">
-			Players tab content coming soon.
-		</div>
+		{#if activeTab === 'players'}
+			<AllianceGuildPlayers data={players} />
+		{/if}
 	{/if}
 </Page>

@@ -6,7 +6,7 @@
 	import Tabs from '$components/Tabs.svelte';
 	import AllianceSearchBar from '$components/AllianceSearchBar.svelte';
 	import AllianceGuilds from '$components/AllianceGuilds.svelte';
-	import AlliancePlayers from '$components/AlliancePlayers.svelte';
+	import AllianceGuildPlayers from '$components/AllianceGuildPlayers.svelte';
 	import { formatNumber, formatRatio } from '$lib/utils';
 
 	let { data } = $props();
@@ -129,7 +129,7 @@
 		{#if activeTab === 'guilds'}
 			<AllianceGuilds data={guilds} />
 		{:else if activeTab === 'players'}
-			<AlliancePlayers data={players} />
+			<AllianceGuildPlayers data={players} />
 		{/if}
 	{/if}
 </Page>
